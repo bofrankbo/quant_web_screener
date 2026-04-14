@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>K線型態分析器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 290px;
+  min-width: 290px;
+  background: #1e222d;
+  border-right: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+}
+#sidebar-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #2a2e39;
+  font-size: 12px;
+  font-weight: 700;
+  color: #787b86;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#pattern-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+#pattern-list::-webkit-scrollbar { width: 4px; }
+#pattern-list::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+/* ── Search panel in sidebar ── */
+#search-panel {
+  border-top: 1px solid #2a2e39;
+  padding: 12px;
+  flex-shrink: 0;
+}
+#search-panel label {
+  font-size: 11px;
+  color: #787b86;
+  display: block;
+  margin-bottom: 4px;
+}
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.search-row input[type=number] {
+  width: 54px;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.search-row span { font-size: 11px; color: #4c525e; }
+#btn-search {
+  width: 100%;
+  background: #2962ff;
+  border-color: #2962ff;
+  color: #fff;
+  padding: 7px;
+  font-size: 13px;
+  font-weight: 600;
+}
+#btn-search:hover { background: #1a4fd6; }
+#btn-search:disabled { background: #2a2e39; border-color: #363a45; color: #4c525e; cursor: not-allowed; }
+
+/* ── Results panel ── */
+#results-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #1e222d;
+  border-left: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  z-index: 100;
+}
+#results-panel.open { transform: translateX(0); }
+#results-header {
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+#results-header span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #787b86;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+#btn-close-results {
+  background: none;
+  border: none;
+  color: #787b86;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+#btn-close-results:hover { color: #d1d4dc; background: none; }
+#results-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+#results-body::-webkit-scrollbar { width: 4px; }
+#results-body::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+  background: #2a2e39;
+  font-size: 13px;
+}
+.result-row:hover { background: #323740; }
+.result-rank { color: #4c525e; font-size: 11px; width: 24px; }
+.result-ticker { font-weight: 700; color: #d1d4dc; }
+.result-score { color: #26a69a; font-family: monospace; font-size: 12px; }
+.result-window { color: #787b86; font-size: 11px; }
+
+.search-status {
+  font-size: 12px;
+  color: #787b86;
+  text-align: center;
+  padding: 20px;
+}
+.search-status.error { color: #ef5350; }
+
+/* ── Main ── */
+#main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+#toolbar {
+  height: 46px;
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+#toolbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d1d4dc;
+  margin-right: 10px;
+}
+.sep { width: 1px; height: 22px; background: #2a2e39; margin: 0 4px; }
+.spacer { flex: 1; }
+
+button {
+  background: #2a2e39;
+  border: 1px solid #363a45;
+  color: #c4c7cf;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+button:hover { background: #363a45; }
+button.active { background: #2962ff; border-color: #2962ff; color: #fff; }
+button.danger:hover { background: #2a1a1a; color: #ef5350; border-color: #ef5350; }
+
+/* ── Canvas area ── */
+#canvas-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* price chart takes most space; volume panel is fixed height */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+canvas { position: absolute; top: 0; left: 0; cursor: crosshair; display: block; }
+
+/* Volume panel */
+#vol-container {
+  height: 90px;
+  position: relative;
+  overflow: hidden;
+  border-top: 1px solid #2a2e39;
+  flex-shrink: 0;
+  display: none;
+}
+#vol-container.visible { display: block; }
+#vol-canvas { position: absolute; top: 0; left: 0; cursor: ns-resize; display: block; }
+
+/* ── HUD ── */
+#hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(19,23,34,0.85);
+  border: 1px solid #2a2e39;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  color: #4c525e;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#price-tag {
+  position: absolute;
+  left: 2px;
+  background: #2962ff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: monospace;
+  color: #fff;
+  pointer-events: none;
+  display: none;
+}
+#candle-count {
+  font-size: 12px;
+  color: #4c525e;
+}
+
+/* ── Pattern cards ── */
+.pattern-card {
+  background: #2a2e39;
+  border-radius: 6px;
+  padding: 11px 12px;
+  margin-bottom: 7px;
+  border-left: 3px solid #363a45;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.pattern-card:hover { background: #323740; }
+.pattern-card.selected { outline: 1px solid #ffc40066; }
+.pattern-card.bullish { border-left-color: #26a69a; }
+.pattern-card.bearish { border-left-color: #ef5350; }
+.pattern-card.neutral { border-left-color: #787b86; }
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin-bottom: 5px;
+  letter-spacing: 0.3px;
+}
+.bullish .badge { background: rgba(38,166,154,0.18); color: #26a69a; }
+.bearish .badge { background: rgba(239,83,80,0.18); color: #ef5350; }
+.neutral .badge { background: rgba(120,123,134,0.18); color: #9598a1; }
+
+.pname { font-size: 15px; font-weight: 700; margin-bottom: 1px; }
+.pen   { font-size: 11px; color: #787b86; margin-bottom: 5px; }
+.pdesc { font-size: 12px; color: #9598a1; line-height: 1.55; }
+
+.no-patterns {
+  color: #4c525e;
+  font-size: 13px;
+  text-align: center;
+  padding: 30px 16px;
+  line-height: 2;
+}
+</style>
+</head>
+<body>
+
+<!-- Left sidebar: pattern recognition + search controls -->
+<div id="sidebar">
+  <div id="sidebar-header">型態識別結果</div>
+  <div id="pattern-list">
+    <div class="no-patterns">在畫布拖曳繪製K線<br>系統即時識別型態</div>
+  </div>
+
+  <!-- Search panel -->
+  <div id="search-panel">
+    <label>Window Range (bars)</label>
+    <div class="search-row">
+      <input type="number" id="win-min" value="5" min="3" max="120">
+      <span>–</span>
+      <input type="number" id="win-max" value="30" min="3" max="120">
+      <span>bars</span>
+    </div>
+    <div class="search-row" style="margin-bottom:8px;">
+      <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;">
+        <input type="checkbox" id="chk-volume" style="cursor:pointer;">
+        <span style="font-size:12px;color:#9598a1;">Match Volume Shape</span>
+      </label>
+    </div>
+    <button id="btn-search" disabled>Draw candles first</button>
+  </div>
+</div>
+
+<!-- Main chart area -->
+<div id="main">
+  <div id="toolbar">
+    <span id="toolbar-title">K線型態分析器</span>
+    <div class="sep"></div>
+    <button id="btn-undo">↩ 撤銷</button>
+    <button id="btn-clear" class="danger">⌫ 清除</button>
+    <div class="sep"></div>
+    <button id="btn-auto-wick" class="active" title="自動上下影線長度">自動影線</button>
+    <button id="btn-toggle-vol">顯示量能</button>
+    <div class="spacer"></div>
+    <span id="candle-count"></span>
+  </div>
+
+  <div id="canvas-wrap">
+    <div id="canvas-container">
+      <canvas id="chart"></canvas>
+      <div id="hint">拖曳繪K線 &nbsp;·&nbsp; 右鍵刪除 &nbsp;·&nbsp; 拖曳影線端點調整長度</div>
+      <div id="price-tag"></div>
+    </div>
+    <div id="vol-container">
+      <canvas id="vol-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Right results panel (slides in) -->
+<div id="results-panel">
+  <div id="results-header">
+    <span>相似股票</span>
+    <button id="btn-close-results">✕</button>
+  </div>
+  <div id="results-body">
+    <div class="search-status">搜尋結果將顯示於此</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const API_BASE = 'http://localhost:8000';
+
+// ─── DOM refs ──────────────────────────────────────────────────────────────────
+const canvas      = document.getElementById('chart');
+const ctx         = canvas.getContext('2d');
+const container   = document.getElementById('canvas-container');
+const patternEl   = document.getElementById('pattern-list');
+const countEl     = document.getElementById('candle-count');
+const priceTagEl  = document.getElementById('price-tag');
+const autoWickBtn = document.getElementById('btn-auto-wick');
+const volContainer= document.getElementById('vol-container');
+const volCanvas   = document.getElementById('vol-canvas');
+const volCtx      = volCanvas.getContext('2d');
+const toggleVolBtn= document.getElementById('btn-toggle-vol');
+const searchBtn   = document.getElementById('btn-search');
+const resultsPanel= document.getElementById('results-panel');
+const resultsBody = document.getElementById('results-body');
+
+// ─── Layout constants ─────────────────────────────────────────────────────────
+const L  = 56;
+const R  = 16;
+const T  = 18;
+const B  = 34;
+const SW = 46;
+const CW = 9;
+const GRID_STEPS = 8;
+const P_MIN = 0;
+const P_MAX = 100;
+
+// Volume panel constants
+const VL = 56;  // left margin (aligns with price chart)
+const VB = 20;  // bottom margin for axis labels
+const VT = 6;   // top margin
+const VOL_MAX_DEFAULT = 100;
+
+// ─── Colors ───────────────────────────────────────────────────────────────────
+const COL = {
+  bg:          '#131722',
+  panel:       '#1e222d',
+  grid:        '#1c2030',
+  axis:        '#2a2e39',
+  text:        '#4c525e',
+  bull:        '#26a69a',
+  bear:        '#ef5350',
+  hl:          'rgba(255,196,0,0.10)',
+  hlBorder:    '#ffc400',
+  handle:      'rgba(255,255,255,0.75)',
+  preview:     'rgba(180,180,180,0.35)',
+  xhair:       'rgba(120,123,134,0.35)',
+  volBar:      'rgba(100,120,180,0.6)',
+  volBarHov:   'rgba(100,120,180,0.9)',
+};
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let candles   = [];
+let volumes   = [];   // parallel array: volumes[i] = 0..100 for candle i
+let mx = -1, my = -1;
+let drawing   = false;
+let drawStartY = 0;
+let drag = { on: false, idx: -1, part: '' };
+let hov  = { idx: -1, part: '' };
+let patterns   = [];
+let hlSet      = new Set();
+let selectedPIdx = -1;
+let autoWick = true;
+let showVol  = false;
+
+// Volume drag state
+let volDrag = { on: false, idx: -1 };
+let volHov  = -1;
+
+// ─── Price ↔ Y ────────────────────────────────────────────────────────────────
+function pY(price) {
+  return T + (P_MAX - price) / (P_MAX - P_MIN) * (canvas.height - T - B);
+}
+function yP(y) {
+  return P_MAX - (y - T) / (canvas.height - T - B) * (P_MAX - P_MIN);
+}
+function clampP(p) { return Math.min(P_MAX, Math.max(P_MIN, p)); }
+function slotX(i)  { return L + i * SW + SW / 2; }
+
+// ─── Volume ↔ Y ───────────────────────────────────────────────────────────────
+function volH(v) {
+  // v in 0..100 → height in pixels
+  const usable = volCanvas.height - VT - VB;
+  return Math.max(2, (v / 100) * usable);
+}
+function yVol(y) {
+  const usable = volCanvas.height - VT - VB;
+  const fromBottom = (volCanvas.height - VB) - y;
+  return Math.min(100, Math.max(0, (fromBottom / usable) * 100));
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = COL.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawGrid(W, H);
+  drawHighlights(H);
+  drawAllCandles();
+  if (drawing) drawPreview();
+  drawAxes(W, H);
+  drawCrosshair(W, H);
+}
+
+function renderVol() {
+  if (!showVol) return;
+  const W = volCanvas.width, H = volCanvas.height;
+  volCtx.clearRect(0, 0, W, H);
+  volCtx.fillStyle = COL.bg;
+  volCtx.fillRect(0, 0, W, H);
+
+  // grid line at top
+  volCtx.strokeStyle = COL.axis;
+  volCtx.lineWidth = 1;
+  volCtx.beginPath();
+  volCtx.moveTo(VL + 0.5, VT);
+  volCtx.lineTo(W - R, VT);
+  volCtx.stroke();
+
+  // "VOL" label
+  volCtx.fillStyle = COL.text;
+  volCtx.font = '10px monospace';
+  volCtx.textAlign = 'right';
+  volCtx.fillText('VOL', VL - 4, VT + 10);
+
+  // Bars
+  for (let i = 0; i < volumes.length; i++) {
+    const x = slotX(i);
+    const h = volH(volumes[i]);
+    const y = (H - VB) - h;
+    volCtx.fillStyle = (i === volHov) ? COL.volBarHov : COL.volBar;
+    volCtx.fillRect(x - CW, y, CW * 2, h);
+
+    // index label
+    volCtx.fillStyle = COL.text;
+    volCtx.font = '10px monospace';
+    volCtx.textAlign = 'center';
+    volCtx.fillText(i + 1, x, H - VB + 14);
+  }
+
+  // Drag handle on hover
+  if (volHov >= 0 && volHov < volumes.length) {
+    const x = slotX(volHov);
+    const h = volH(volumes[volHov]);
+    const y = (H - VB) - h;
+    volCtx.fillStyle = COL.handle;
+    volCtx.beginPath();
+    volCtx.arc(x, y, 5, 0, Math.PI * 2);
+    volCtx.fill();
+  }
+}
+
+function drawGrid(W, H) {
+  ctx.strokeStyle = COL.grid;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= GRID_STEPS; i++) {
+    const p = P_MIN + (P_MAX - P_MIN) * i / GRID_STEPS;
+    const y = Math.round(pY(p)) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(L, y);
+    ctx.lineTo(W - R, y);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(42,46,57,0.5)';
+  for (let i = 0; i <= candles.length + 3; i++) {
+    const x = Math.round(L + i * SW) + 0.5;
+    if (x > W - R) break;
+    ctx.beginPath();
+    ctx.moveTo(x, T);
+    ctx.lineTo(x, H - B);
+    ctx.stroke();
+  }
+}
+
+function drawHighlights(H) {
+  if (hlSet.size === 0) return;
+  for (const idx of hlSet) {
+    if (idx >= candles.length) continue;
+    const x = slotX(idx);
+    ctx.fillStyle = COL.hl;
+    ctx.fillRect(x - SW / 2, T, SW, H - T - B);
+  }
+  if (hlSet.size > 0) {
+    const sorted = [...hlSet].sort((a, b) => a - b);
+    const x1 = slotX(sorted[0]) - SW / 2;
+    const x2 = slotX(sorted[sorted.length - 1]) + SW / 2;
+    ctx.strokeStyle = COL.hlBorder;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeRect(x1 + 0.5, T + 0.5, (x2 - x1) - 1, H - T - B - 1);
+    ctx.setLineDash([]);
+  }
+}
+
+function drawAllCandles() {
+  for (let i = 0; i < candles.length; i++) drawCandle(candles[i], i);
+}
+
+function drawCandle(c, i) {
+  const x    = slotX(i);
+  const bull = c.close >= c.open;
+  const col  = bull ? COL.bull : COL.bear;
+
+  const bTop = pY(Math.max(c.open, c.close));
+  const bBot = pY(Math.min(c.open, c.close));
+  const bH   = Math.max(bBot - bTop, 1.5);
+  const wTop = pY(c.high);
+  const wBot = pY(c.low);
+
+  ctx.strokeStyle = col;
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x, wTop); ctx.lineTo(x, bTop);
+  ctx.moveTo(x, bBot); ctx.lineTo(x, wBot);
+  ctx.stroke();
+
+  ctx.fillStyle = col;
+  ctx.fillRect(x - CW, bTop, CW * 2, bH);
+
+  if (hov.idx === i) {
+    ctx.fillStyle = COL.handle;
+    ctx.beginPath(); ctx.arc(x, wTop, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, wBot, 5, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+function drawPreview() {
+  const x  = slotX(candles.length);
+  const op = yP(drawStartY);
+  const cl = yP(my);
+  const bull = cl >= op;
+  const col  = bull ? COL.bull : COL.bear;
+  const range = Math.abs(cl - op);
+  const ext   = autoWick ? Math.max(range * 0.4, 3) : 3;
+  const bTop = pY(Math.max(op, cl));
+  const bBot = pY(Math.min(op, cl));
+  const wTop = pY(Math.max(op, cl) + ext);
+  const wBot = pY(Math.min(op, cl) - ext);
+  const bH   = Math.max(bBot - bTop, 1.5);
+
+  ctx.globalAlpha = 0.45;
+  ctx.strokeStyle = col;
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x, wTop); ctx.lineTo(x, bTop);
+  ctx.moveTo(x, bBot); ctx.lineTo(x, wBot);
+  ctx.stroke();
+  ctx.fillStyle = col;
+  ctx.fillRect(x - CW, bTop, CW * 2, bH);
+  ctx.globalAlpha = 1;
+}
+
+function drawAxes(W, H) {
+  ctx.fillStyle = COL.bg;
+  ctx.fillRect(0, 0, L, H);
+
+  ctx.strokeStyle = COL.axis;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(L + 0.5, T);
+  ctx.lineTo(L + 0.5, H - B);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(L, H - B + 0.5);
+  ctx.lineTo(W - R, H - B + 0.5);
+  ctx.stroke();
+
+  ctx.fillStyle = COL.text;
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= GRID_STEPS; i++) {
+    const p = P_MIN + (P_MAX - P_MIN) * i / GRID_STEPS;
+    const y = pY(p);
+    ctx.fillText(p.toFixed(0), L - 5, y + 4);
+  }
+
+  ctx.textAlign = 'center';
+  for (let i = 0; i < candles.length; i++) {
+    ctx.fillText(i + 1, slotX(i), H - B + 14);
+  }
+  if (candles.length < 20) {
+    ctx.fillStyle = 'rgba(41,98,255,0.4)';
+    ctx.fillText('↑', slotX(candles.length), H - B + 14);
+  }
+}
+
+function drawCrosshair(W, H) {
+  if (mx < L || mx > W - R || my < T || my > H - B) return;
+  ctx.strokeStyle = COL.xhair;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(mx, T);     ctx.lineTo(mx, H - B);
+  ctx.moveTo(L, my);     ctx.lineTo(W - R, my);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const p = yP(my);
+  if (p >= P_MIN - 5 && p <= P_MAX + 5) {
+    const labelY = Math.min(Math.max(my, T + 9), H - B - 9);
+    ctx.fillStyle = '#2962ff';
+    ctx.fillRect(0, labelY - 9, L - 1, 18);
+    ctx.fillStyle = '#fff';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(p.toFixed(1), L - 4, labelY + 4);
+  }
+}
+
+// ─── PRICE CANVAS EVENTS ─────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const x = e.offsetX, y = e.offsetY;
+
+  for (let i = 0; i < candles.length; i++) {
+    const cx = slotX(i);
+    if (Math.abs(x - cx) > SW / 2) continue;
+    const c     = candles[i];
+    const highY = pY(c.high);
+    const lowY  = pY(c.low);
+    if (Math.abs(y - highY) <= 7) { drag = { on: true, idx: i, part: 'high' }; return; }
+    if (Math.abs(y - lowY)  <= 7) { drag = { on: true, idx: i, part: 'low'  }; return; }
+  }
+
+  drawing    = true;
+  drawStartY = y;
+});
+
+canvas.addEventListener('mousemove', e => {
+  mx = e.offsetX;
+  my = e.offsetY;
+
+  const p = yP(my);
+  if (p >= P_MIN - 5 && p <= P_MAX + 5) {
+    priceTagEl.style.display = 'block';
+    priceTagEl.style.top = (my - 9) + 'px';
+    priceTagEl.textContent = p.toFixed(1);
+  } else {
+    priceTagEl.style.display = 'none';
+  }
+
+  if (drag.on) {
+    const c     = candles[drag.idx];
+    const price = clampP(yP(my));
+    if (drag.part === 'high') {
+      c.high = Math.max(price, Math.max(c.open, c.close) + 0.5);
+    } else {
+      c.low  = Math.min(price, Math.min(c.open, c.close) - 0.5);
+    }
+    doAnalyze(); render(); return;
+  }
+
+  hov = { idx: -1, part: '' };
+  canvas.style.cursor = 'crosshair';
+  for (let i = 0; i < candles.length; i++) {
+    const cx = slotX(i);
+    if (Math.abs(mx - cx) > SW / 2) continue;
+    const c     = candles[i];
+    const highY = pY(c.high);
+    const lowY  = pY(c.low);
+    if (Math.abs(my - highY) <= 7) { hov = { idx: i, part: 'high' }; canvas.style.cursor = 'ns-resize'; break; }
+    if (Math.abs(my - lowY)  <= 7) { hov = { idx: i, part: 'low'  }; canvas.style.cursor = 'ns-resize'; break; }
+    hov = { idx: i, part: 'body' };
+  }
+
+  render();
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (drag.on) { drag = { on: false, idx: -1, part: '' }; return; }
+  if (!drawing) return;
+  drawing = false;
+
+  const y  = e.offsetY;
+  if (Math.abs(y - drawStartY) < 4) return;
+
+  const op = clampP(yP(drawStartY));
+  const cl = clampP(yP(y));
+  const bodyRange = Math.abs(cl - op);
+  const ext = autoWick ? Math.max(bodyRange * 0.4, 3) : 2;
+  const high = clampP(Math.max(op, cl) + ext);
+  const low  = clampP(Math.min(op, cl) - ext);
+
+  candles.push({ open: op, close: cl, high, low });
+  volumes.push(50); // default volume 50%
+  doAnalyze();
+  updateSidebar();
+  updateSearchBtn();
+  render();
+  renderVol();
+});
+
+canvas.addEventListener('mouseleave', () => {
+  mx = -1; my = -1;
+  priceTagEl.style.display = 'none';
+  if (!drag.on) render();
+});
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  for (let i = candles.length - 1; i >= 0; i--) {
+    if (Math.abs(e.offsetX - slotX(i)) < SW / 2) {
+      candles.splice(i, 1);
+      volumes.splice(i, 1);
+      doAnalyze(); updateSidebar(); updateSearchBtn(); render(); renderVol();
+      return;
+    }
+  }
+});
+
+// ─── VOLUME CANVAS EVENTS ────────────────────────────────────────────────────
+volCanvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const x = e.offsetX;
+  for (let i = 0; i < volumes.length; i++) {
+    if (Math.abs(x - slotX(i)) <= SW / 2) {
+      volDrag = { on: true, idx: i };
+      return;
+    }
+  }
+});
+
+volCanvas.addEventListener('mousemove', e => {
+  if (volDrag.on) {
+    volumes[volDrag.idx] = Math.min(100, Math.max(0, yVol(e.offsetY)));
+    renderVol(); return;
+  }
+  volHov = -1;
+  for (let i = 0; i < volumes.length; i++) {
+    if (Math.abs(e.offsetX - slotX(i)) <= SW / 2) { volHov = i; break; }
+  }
+  renderVol();
+});
+
+volCanvas.addEventListener('mouseup', () => {
+  volDrag = { on: false, idx: -1 };
+});
+volCanvas.addEventListener('mouseleave', () => {
+  volHov = -1;
+  if (!volDrag.on) renderVol();
+});
+
+// ─── TOOLBAR BUTTONS ─────────────────────────────────────────────────────────
+document.getElementById('btn-undo').addEventListener('click', () => {
+  if (candles.length > 0) {
+    candles.pop(); volumes.pop();
+    doAnalyze(); updateSidebar(); updateSearchBtn(); render(); renderVol();
+  }
+});
+document.getElementById('btn-clear').addEventListener('click', () => {
+  candles = []; volumes = []; patterns = []; hlSet.clear(); selectedPIdx = -1;
+  updateSidebar(); updateSearchBtn(); render(); renderVol();
+});
+autoWickBtn.addEventListener('click', () => {
+  autoWick = !autoWick;
+  autoWickBtn.classList.toggle('active', autoWick);
+  autoWickBtn.textContent = autoWick ? '自動影線' : '手動影線';
+});
+toggleVolBtn.addEventListener('click', () => {
+  showVol = !showVol;
+  volContainer.classList.toggle('visible', showVol);
+  toggleVolBtn.classList.toggle('active', showVol);
+  toggleVolBtn.textContent = showVol ? '隱藏量能' : '顯示量能';
+  resizeAll();
+});
+
+// ─── SEARCH ──────────────────────────────────────────────────────────────────
+function updateSearchBtn() {
+  if (candles.length >= 2) {
+    searchBtn.disabled = false;
+    searchBtn.textContent = `搜尋相似型態 (${candles.length}根)`;
+  } else {
+    searchBtn.disabled = true;
+    searchBtn.textContent = 'Draw candles first';
+  }
+}
+
+searchBtn.addEventListener('click', async () => {
+  const winMin = parseInt(document.getElementById('win-min').value) || 5;
+  const winMax = parseInt(document.getElementById('win-max').value) || 30;
+  const useVol = document.getElementById('chk-volume').checked;
+
+  const payload = {
+    candles: candles.map((c, i) => ({
+      open:   c.open,
+      close:  c.close,
+      high:   c.high,
+      low:    c.low,
+      volume: volumes[i] || 0,
+    })),
+    window_min: Math.min(winMin, winMax),
+    window_max: Math.max(winMin, winMax),
+    use_volume: useVol,
+    top_n: 30,
+  };
+
+  resultsPanel.classList.add('open');
+  resultsBody.innerHTML = '<div class="search-status">搜尋中...</div>';
+  searchBtn.disabled = true;
+
+  try {
+    const resp = await fetch(`${API_BASE}/pattern_match`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    if (!data.length) {
+      resultsBody.innerHTML = '<div class="search-status">No matches found.</div>';
+    } else {
+      resultsBody.innerHTML = data.map((r, i) => `
+        <div class="result-row">
+          <span class="result-rank">${i + 1}</span>
+          <span class="result-ticker">${r.ticker}</span>
+          <span class="result-window">${r.best_window}d</span>
+          <span class="result-score">${r.dtw_score.toFixed(3)}</span>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    resultsBody.innerHTML = `<div class="search-status error">Error: ${err.message}<br><small>Is FastAPI running on :8000?</small></div>`;
+  } finally {
+    searchBtn.disabled = false;
+    searchBtn.textContent = `搜尋相似型態 (${candles.length}根)`;
+  }
+});
+
+document.getElementById('btn-close-results').addEventListener('click', () => {
+  resultsPanel.classList.remove('open');
+});
+
+// ─── PATTERN RECOGNITION ─────────────────────────────────────────────────────
+function bull(c)   { return c.close >  c.open; }
+function bear(c)   { return c.close <  c.open; }
+function body(c)   { return Math.abs(c.close - c.open); }
+function upper(c)  { return c.high  - Math.max(c.open, c.close); }
+function lower(c)  { return Math.min(c.open, c.close) - c.low; }
+function doji(c)   {
+  const range = c.high - c.low;
+  return range > 0 && Math.abs(c.close - c.open) / range < 0.07;
+}
+function mid(c)    { return (c.open + c.close) / 2; }
+
+function doAnalyze() {
+  patterns = [];
+  const cs = candles;
+  const n  = cs.length;
+  if (n === 0) return;
+
+  for (let i = 0; i < n; i++) {
+    const c = cs[i];
+    const b = body(c);
+    const u = upper(c);
+    const l = lower(c);
+
+    if (doji(c) && (c.high - c.low) > 0)
+      add('十字星', 'Doji', 'neutral', [i], '開收盤幾乎相等，多空勢均力敵，趨勢可能轉折。');
+    if (!doji(c) && b > 0 && l > b * 2 && u < b * 0.6)
+      add('鎚子', 'Hammer', 'bullish', [i], '下影線 > 2倍實體，上影極短。下跌後底部潛在反轉訊號。');
+    if (!doji(c) && b > 0 && u > b * 2 && l < b * 0.6)
+      add('射擊之星', 'Shooting Star', 'bearish', [i], '上影線 > 2倍實體，下影極短。上漲後頂部潛在反轉訊號。');
+    if (!doji(c) && bull(c) && u > b * 2 && l < b * 0.6 && !patterns.find(p => p.indices[0] === i && p.name === '射擊之星'))
+      add('倒鎚子', 'Inverted Hammer', 'bullish', [i], '上影線長的陽線，需次日確認，底部可能反轉。');
+    if (b > 4 && u < b * 0.05 && l < b * 0.05)
+      add(bull(c) ? '光頭光腳陽線' : '光頭光腳陰線', bull(c) ? 'Bullish Marubozu' : 'Bearish Marubozu',
+          bull(c) ? 'bullish' : 'bearish', [i], bull(c) ? '無影線強勢陽線，全程買盤主導。' : '無影線強勢陰線，全程賣盤主導。');
+    if (u > b * 3 && l < b * 0.5 && !patterns.find(p => p.indices[0] === i && p.name === '射擊之星'))
+      add('長上影線', 'Long Upper Shadow', 'bearish', [i], '多頭上攻後被壓回，高點遭賣壓。');
+    if (l > b * 3 && u < b * 0.5 && !patterns.find(p => p.indices[0] === i && p.name === '鎚子'))
+      add('長下影線', 'Long Lower Shadow', 'bullish', [i], '空頭向下後被撐起，低點有買盤支撐。');
+  }
+
+  for (let i = 0; i < n - 1; i++) {
+    const a = cs[i], b2 = cs[i + 1];
+    if (bear(a) && bull(b2) && b2.open <= a.close && b2.close >= a.open)
+      add('多頭吞噬', 'Bullish Engulfing', 'bullish', [i, i+1], '陽線吞噬前陰線全部實體，強力看漲反轉。');
+    if (bull(a) && bear(b2) && b2.open >= a.close && b2.close <= a.open)
+      add('空頭吞噬', 'Bearish Engulfing', 'bearish', [i, i+1], '陰線吞噬前陽線全部實體，強力看跌反轉。');
+    if (bear(a) && bull(b2) && b2.open > a.close && b2.close < a.open && body(b2) < body(a) * 0.65)
+      add('多頭孕線', 'Bullish Harami', 'bullish', [i, i+1], '小陽線收在大陰線實體內，趨勢可能止跌。');
+    if (bull(a) && bear(b2) && b2.open < a.close && b2.close > a.open && body(b2) < body(a) * 0.65)
+      add('空頭孕線', 'Bearish Harami', 'bearish', [i, i+1], '小陰線收在大陽線實體內，趨勢可能止漲。');
+    if (bull(a) && bear(b2) && Math.abs(a.high - b2.high) < (a.high - a.low) * 0.03)
+      add('鑷子頂', 'Tweezer Top', 'bearish', [i, i+1], '兩根K線高點相同，頂部阻力確認，看跌。');
+    if (bear(a) && bull(b2) && Math.abs(a.low - b2.low) < (a.high - a.low) * 0.03)
+      add('鑷子底', 'Tweezer Bottom', 'bullish', [i, i+1], '兩根K線低點相同，底部支撐確認，看漲。');
+    if (bear(a) && bull(b2) && b2.open < a.low && b2.close > mid(a) && b2.close < a.open)
+      add('穿刺線', 'Piercing Line', 'bullish', [i, i+1], '陽線跳空低開並收盤穿越前陰線中點，看漲反轉。');
+    if (bull(a) && bear(b2) && b2.open > a.high && b2.close < mid(a) && b2.close > a.open)
+      add('烏雲蓋頂', 'Dark Cloud Cover', 'bearish', [i, i+1], '陰線跳空高開並收盤插入前陽線中點以下，看跌反轉。');
+    if (bear(a) && bull(b2) && b2.open < a.low && Math.abs(b2.close - a.low) < body(a) * 0.05)
+      add('搭頸線', 'On Neck Line', 'bearish', [i, i+1], '陽線收盤僅觸及前陰線低點，賣壓持續，空頭延續。');
+  }
+
+  for (let i = 0; i < n - 2; i++) {
+    const a = cs[i], b2 = cs[i+1], c2 = cs[i+2];
+    if (bull(a) && bull(b2) && bull(c2) && b2.close > a.close && c2.close > b2.close &&
+        b2.open > a.open && b2.open < a.close && c2.open > b2.open && c2.open < b2.close)
+      add('紅三兵', 'Three White Soldiers', 'bullish', [i,i+1,i+2], '三根陽線逐步墊高，每根開盤在前棒實體內收盤更高，強勢上攻。');
+    if (bear(a) && bear(b2) && bear(c2) && b2.close < a.close && c2.close < b2.close &&
+        b2.open < a.open && b2.open > a.close && c2.open < b2.open && c2.open > b2.close)
+      add('三隻烏鴉', 'Three Black Crows', 'bearish', [i,i+1,i+2], '三根陰線逐步走低，每根開盤在前棒實體內收盤更低，強勢下跌。');
+    if (bear(a) && body(b2) < body(a) * 0.35 && Math.max(b2.open, b2.close) < a.close &&
+        bull(c2) && c2.close > mid(a))
+      add('啟明之星', 'Morning Star', 'bullish', [i,i+1,i+2], '大陰線 → 小星 → 大陽線，底部強力三段反轉型態。');
+    if (bull(a) && body(b2) < body(a) * 0.35 && Math.min(b2.open, b2.close) > a.close &&
+        bear(c2) && c2.close < mid(a))
+      add('黃昏之星', 'Evening Star', 'bearish', [i,i+1,i+2], '大陽線 → 小星 → 大陰線，頂部強力三段反轉型態。');
+    if (bear(a) && doji(b2) && Math.max(b2.open, b2.close) < a.close && bull(c2) && c2.close > mid(a))
+      add('啟明十字星', 'Morning Doji Star', 'bullish', [i,i+1,i+2], '啟明之星的強化版，中間為十字星，反轉訊號更強。');
+    if (bull(a) && doji(b2) && Math.min(b2.open, b2.close) > a.close && bear(c2) && c2.close < mid(a))
+      add('黃昏十字星', 'Evening Doji Star', 'bearish', [i,i+1,i+2], '黃昏之星的強化版，中間為十字星，反轉訊號更強。');
+    if (bear(a) && bull(b2) && bull(c2) && b2.open > a.close && b2.close < a.open && c2.close > a.open)
+      add('三內部上漲', 'Three Inside Up', 'bullish', [i,i+1,i+2], '孕線+確認陽線，多頭接管確認，可靠性高。');
+    if (bull(a) && bear(b2) && bear(c2) && b2.open < a.close && b2.close > a.open && c2.close < a.open)
+      add('三內部下跌', 'Three Inside Down', 'bearish', [i,i+1,i+2], '孕線+確認陰線，空頭接管確認，可靠性高。');
+  }
+
+  for (let i = 0; i < n - 4; i++) {
+    const [c1, c2, c3, c4, c5] = [cs[i], cs[i+1], cs[i+2], cs[i+3], cs[i+4]];
+    if (bull(c1) && bear(c2) && bear(c3) && bear(c4) && bull(c5) &&
+        c2.close > c1.open && c4.close > c1.open && c5.close > c1.close)
+      add('上升三法(完整)', 'Rising Three Methods', 'bullish', [i,i+1,i+2,i+3,i+4], '強陽→三根整理小陰→突破新高陽線，多頭旗形延續。');
+    if (bear(c1) && bull(c2) && bull(c3) && bull(c4) && bear(c5) &&
+        c2.close < c1.open && c4.close < c1.open && c5.close < c1.close)
+      add('下降三法(完整)', 'Falling Three Methods', 'bearish', [i,i+1,i+2,i+3,i+4], '強陰→三根整理小陽→跌破新低陰線，空頭旗形延續。');
+  }
+
+  hlSet.clear();
+  for (const p of patterns) p.indices.forEach(i => hlSet.add(i));
+}
+
+function add(name, en, type, indices, desc) {
+  patterns.push({ name, en, type, indices, desc });
+}
+
+// ─── SIDEBAR ─────────────────────────────────────────────────────────────────
+function updateSidebar() {
+  countEl.textContent = candles.length > 0 ? `${candles.length} 根K線` : '';
+  selectedPIdx = -1;
+
+  if (candles.length === 0) {
+    patternEl.innerHTML = '<div class="no-patterns">在畫布拖曳繪製K線<br>系統即時識別型態</div>';
+    return;
+  }
+  if (patterns.length === 0) {
+    patternEl.innerHTML = '<div class="no-patterns">未識別到已知型態<br>繼續增加K線</div>';
+    return;
+  }
+
+  const seen = new Set();
+  const unique = patterns.filter(p => {
+    const k = p.name + '|' + p.indices.join(',');
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+
+  patternEl.innerHTML = unique.map((p, pi) => `
+    <div class="pattern-card ${p.type}" data-pi="${pi}">
+      <div class="badge">${p.type === 'bullish' ? '多頭' : p.type === 'bearish' ? '空頭' : '中性'}</div>
+      <div class="pname">${p.name}</div>
+      <div class="pen">${p.en} &nbsp;·&nbsp; 第 ${p.indices.map(i=>i+1).join('·')} 根</div>
+      <div class="pdesc">${p.desc}</div>
+    </div>
+  `).join('');
+
+  patternEl.querySelectorAll('.pattern-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const pi = +card.dataset.pi;
+      const p  = unique[pi];
+      if (selectedPIdx === pi) {
+        selectedPIdx = -1;
+        hlSet.clear();
+        patterns.forEach(pp => pp.indices.forEach(i => hlSet.add(i)));
+        patternEl.querySelectorAll('.pattern-card').forEach(c => c.classList.remove('selected'));
+      } else {
+        selectedPIdx = pi;
+        hlSet.clear();
+        p.indices.forEach(i => hlSet.add(i));
+        patternEl.querySelectorAll('.pattern-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      }
+      render();
+    });
+  });
+}
+
+// ─── INIT & RESIZE ───────────────────────────────────────────────────────────
+function resizeAll() {
+  const pRect = container.getBoundingClientRect();
+  canvas.width  = pRect.width;
+  canvas.height = pRect.height;
+
+  if (showVol) {
+    const vRect = volContainer.getBoundingClientRect();
+    volCanvas.width  = vRect.width;
+    volCanvas.height = vRect.height;
+  }
+
+  render();
+  renderVol();
+}
+
+window.addEventListener('resize', resizeAll);
+window.addEventListener('mouseup', () => {
+  if (drag.on)    { drag    = { on:false, idx:-1, part:'' }; render(); }
+  if (volDrag.on) { volDrag = { on:false, idx:-1 }; }
+});
+resizeAll();
+</script>
+</body>
+</html>
