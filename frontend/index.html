@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Quant Screener</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+}
+h1 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #787b86;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.cards {
+  display: flex;
+  gap: 20px;
+}
+.card {
+  width: 200px;
+  background: #1e222d;
+  border: 1px solid #2a2e39;
+  border-radius: 8px;
+  padding: 28px 20px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.card:hover { border-color: #2962ff; background: #222739; }
+.card-icon { font-size: 32px; }
+.card-title { font-size: 14px; font-weight: 600; color: #d1d4dc; }
+.card-desc { font-size: 11px; color: #787b86; text-align: center; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Quant Screener</h1>
+  <div class="cards">
+    <a class="card" href="/static/screener.html">
+      <div class="card-icon">📊</div>
+      <div class="card-title">Screener</div>
+      <div class="card-desc">多條件篩選台股<br>MA / BB / RSI / 籌碼</div>
+    </a>
+    <a class="card" href="/static/watchlist.html">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Watchlist</div>
+      <div class="card-desc">建立自訂選股清單<br>航運 / 電子 / 半導體</div>
+    </a>
+    <a class="card" href="/static/kline_draw.html">
+      <div class="card-icon">✏️</div>
+      <div class="card-title">Pattern Draw</div>
+      <div class="card-desc">手繪 K 線型態<br>DTW 全市場比對</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

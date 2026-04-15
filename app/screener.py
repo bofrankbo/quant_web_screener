@@ -4,7 +4,7 @@ Filters: MA, Bollinger Band, Volume Ratio, RSI, Concentration.
 """
 import duckdb
 import polars as pl
-from app.config import PRICE_ADJ_PATH, CONCENTRATION_PATH, DB_PATH
+from app.config import PRICE_ADJ_PATH, CONCENTRATION_PATH, DB_PATH, TICKER_INFO_PATH
 
 
 def get_conn() -> duckdb.DuckDBPyConnection:
@@ -57,6 +57,7 @@ def screen_stocks(
     use_concentration: bool = False,
     conc_min: float = 0.0,
     top_n: int = 50,
+    tickers: list[str] | None = None,
 ) -> pl.DataFrame:
     """
     Multi-condition K-line screener.
@@ -70,6 +71,13 @@ def screen_stocks(
     """
     lookback = max(ma_window, rsi_period) + 10
     csv_glob = str(PRICE_ADJ_PATH / "*.csv")
+
+    ticker_filter = ""
+    if tickers is not None:
+        if not tickers:
+            return pl.DataFrame()
+        escaped = ", ".join(f"'{t}'" for t in tickers)
+        ticker_filter = f"AND ticker IN ({escaped})"
 
     # DuckDB: read CSVs, extract last `lookback` rows per ticker
     # Column map: max→high, min→low, Trading_Volume→volume
@@ -91,6 +99,7 @@ def screen_stocks(
     SELECT ticker, date, open, high, low, close, volume
     FROM ranked
     WHERE rn <= {lookback}
+    {ticker_filter}
     """
 
     with get_conn() as conn:
@@ -176,3 +185,128 @@ def screen_stocks(
     )
 
     return latest
+
+
+def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
+    """
+    Return last close, day%, 5d%, 10d%, 20d% for each ticker.
+    Reads only the relevant CSV files (no full-market scan).
+    """
+    if not tickers:
+        return pl.DataFrame(schema={
+            "ticker": pl.Utf8, "close": pl.Float64,
+            "day_pct": pl.Float64, "pct_5d": pl.Float64,
+            "pct_10d": pl.Float64, "pct_20d": pl.Float64,
+        })
+
+    # Only read CSVs that exist
+    paths = [str(PRICE_ADJ_PATH / f"{t}.csv") for t in tickers
+             if (PRICE_ADJ_PATH / f"{t}.csv").exists()]
+    if not paths:
+        return pl.DataFrame(schema={
+            "ticker": pl.Utf8, "close": pl.Float64,
+            "day_pct": pl.Float64, "pct_5d": pl.Float64,
+            "pct_10d": pl.Float64, "pct_20d": pl.Float64,
+        })
+
+    paths_lit = ", ".join(f"'{p}'" for p in paths)
+    lookback = 22  # need 21 rows for 20d change
+
+    fetch_query = f"""
+    WITH ranked AS (
+        SELECT
+            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
+            CAST(date AS DATE) AS date,
+            CAST(close AS DOUBLE) AS close,
+            ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
+        FROM read_csv_auto([{paths_lit}], filename=true)
+    )
+    SELECT ticker, date, close
+    FROM ranked
+    WHERE rn <= {lookback}
+    ORDER BY ticker, date
+    """
+
+    with get_conn() as conn:
+        df = conn.execute(fetch_query).pl()
+
+    if df.is_empty():
+        return df
+
+    rows = []
+    for group in df.partition_by("ticker", maintain_order=False):
+        ticker = group["ticker"][0]
+        closes = group.sort("date")["close"].to_list()
+        n = len(closes)
+        last = closes[-1]
+
+        def _pct(back: int):
+            if n >= back + 1:
+                old = closes[-(back + 1)]
+                return round((last / old - 1) * 100, 2) if old else None
+            return None
+
+        rows.append({
+            "ticker": ticker,
+            "close": round(last, 2),
+            "day_pct": _pct(1),
+            "pct_5d": _pct(5),
+            "pct_10d": _pct(10),
+            "pct_20d": _pct(20),
+        })
+
+    return pl.DataFrame(rows)
+
+
+def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
+    """Return ticker → stock_name from ticker_info.csv (latest row per ticker)."""
+    if not tickers:
+        return pl.DataFrame(schema={"ticker": pl.Utf8, "name": pl.Utf8})
+
+    escaped = ", ".join(f"'{t}'" for t in tickers)
+    info_path = str(TICKER_INFO_PATH)
+
+    query = f"""
+    SELECT stock_id AS ticker, stock_name AS name
+    FROM read_csv_auto('{info_path}')
+    WHERE stock_id IN ({escaped})
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY stock_id ORDER BY date DESC) = 1
+    """
+
+    with get_conn() as conn:
+        return conn.execute(query).pl()
+
+
+def get_kline(ticker: str, lookback: int = 120, ma_window: int = 20) -> pl.DataFrame:
+    """Return OHLCV + MA + Bollinger for a single ticker."""
+    csv_path = str(PRICE_ADJ_PATH / f"{ticker}.csv")
+
+    fetch_query = f"""
+    WITH ranked AS (
+        SELECT
+            CAST(date AS DATE)               AS date,
+            CAST(open AS DOUBLE)             AS open,
+            CAST("max" AS DOUBLE)            AS high,
+            CAST("min" AS DOUBLE)            AS low,
+            CAST(close AS DOUBLE)            AS close,
+            CAST("Trading_Volume" AS DOUBLE) AS volume,
+            ROW_NUMBER() OVER (ORDER BY date DESC) AS rn
+        FROM read_csv_auto('{csv_path}')
+    )
+    SELECT date, open, high, low, close, volume
+    FROM ranked
+    WHERE rn <= {lookback}
+    ORDER BY date
+    """
+
+    with get_conn() as conn:
+        df = conn.execute(fetch_query).pl()
+
+    if df.is_empty():
+        return df
+
+    df = df.with_columns(pl.lit(ticker).alias("ticker"))
+    df = _compute_indicators(df, ma_window=ma_window, rsi_period=14)
+    df = df.drop(["ticker"])
+
+    return df.select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])

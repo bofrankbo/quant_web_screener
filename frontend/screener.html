@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Line Screener</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Topbar ── */
+#topbar {
+  height: 44px;
+  min-height: 44px;
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 16px;
+}
+#topbar h1 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #d1d4dc;
+  letter-spacing: 0.5px;
+}
+#topbar a {
+  margin-left: auto;
+  font-size: 12px;
+  color: #2962ff;
+  text-decoration: none;
+  padding: 4px 10px;
+  border: 1px solid #2962ff;
+  border-radius: 4px;
+}
+#topbar a:hover { background: rgba(41,98,255,0.12); }
+
+/* ── Body layout ── */
+#body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #1e222d;
+  border-right: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 12px;
+  gap: 10px;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+.section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #787b86;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-top: 4px;
+  border-top: 1px solid #2a2e39;
+}
+.section-title:first-child { border-top: none; }
+
+.field { display: flex; flex-direction: column; gap: 3px; }
+.field label { font-size: 11px; color: #787b86; }
+.field-row { display: flex; align-items: center; gap: 6px; }
+.val { font-size: 12px; color: #d1d4dc; min-width: 28px; text-align: right; }
+
+input[type=range] {
+  flex: 1;
+  accent-color: #2962ff;
+  cursor: pointer;
+}
+input[type=number] {
+  width: 64px;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+input[type=number]:focus { outline: none; border-color: #2962ff; }
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #d1d4dc;
+  cursor: pointer;
+}
+.check-row input[type=checkbox] { accent-color: #2962ff; cursor: pointer; }
+
+#btn-screen {
+  width: 100%;
+  background: #2962ff;
+  color: #fff;
+  border: none;
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+#btn-screen:hover { background: #1a4fd4; }
+#btn-screen:disabled { background: #363a45; color: #787b86; cursor: default; }
+
+#status { font-size: 11px; color: #787b86; text-align: center; min-height: 16px; }
+
+/* ── Watchlist ── */
+select {
+  flex: 1;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+select:focus { outline: none; border-color: #2962ff; }
+
+.icon-btn {
+  background: #2a2e39;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.icon-btn:hover { background: #363a45; }
+.icon-btn.danger:hover { background: #3d1f1f; border-color: #ef5350; color: #ef5350; }
+
+.new-wl-input {
+  flex: 1;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.new-wl-input:focus { outline: none; border-color: #2962ff; }
+.new-wl-input::placeholder { color: #4c525e; }
+
+/* ── WL popup ── */
+#wl-popup {
+  position: fixed;
+  background: #1e222d;
+  border: 1px solid #2a2e39;
+  border-radius: 4px;
+  min-width: 130px;
+  z-index: 200;
+  display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+#wl-popup.visible { display: block; }
+.wl-popup-item {
+  padding: 7px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #d1d4dc;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.wl-popup-item:hover { background: #2a2e39; }
+.wl-popup-item.in-list { color: #26a69a; }
+.wl-popup-empty { padding: 7px 12px; font-size: 11px; color: #4c525e; }
+
+/* ── WL button in table ── */
+.wl-btn {
+  background: none;
+  border: 1px solid #363a45;
+  color: #787b86;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 5px;
+  line-height: 1;
+}
+.wl-btn:hover { border-color: #2962ff; color: #2962ff; }
+
+/* ── Main area ── */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Table area ── */
+#table-wrap {
+  flex: 1;
+  overflow: auto;
+  min-height: 100px;
+}
+#table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+#table-wrap::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
+
+#results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+#results-table thead th {
+  background: #1e222d;
+  color: #787b86;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid #2a2e39;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+#results-table thead th:first-child { text-align: left; }
+#results-table tbody tr {
+  border-bottom: 1px solid #1c2030;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+#results-table tbody tr:hover { background: #1e222d; }
+#results-table tbody tr.active { background: #2a2e39; }
+#results-table td {
+  padding: 7px 10px;
+  text-align: right;
+  white-space: nowrap;
+  color: #d1d4dc;
+}
+#results-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+  color: #fff;
+}
+.bull { color: #26a69a; }
+.bear { color: #ef5350; }
+
+#empty-msg {
+  padding: 32px;
+  text-align: center;
+  color: #4c525e;
+  font-size: 13px;
+}
+
+/* ── Chart panel ── */
+#chart-panel {
+  height: 380px;
+  min-height: 380px;
+  border-top: 1px solid #2a2e39;
+  display: none;
+  flex-direction: column;
+}
+#chart-panel.visible { display: flex; }
+
+#chart-header {
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+#chart-ticker {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  min-width: 48px;
+}
+#chart-header label { font-size: 11px; color: #787b86; }
+#lookback-val { font-size: 11px; color: #d1d4dc; min-width: 28px; }
+#lookback { width: 100px; accent-color: #2962ff; cursor: pointer; }
+#chart-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #787b86;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+#chart-close:hover { color: #d1d4dc; }
+
+#lwc-container { flex: 1; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>K-LINE SCREENER</h1>
+  <a href="/static/watchlist.html">Watchlists</a>
+  <a href="/draw" target="_blank">Pattern Draw →</a>
+</div>
+
+<div id="body">
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div class="section-title">Price / MA</div>
+
+    <div class="field">
+      <label>MA Window</label>
+      <div class="field-row">
+        <input type="range" id="ma_window" min="5" max="120" value="20"
+               oninput="document.getElementById('ma_window_val').textContent=this.value">
+        <span class="val" id="ma_window_val">20</span>
+      </div>
+    </div>
+
+    <label class="check-row">
+      <input type="checkbox" id="price_above_ma" checked> Close &gt; MA
+    </label>
+
+    <label class="check-row">
+      <input type="checkbox" id="bb_breakout"> Bollinger Upper Breakout
+    </label>
+
+    <div class="section-title">Volume</div>
+
+    <div class="field">
+      <label>Min Volume Ratio (× MA vol)</label>
+      <div class="field-row">
+        <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
+               oninput="document.getElementById('vol_ratio_val').textContent=parseFloat(this.value).toFixed(1)">
+        <span class="val" id="vol_ratio_val">1.5</span>
+      </div>
+    </div>
+
+    <div class="section-title">RSI</div>
+
+    <div class="field">
+      <label>RSI Period</label>
+      <div class="field-row">
+        <input type="range" id="rsi_period" min="5" max="50" value="14"
+               oninput="document.getElementById('rsi_period_val').textContent=this.value">
+        <span class="val" id="rsi_period_val">14</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>RSI Range</label>
+      <div class="field-row">
+        <input type="number" id="rsi_min" value="0" min="0" max="100" step="1"> –
+        <input type="number" id="rsi_max" value="100" min="0" max="100" step="1">
+      </div>
+    </div>
+
+    <div class="section-title">Concentration</div>
+
+    <label class="check-row">
+      <input type="checkbox" id="use_concentration"
+             onchange="document.getElementById('conc_min').disabled=!this.checked">
+      Filter by Concentration 20d
+    </label>
+
+    <div class="field">
+      <label>Min concentration_20d</label>
+      <input type="number" id="conc_min" value="0" step="0.5" disabled style="width:100%">
+    </div>
+
+    <div class="section-title">Results</div>
+
+    <div class="field">
+      <label>Top N</label>
+      <div class="field-row">
+        <input type="range" id="top_n" min="10" max="200" value="50"
+               oninput="document.getElementById('top_n_val').textContent=this.value">
+        <span class="val" id="top_n_val">50</span>
+      </div>
+    </div>
+
+    <div class="section-title">Watchlist</div>
+
+    <div class="field">
+      <label>Filter Scope</label>
+      <div class="field-row" style="gap:4px">
+        <select id="watchlistSel" onchange="onWatchlistSelChange()">
+          <option value="">全市場 (All)</option>
+        </select>
+        <button class="icon-btn danger" id="btn-del-wl" onclick="deleteCurrentWatchlist()"
+                title="Delete watchlist" style="display:none">✕</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>New Watchlist</label>
+      <div class="field-row" style="gap:4px">
+        <input class="new-wl-input" id="new-wl-name" placeholder="Name (e.g. 航運)"
+               onkeydown="if(event.key==='Enter')createWatchlist()">
+        <button class="icon-btn" onclick="createWatchlist()" title="Create">＋</button>
+      </div>
+    </div>
+
+    <button id="btn-screen" onclick="screenStocks()">Screen</button>
+    <div id="status"></div>
+  </div>
+
+  <!-- Main -->
+  <div id="main">
+    <div id="table-wrap">
+      <div id="empty-msg">Set filters and click Screen</div>
+      <table id="results-table" style="display:none">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Date</th>
+            <th>Close</th>
+            <th>MA</th>
+            <th>BB+</th>
+            <th>BB-</th>
+            <th>Vol Ratio</th>
+            <th>RSI</th>
+            <th>Conc 20d</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </div>
+
+    <div id="chart-panel">
+      <div id="chart-header">
+        <span id="chart-ticker">—</span>
+        <label>Lookback</label>
+        <input type="range" id="lookback" min="30" max="500" value="120"
+               oninput="document.getElementById('lookback_val').textContent=this.value; debouncedFetch()">
+        <span id="lookback_val">120</span>
+        <button id="chart-close" onclick="closeChart()">✕</button>
+      </div>
+      <div id="lwc-container"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Watchlist popup -->
+<div id="wl-popup"></div>
+
+<script>
+let currentChart = null;
+let currentTicker = null;
+let debounceTimer = null;
+let activeRow = null;
+let watchlistData = {};  // { name: [ticker, ...] }
+let popupTicker = null;
+
+function getParams() {
+  const params = {
+    ma_window:        +document.getElementById('ma_window').value,
+    volume_ratio:     +document.getElementById('volume_ratio').value,
+    price_above_ma:   document.getElementById('price_above_ma').checked,
+    bb_breakout:      document.getElementById('bb_breakout').checked,
+    rsi_period:       +document.getElementById('rsi_period').value,
+    rsi_min:          +document.getElementById('rsi_min').value,
+    rsi_max:          +document.getElementById('rsi_max').value,
+    use_concentration: document.getElementById('use_concentration').checked,
+    conc_min:         +document.getElementById('conc_min').value,
+    top_n:            +document.getElementById('top_n').value,
+  };
+  const wl = document.getElementById('watchlistSel').value;
+  if (wl) params.watchlist = wl;
+  return params;
+}
+
+async function screenStocks() {
+  const btn = document.getElementById('btn-screen');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  btn.textContent = 'Scanning...';
+  status.textContent = '';
+  closeChart();
+
+  try {
+    const params = getParams();
+    const resp = await fetch('/screen?' + new URLSearchParams(params));
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    renderTable(data, params.ma_window, params.rsi_period);
+    status.textContent = data.length ? `${data.length} matched` : '';
+  } catch (e) {
+    status.textContent = 'Error: ' + e.message;
+    document.getElementById('empty-msg').textContent = 'Request failed: ' + e.message;
+    document.getElementById('empty-msg').style.display = 'block';
+    document.getElementById('results-table').style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Screen';
+  }
+}
+
+function renderTable(data, maWindow, rsiPeriod) {
+  const empty = document.getElementById('empty-msg');
+  const table = document.getElementById('results-table');
+  const tbody = document.getElementById('results-body');
+
+  if (!data.length) {
+    empty.textContent = 'No stocks matched the criteria.';
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    return;
+  }
+
+  // Update MA/RSI header labels
+  table.querySelector('thead tr').children[3].textContent = `MA${maWindow}`;
+  table.querySelector('thead tr').children[7].textContent = `RSI${rsiPeriod}`;
+
+  tbody.innerHTML = '';
+  activeRow = null;
+
+  for (const row of data) {
+    const tr = document.createElement('tr');
+    const conc = row.concentration_20d != null ? row.concentration_20d.toFixed(2) : '—';
+    tr.innerHTML = `
+      <td>${row.ticker}</td>
+      <td>${row.date}</td>
+      <td>${row.close.toFixed(2)}</td>
+      <td>${row.ma != null ? row.ma.toFixed(2) : '—'}</td>
+      <td>${row.bb_upper != null ? row.bb_upper.toFixed(2) : '—'}</td>
+      <td>${row.bb_lower != null ? row.bb_lower.toFixed(2) : '—'}</td>
+      <td class="${row.vol_ratio >= 2 ? 'bull' : ''}">${row.vol_ratio.toFixed(2)}</td>
+      <td class="${row.rsi > 70 ? 'bear' : row.rsi < 30 ? 'bull' : ''}">${row.rsi != null ? row.rsi.toFixed(1) : '—'}</td>
+      <td>${conc}</td>
+      <td></td>
+    `;
+    // WL button in last cell (don't use innerHTML to attach handler)
+    const wlTd = tr.lastElementChild;
+    const wlBtn = document.createElement('button');
+    wlBtn.className = 'wl-btn';
+    wlBtn.textContent = '+';
+    wlBtn.title = 'Add to watchlist';
+    wlBtn.addEventListener('click', e => { e.stopPropagation(); openWlPopup(row.ticker, wlBtn); });
+    wlTd.appendChild(wlBtn);
+
+    tr.addEventListener('click', () => onRowClick(row.ticker, tr));
+    tbody.appendChild(tr);
+  }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+}
+
+function onRowClick(ticker, tr) {
+  if (activeRow) activeRow.classList.remove('active');
+  tr.classList.add('active');
+  activeRow = tr;
+
+  currentTicker = ticker;
+  document.getElementById('chart-ticker').textContent = ticker;
+  document.getElementById('chart-panel').classList.add('visible');
+
+  const lookback = +document.getElementById('lookback').value;
+  fetchKline(ticker, lookback);
+}
+
+function closeChart() {
+  document.getElementById('chart-panel').classList.remove('visible');
+  if (currentChart) { currentChart.remove(); currentChart = null; }
+  if (activeRow) { activeRow.classList.remove('active'); activeRow = null; }
+  currentTicker = null;
+}
+
+function debouncedFetch() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    if (currentTicker) {
+      fetchKline(currentTicker, +document.getElementById('lookback').value);
+    }
+  }, 300);
+}
+
+async function fetchKline(ticker, lookback) {
+  const maWindow = +document.getElementById('ma_window').value;
+  try {
+    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${maWindow}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    renderChart(data, ticker);
+  } catch (e) {
+    console.error('kline fetch failed:', e);
+  }
+}
+
+function renderChart(rows, ticker) {
+  const container = document.getElementById('lwc-container');
+
+  if (currentChart) { currentChart.remove(); currentChart = null; }
+
+  currentChart = LightweightCharts.createChart(container, {
+    layout: {
+      background: { color: '#131722' },
+      textColor: '#d1d4dc',
+    },
+    grid: {
+      vertLines: { color: '#1c2030' },
+      horzLines: { color: '#1c2030' },
+    },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#2a2e39' },
+    timeScale: { borderColor: '#2a2e39', timeVisible: false },
+    width: container.clientWidth,
+    height: container.clientHeight,
+  });
+
+  // Candlestick
+  const candles = currentChart.addCandlestickSeries({
+    upColor: '#26a69a', downColor: '#ef5350',
+    borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+    wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+  });
+  candles.setData(rows.map(r => ({
+    time: r.date, open: r.open, high: r.high, low: r.low, close: r.close,
+  })));
+
+  // MA
+  const maSeries = currentChart.addLineSeries({
+    color: '#ffa726', lineWidth: 1, priceLineVisible: false,
+  });
+  maSeries.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+
+  // BB Upper
+  const bbUpper = currentChart.addLineSeries({
+    color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false,
+  });
+  bbUpper.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+
+  // BB Lower
+  const bbLower = currentChart.addLineSeries({
+    color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false,
+  });
+  bbLower.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+
+  // Volume histogram
+  const volSeries = currentChart.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: 'vol',
+    scaleMargins: { top: 0.82, bottom: 0 },
+  });
+  volSeries.setData(rows.map(r => ({
+    time: r.date,
+    value: r.volume,
+    color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
+  })));
+
+  currentChart.timeScale().fitContent();
+
+  // Responsive resize
+  const ro = new ResizeObserver(() => {
+    if (currentChart) {
+      currentChart.applyOptions({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    }
+  });
+  ro.observe(container);
+}
+
+// ── Watchlist functions ───────────────────────────────────────────────────────
+
+async function loadWatchlists() {
+  try {
+    const resp = await fetch('/watchlists');
+    if (!resp.ok) return;
+    const counts = await resp.json();  // { name: count }
+    const names = Object.keys(counts);
+
+    // Fetch full ticker lists into cache
+    watchlistData = {};
+    await Promise.all(names.map(async name => {
+      const r = await fetch('/watchlists/' + encodeURIComponent(name));
+      if (r.ok) watchlistData[name] = await r.json();
+    }));
+
+    // Repopulate select
+    const sel = document.getElementById('watchlistSel');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">全市場 (All)</option>';
+    for (const name of names) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = `${name} (${counts[name]})`;
+      sel.appendChild(opt);
+    }
+    if (prev && names.includes(prev)) sel.value = prev;
+    onWatchlistSelChange();
+  } catch (e) {
+    console.error('loadWatchlists failed:', e);
+  }
+}
+
+function onWatchlistSelChange() {
+  const sel = document.getElementById('watchlistSel');
+  document.getElementById('btn-del-wl').style.display = sel.value ? 'flex' : 'none';
+}
+
+async function createWatchlist() {
+  const input = document.getElementById('new-wl-name');
+  const name = input.value.trim();
+  if (!name) return;
+  await fetch('/watchlists/' + encodeURIComponent(name), { method: 'POST' });
+  input.value = '';
+  await loadWatchlists();
+  // Auto-select the newly created watchlist
+  const sel = document.getElementById('watchlistSel');
+  sel.value = name;
+  onWatchlistSelChange();
+}
+
+async function deleteCurrentWatchlist() {
+  const sel = document.getElementById('watchlistSel');
+  const name = sel.value;
+  if (!name) return;
+  if (!confirm(`Delete watchlist "${name}"?`)) return;
+  await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
+  await loadWatchlists();
+}
+
+async function addToWatchlist(ticker, wlName) {
+  await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
+    { method: 'PUT' });
+}
+
+async function removeFromWatchlist(ticker, wlName) {
+  await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
+    { method: 'DELETE' });
+}
+
+function openWlPopup(ticker, btn) {
+  popupTicker = ticker;
+  const popup = document.getElementById('wl-popup');
+  popup.innerHTML = '';
+
+  const names = Object.keys(watchlistData);
+  if (!names.length) {
+    popup.innerHTML = '<div class="wl-popup-empty">No watchlists yet</div>';
+  } else {
+    for (const name of names) {
+      const inList = (watchlistData[name] || []).includes(ticker);
+      const item = document.createElement('div');
+      item.className = 'wl-popup-item' + (inList ? ' in-list' : '');
+      item.textContent = (inList ? '✓ ' : '+ ') + name;
+      item.addEventListener('click', async () => {
+        popup.classList.remove('visible');
+        if (inList) {
+          await removeFromWatchlist(ticker, name);
+        } else {
+          await addToWatchlist(ticker, name);
+        }
+        await loadWatchlists();
+      });
+      popup.appendChild(item);
+    }
+  }
+
+  const rect = btn.getBoundingClientRect();
+  popup.style.top = (rect.bottom + 4) + 'px';
+  popup.style.left = Math.max(4, rect.right - 130) + 'px';
+  popup.classList.add('visible');
+}
+
+// Close popup on outside click
+document.addEventListener('click', e => {
+  const popup = document.getElementById('wl-popup');
+  if (!popup.contains(e.target)) popup.classList.remove('visible');
+});
+
+// Enter key triggers screen
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.closest('#sidebar')) {
+    screenStocks();
+  }
+});
+
+// Init
+loadWatchlists();
+</script>
+</body>
+</html>

@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watchlist Manager</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #131722;
+  color: #d1d4dc;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Topbar ── */
+#topbar {
+  height: 44px;
+  min-height: 44px;
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+}
+#topbar h1 { font-size: 14px; font-weight: 700; color: #d1d4dc; letter-spacing: 0.5px; }
+.nav-link {
+  font-size: 12px;
+  color: #787b86;
+  text-decoration: none;
+  padding: 3px 9px;
+  border: 1px solid #2a2e39;
+  border-radius: 4px;
+}
+.nav-link:hover { border-color: #2962ff; color: #2962ff; }
+.nav-link:first-of-type { margin-left: auto; }
+
+/* ── Body layout ── */
+#body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Left panel ── */
+#left {
+  width: 220px;
+  min-width: 220px;
+  background: #1e222d;
+  border-right: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#new-wl-form {
+  padding: 10px;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  gap: 6px;
+}
+#new-wl-input {
+  flex: 1;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  min-width: 0;
+}
+#new-wl-input:focus { outline: none; border-color: #2962ff; }
+#new-wl-input::placeholder { color: #4c525e; }
+#btn-create-wl {
+  background: #2962ff;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#btn-create-wl:hover { background: #1a4fd4; }
+
+#wl-list {
+  flex: 1;
+  overflow-y: auto;
+}
+#wl-list::-webkit-scrollbar { width: 4px; }
+#wl-list::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+.wl-item {
+  display: flex;
+  align-items: center;
+  padding: 9px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #1c2030;
+  gap: 6px;
+  transition: background 0.1s;
+}
+.wl-item:hover { background: #242836; }
+.wl-item.active { background: #2a2e39; border-left: 2px solid #2962ff; padding-left: 8px; }
+.wl-item-name { flex: 1; font-size: 13px; font-weight: 600; color: #d1d4dc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-item-count {
+  font-size: 11px;
+  color: #787b86;
+  background: #131722;
+  padding: 1px 6px;
+  border-radius: 8px;
+  min-width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.wl-item.active .wl-item-count { background: #363a45; }
+.wl-del-btn {
+  background: none;
+  border: none;
+  color: #4c525e;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 1px 3px;
+  line-height: 1;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.wl-del-btn:hover { color: #ef5350; background: rgba(239,83,80,0.1); }
+
+#wl-empty-left {
+  padding: 24px 16px;
+  font-size: 12px;
+  color: #4c525e;
+  text-align: center;
+}
+
+/* ── Right panel ── */
+#right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+#overview-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#overview-panel.hidden { display: none; }
+
+#overview-header {
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d4dc;
+  flex-shrink: 0;
+}
+
+#overview-area {
+  flex: 1;
+  overflow-y: auto;
+}
+#overview-area::-webkit-scrollbar { width: 6px; }
+#overview-area::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
+
+#overview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+#overview-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1a1e2d;
+  color: #787b86;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 8px 16px;
+  text-align: right;
+  border-bottom: 1px solid #2a2e39;
+  white-space: nowrap;
+}
+#overview-table thead th:first-child { text-align: left; }
+#overview-table tbody tr {
+  cursor: pointer;
+  border-bottom: 1px solid #1a1e2a;
+}
+#overview-table tbody tr:hover td { background: #1c2030; }
+#overview-table td {
+  padding: 11px 16px;
+  text-align: right;
+  color: #d1d4dc;
+}
+#overview-table td:first-child {
+  text-align: left;
+  font-weight: 700;
+  color: #fff;
+}
+#overview-loading {
+  padding: 24px;
+  text-align: center;
+  color: #4c525e;
+  font-size: 12px;
+  display: none;
+}
+
+#right-content {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+#right-content.visible { display: flex; }
+
+/* ── Right header ── */
+#right-header {
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#wl-title-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+#wl-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#wl-title-input {
+  display: none;
+  background: #131722;
+  border: 1px solid #2962ff;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  width: 180px;
+}
+#wl-title-input:focus { outline: none; }
+#btn-rename {
+  background: none;
+  border: 1px solid #363a45;
+  color: #787b86;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+#btn-rename:hover { border-color: #2962ff; color: #2962ff; }
+#wl-ticker-count { font-size: 12px; color: #787b86; flex-shrink: 0; }
+
+/* ── Add tickers ── */
+#add-section {
+  padding: 8px 16px;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+#add-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #787b86;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+#add-input {
+  flex: 1;
+  background: #131722;
+  border: 1px solid #363a45;
+  color: #d1d4dc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  letter-spacing: 0.5px;
+  min-width: 0;
+}
+#add-input:focus { outline: none; border-color: #2962ff; }
+#add-input::placeholder { color: #4c525e; font-family: -apple-system, 'Segoe UI', sans-serif; letter-spacing: 0; }
+#btn-add {
+  background: #2962ff;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+#btn-add:hover { background: #1a4fd4; }
+
+/* ── Stock table ── */
+#ticker-area {
+  flex: 1;
+  overflow-y: auto;
+}
+#ticker-area::-webkit-scrollbar { width: 6px; }
+#ticker-area::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
+
+#loading-row {
+  display: none;
+  padding: 24px;
+  text-align: center;
+  color: #4c525e;
+  font-size: 12px;
+}
+
+#stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+#stock-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #1a1e2d;
+  color: #787b86;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid #2a2e39;
+  white-space: nowrap;
+  user-select: none;
+}
+#stock-table thead th.sortable { cursor: pointer; }
+#stock-table thead th.sortable:hover { color: #d1d4dc; }
+#stock-table thead th.sort-asc::after  { content: ' ▲'; color: #2962ff; }
+#stock-table thead th.sort-desc::after { content: ' ▼'; color: #2962ff; }
+#stock-table thead th:first-child,
+#stock-table thead th:nth-child(2) { text-align: left; }
+
+#stock-table tbody tr:hover td { background: #1c2030; }
+
+#stock-table td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid #1a1e2a;
+  color: #d1d4dc;
+  white-space: nowrap;
+}
+#stock-table td:first-child { text-align: left; }
+#stock-table td:nth-child(2) { text-align: left; color: #9598a1; font-size: 12px; }
+
+.ticker-link {
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  color: #2962ff;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ticker-link:hover { text-decoration: underline; }
+
+.pct-pos  { color: #26a69a; }
+.pct-neg  { color: #ef5350; }
+.pct-zero { color: #787b86; }
+
+.custom-cell {
+  cursor: pointer;
+  min-width: 80px;
+  color: #9598a1;
+  font-size: 12px;
+}
+.custom-cell.editing { padding: 4px 8px; }
+.custom-cell input {
+  background: #131722;
+  border: 1px solid #2962ff;
+  color: #d1d4dc;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+  width: 100%;
+  min-width: 80px;
+}
+.custom-cell input:focus { outline: none; }
+
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  color: #2962ff;
+}
+.toggle-btn.off { color: #363a45; }
+.toggle-btn:hover { opacity: 0.75; }
+
+tr.row-inactive td:not(.toggle-col) {
+  color: #3a3f4a !important;
+}
+
+.del-row-btn {
+  background: none;
+  border: none;
+  color: #4c525e;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+}
+.del-row-btn:hover { color: #ef5350; background: rgba(239,83,80,0.1); }
+
+#th-custom {
+  cursor: pointer;
+  position: relative;
+}
+#th-custom::before { content: '✎ '; font-size: 9px; opacity: 0.6; }
+#th-custom:hover { color: #d1d4dc; }
+#th-custom input {
+  background: #131722;
+  border: 1px solid #2962ff;
+  color: #d1d4dc;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  width: 80px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+#th-custom input:focus { outline: none; }
+
+.empty-row td { text-align: center !important; color: #4c525e; padding: 32px 12px !important; }
+
+.wl-all-item {
+  border-bottom: 2px solid #2a2e39;
+}
+
+.wl-name-cell {
+  color: #787b86;
+  font-size: 11px;
+  text-align: left !important;
+}
+
+.group-header-row td {
+  background: #1a1e2d;
+  color: #2962ff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border-top: 2px solid #2a2e39;
+  text-align: left !important;
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>WATCHLIST MANAGER</h1>
+  <a class="nav-link" href="/">← Home</a>
+  <a class="nav-link" href="/static/screener.html">Screener</a>
+</div>
+
+<div id="body">
+  <!-- Left: watchlist list -->
+  <div id="left">
+    <div id="new-wl-form">
+      <input id="new-wl-input" type="text" placeholder="New watchlist name…"
+             onkeydown="if(event.key==='Enter')createWatchlist()">
+      <button id="btn-create-wl" onclick="createWatchlist()">＋</button>
+    </div>
+    <div id="wl-list"></div>
+  </div>
+
+  <!-- Right: watchlist detail -->
+  <div id="right">
+    <div id="overview-panel">
+      <div id="overview-header">選股清單總覽</div>
+      <div id="overview-area">
+        <div id="overview-loading">Loading…</div>
+        <table id="overview-table">
+          <thead>
+            <tr>
+              <th>清單名稱</th>
+              <th>股數</th>
+              <th>平均 5d%</th>
+              <th>平均 10d%</th>
+              <th>平均 20d%</th>
+            </tr>
+          </thead>
+          <tbody id="overview-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="right-content">
+      <!-- Header -->
+      <div id="right-header">
+        <div id="wl-title-wrap">
+          <span id="wl-title"></span>
+          <input id="wl-title-input" type="text" onkeydown="handleRenameKey(event)" onblur="cancelRename()">
+          <button id="btn-rename" onclick="startRename()">Rename</button>
+        </div>
+        <span id="wl-ticker-count"></span>
+      </div>
+
+      <!-- Add tickers -->
+      <div id="add-section">
+        <div id="add-section-label">Add</div>
+        <input id="add-input" type="text" placeholder="2603, 2609, 2615…"
+               onkeydown="if(event.key==='Enter')addTickers()">
+        <button id="btn-add" onclick="addTickers()">Add</button>
+      </div>
+
+      <!-- Table -->
+      <div id="ticker-area">
+        <div id="loading-row">Loading…</div>
+        <table id="stock-table">
+          <thead>
+            <tr>
+              <th style="width:28px"></th>
+              <th class="sortable" onclick="sortBy('ticker')">代號</th>
+              <th>名稱</th>
+              <th class="sortable" onclick="sortBy('close')">收盤</th>
+              <th class="sortable" onclick="sortBy('day_pct')">日%</th>
+              <th class="sortable" onclick="sortBy('pct_5d')">5d%</th>
+              <th class="sortable" onclick="sortBy('pct_10d')">10d%</th>
+              <th class="sortable" onclick="sortBy('pct_20d')">20d%</th>
+              <th id="th-custom" onclick="editCustomLabel()">備註</th>
+              <th id="th-wl-col" style="display:none">清單</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="stock-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentWl = null;
+let wlCounts = {};        // {name: count} — for left panel
+let currentRows = [];     // cached summary rows for sorting (data rows only, no group headers)
+let allGroupedRows = [];  // full row list including group-header pseudo-rows (for "全部" view)
+let sortCol = null;
+let sortDir = 1;          // 1 = asc, -1 = desc
+
+// ── Load / refresh ────────────────────────────────────────────────────────────
+
+async function loadAll() {
+  try {
+    const resp = await fetch('/watchlists');
+    if (!resp.ok) return;
+    wlCounts = await resp.json();
+    renderLeft();
+
+    if (currentWl === '__all__') {
+      await loadAllSummary();
+    } else if (currentWl !== null) {
+      if (wlCounts[currentWl] !== undefined) {
+        await loadSummary(currentWl);
+      } else {
+        currentWl = null;
+        showOverview();
+        await loadOverview();
+      }
+    } else {
+      // Default: show overview on first load
+      showOverview();
+      await loadOverview();
+    }
+  } catch (e) {
+    console.error('loadAll failed:', e);
+  }
+}
+
+async function loadOverview() {
+  const names = Object.keys(wlCounts);
+  const tbody = document.getElementById('overview-tbody');
+  const loadingEl = document.getElementById('overview-loading');
+
+  if (!names.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#4c525e;padding:32px">No watchlists yet — create one on the left.</td></tr>';
+    return;
+  }
+
+  loadingEl.style.display = 'block';
+  tbody.innerHTML = '';
+
+  try {
+    const results = await Promise.all(
+      names.map(name =>
+        fetch('/watchlists/' + encodeURIComponent(name) + '/summary')
+          .then(r => r.ok ? r.json() : { rows: [] })
+          .then(data => ({ name, rows: data.rows || [] }))
+      )
+    );
+
+    loadingEl.style.display = 'none';
+    renderOverview(results);
+  } catch (e) {
+    loadingEl.style.display = 'none';
+    console.error('loadOverview failed:', e);
+  }
+}
+
+function avgPct(rows, key) {
+  // Only include active tickers (active !== false)
+  const vals = rows.filter(r => r.active !== false).map(r => r[key]).filter(v => v != null);
+  if (!vals.length) return null;
+  return vals.reduce((s, v) => s + v, 0) / vals.length;
+}
+
+function renderOverview(results) {
+  const tbody = document.getElementById('overview-tbody');
+  tbody.innerHTML = '';
+
+  for (const { name, rows } of results) {
+    const activeCount = rows.filter(r => r.active !== false).length;
+    const avg5  = avgPct(rows, 'pct_5d');
+    const avg10 = avgPct(rows, 'pct_10d');
+    const avg20 = avgPct(rows, 'pct_20d');
+
+    const countLabel = activeCount < rows.length
+      ? `${activeCount}/${rows.length}`
+      : `${rows.length}`;
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${escHtml(name)}</td>
+      <td>${countLabel}</td>
+      <td class="${pctClass(avg5)}">${fmtPct(avg5)}</td>
+      <td class="${pctClass(avg10)}">${fmtPct(avg10)}</td>
+      <td class="${pctClass(avg20)}">${fmtPct(avg20)}</td>
+    `;
+    tr.addEventListener('click', () => selectWatchlist(name));
+    tbody.appendChild(tr);
+  }
+}
+
+async function loadSummary(name) {
+  setLoading(true);
+  try {
+    const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary');
+    if (!r.ok) return;
+    const data = await r.json();
+
+    // Update custom header label
+    const thCustom = document.getElementById('th-custom');
+    if (!thCustom.querySelector('input')) {
+      thCustom.dataset.label = data.custom_label || '備註';
+      thCustom.textContent = data.custom_label || '備註';
+    }
+
+    currentRows = data.rows || [];
+    sortCol = null; sortDir = 1;
+    clearSortIndicators();
+    renderTable(currentRows);
+
+    const n = currentRows.length;
+    document.getElementById('wl-ticker-count').textContent =
+      `${n} ticker${n !== 1 ? 's' : ''}`;
+  } catch (e) {
+    console.error('loadSummary failed:', e);
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── Left panel ────────────────────────────────────────────────────────────────
+
+function renderLeft() {
+  const list = document.getElementById('wl-list');
+  const names = Object.keys(wlCounts);
+  list.innerHTML = '';
+
+  // Pinned "全部" entry
+  const totalCount = Object.values(wlCounts).reduce((s, v) => s + v, 0);
+  const allItem = document.createElement('div');
+  allItem.className = 'wl-item wl-all-item' + (currentWl === '__all__' ? ' active' : '');
+  allItem.innerHTML = `
+    <span class="wl-item-name">全部</span>
+    <span class="wl-item-count">${totalCount}</span>
+  `;
+  allItem.addEventListener('click', () => selectAll());
+  list.appendChild(allItem);
+
+  if (!names.length) {
+    const empty = document.createElement('div');
+    empty.id = 'wl-empty-left';
+    empty.textContent = 'No watchlists yet.\nCreate one above.';
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const name of names) {
+    const count = wlCounts[name];
+    const item = document.createElement('div');
+    item.className = 'wl-item' + (name === currentWl ? ' active' : '');
+    item.innerHTML = `
+      <span class="wl-item-name">${escHtml(name)}</span>
+      <span class="wl-item-count">${count}</span>
+      <button class="wl-del-btn" title="Delete">✕</button>
+    `;
+    item.querySelector('.wl-del-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      deleteWatchlist(name);
+    });
+    item.addEventListener('click', () => selectWatchlist(name));
+    list.appendChild(item);
+  }
+}
+
+// ── Right panel ───────────────────────────────────────────────────────────────
+
+function selectWatchlist(name) {
+  currentWl = name;
+  renderLeft();
+  showContent();
+  document.getElementById('wl-title').textContent = name;
+  document.getElementById('wl-title').style.display = '';
+  document.getElementById('wl-title-input').style.display = 'none';
+  document.getElementById('btn-rename').style.display = '';
+  document.getElementById('add-section').style.display = '';
+  // Restore custom column, hide watchlist column
+  document.getElementById('th-custom').style.display = '';
+  document.getElementById('th-wl-col').style.display = 'none';
+  loadSummary(name);
+}
+
+async function selectAll() {
+  currentWl = '__all__';
+  renderLeft();
+  showContent();
+  document.getElementById('wl-title').textContent = '全部';
+  document.getElementById('wl-title').style.display = '';
+  document.getElementById('wl-title-input').style.display = 'none';
+  document.getElementById('btn-rename').style.display = 'none';
+  document.getElementById('add-section').style.display = 'none';
+  // Switch to watchlist column, hide custom column
+  document.getElementById('th-custom').style.display = 'none';
+  document.getElementById('th-wl-col').style.display = '';
+  await loadAllSummary();
+}
+
+async function loadAllSummary() {
+  setLoading(true);
+  try {
+    const names = Object.keys(wlCounts);
+    if (!names.length) {
+      currentRows = [];
+      allGroupedRows = [];
+      renderAllTable([]);
+      document.getElementById('wl-ticker-count').textContent = '0 tickers';
+      return;
+    }
+
+    const results = await Promise.all(
+      names.map(name =>
+        fetch('/watchlists/' + encodeURIComponent(name) + '/summary')
+          .then(r => r.ok ? r.json() : { rows: [] })
+          .then(data => ({ name, rows: data.rows || [] }))
+      )
+    );
+
+    allGroupedRows = [];
+    for (const { name, rows } of results) {
+      if (!rows.length) continue;
+      allGroupedRows.push({ _isGroup: true, _groupName: name });
+      rows.forEach(r => allGroupedRows.push({ ...r, _wlName: name }));
+    }
+
+    currentRows = allGroupedRows.filter(r => !r._isGroup);
+    sortCol = null; sortDir = 1;
+    clearSortIndicators();
+    renderAllTable(allGroupedRows);
+    const activeCount = currentRows.filter(r => r.active !== false).length;
+    document.getElementById('wl-ticker-count').textContent =
+      activeCount < currentRows.length
+        ? `${activeCount}/${currentRows.length} tickers`
+        : `${currentRows.length} ticker${currentRows.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    console.error('loadAllSummary failed:', e);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function renderAllTable(rows) {
+  const tbody = document.getElementById('stock-tbody');
+  tbody.innerHTML = '';
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    tr.innerHTML = '<td colspan="9">No tickers in any watchlist.</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  for (const row of rows) {
+    if (row._isGroup) {
+      // Skip group header if all its tickers are inactive
+      const hasActive = rows.some(
+        r => !r._isGroup && r._wlName === row._groupName && r.active !== false
+      );
+      if (!hasActive) continue;
+      const tr = document.createElement('tr');
+      tr.className = 'group-header-row';
+      tr.innerHTML = `<td colspan="10">${escHtml(row._groupName)}</td>`;
+      tbody.appendChild(tr);
+      continue;
+    }
+
+    // Only show active tickers in the All view
+    if (row.active === false) continue;
+
+    const tr = document.createElement('tr');
+    tr.dataset.ticker = row.ticker;
+    const wlName = row._wlName || '';
+    tr.innerHTML = `
+      <td class="toggle-col"></td>
+      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a></td>
+      <td>${escHtml(row.stock_name || '')}</td>
+      <td>${row.close != null ? row.close : '—'}</td>
+      <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
+      <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
+      <td class="${pctClass(row.pct_10d)}">${fmtPct(row.pct_10d)}</td>
+      <td class="${pctClass(row.pct_20d)}">${fmtPct(row.pct_20d)}</td>
+      <td class="custom-cell" style="display:none" data-ticker="${escAttr(row.ticker)}"></td>
+      <td class="wl-name-cell">${escHtml(wlName)}</td>
+      <td><button class="del-row-btn" title="Remove">✕</button></td>
+    `;
+    tr.querySelector('.del-row-btn').addEventListener('click', () => {
+      removeTicker(wlName, row.ticker);
+    });
+    tbody.appendChild(tr);
+  }
+}
+
+function showOverview() {
+  document.getElementById('overview-panel').classList.remove('hidden');
+  document.getElementById('right-content').classList.remove('visible');
+}
+
+function showContent() {
+  document.getElementById('overview-panel').classList.add('hidden');
+  document.getElementById('right-content').classList.add('visible');
+}
+
+// keep legacy alias used elsewhere
+function showPlaceholder() { showOverview(); }
+
+function setLoading(on) {
+  document.getElementById('loading-row').style.display = on ? 'block' : 'none';
+  document.getElementById('stock-table').style.display = on ? 'none' : '';
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById('stock-tbody');
+  tbody.innerHTML = '';
+
+  if (!rows.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    tr.innerHTML = '<td colspan="9">No tickers yet — add some above.</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  for (const row of rows) {
+    const isActive = row.active !== false;
+    const tr = document.createElement('tr');
+    tr.className = isActive ? '' : 'row-inactive';
+    tr.dataset.ticker = row.ticker;
+    tr.innerHTML = `
+      <td class="toggle-col">
+        <button class="toggle-btn ${isActive ? 'on' : 'off'}"
+                data-ticker="${escAttr(row.ticker)}"
+                data-active="${isActive}"
+                title="${isActive ? '已啟用，點擊停用' : '已停用，點擊啟用'}">
+          ${isActive ? '●' : '○'}
+        </button>
+      </td>
+      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a></td>
+      <td>${escHtml(row.stock_name || '')}</td>
+      <td>${row.close != null ? row.close : '—'}</td>
+      <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
+      <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
+      <td class="${pctClass(row.pct_10d)}">${fmtPct(row.pct_10d)}</td>
+      <td class="${pctClass(row.pct_20d)}">${fmtPct(row.pct_20d)}</td>
+      <td class="custom-cell" data-ticker="${escAttr(row.ticker)}">${escHtml(row.custom || '')}</td>
+      <td class="wl-name-cell" style="display:none"></td>
+      <td><button class="del-row-btn" title="Remove">✕</button></td>
+    `;
+    tr.querySelector('.toggle-btn').addEventListener('click', function() {
+      toggleActive(this);
+    });
+    tr.querySelector('.custom-cell').addEventListener('click', function() {
+      editCustomCell(this);
+    });
+    tr.querySelector('.del-row-btn').addEventListener('click', () => {
+      removeTicker(currentWl, row.ticker);
+    });
+    tbody.appendChild(tr);
+  }
+}
+
+// ── Sorting ───────────────────────────────────────────────────────────────────
+
+function sortBy(col) {
+  if (sortCol === col) {
+    sortDir = -sortDir;
+  } else {
+    sortCol = col;
+    sortDir = col === 'ticker' ? 1 : -1; // default: text asc, numbers desc
+  }
+  clearSortIndicators();
+  const headers = document.querySelectorAll('#stock-table thead th');
+  const colMap = [null, 'ticker', null, 'close', 'day_pct', 'pct_5d', 'pct_10d', 'pct_20d', null, null, null];
+  const idx = colMap.indexOf(col);
+  if (idx >= 0) {
+    headers[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  }
+
+  const sorted = [...currentRows].sort((a, b) => {
+    const av = a[col], bv = b[col];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return av.localeCompare(bv) * sortDir;
+    return (av - bv) * sortDir;
+  });
+
+  renderTable(sorted);
+}
+
+function clearSortIndicators() {
+  document.querySelectorAll('#stock-table thead th').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+}
+
+// ── CRUD ─────────────────────────────────────────────────────────────────────
+
+async function createWatchlist() {
+  const input = document.getElementById('new-wl-input');
+  const name = input.value.trim();
+  if (!name) return;
+  await fetch('/watchlists/' + encodeURIComponent(name), { method: 'POST' });
+  input.value = '';
+  wlCounts[name] = 0;
+  renderLeft();
+  selectWatchlist(name);
+}
+
+async function deleteWatchlist(name) {
+  if (!confirm(`Delete watchlist "${name}"?\nThis cannot be undone.`)) return;
+  await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
+  delete wlCounts[name];
+  if (currentWl === name || currentWl === null) {
+    currentWl = null;
+    showOverview();
+    await loadOverview();
+  } else if (currentWl === '__all__') {
+    await loadAllSummary();
+  }
+  renderLeft();
+}
+
+async function addTickers() {
+  if (!currentWl) return;
+  const input = document.getElementById('add-input');
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  const tickers = raw.split(/[\s,，、\n]+/).map(t => t.trim()).filter(Boolean);
+  if (!tickers.length) return;
+
+  await Promise.all(tickers.map(ticker =>
+    fetch(`/watchlists/${encodeURIComponent(currentWl)}/tickers/${encodeURIComponent(ticker)}`,
+      { method: 'PUT' })
+  ));
+  input.value = '';
+  await loadAll();
+}
+
+async function removeTicker(wlName, ticker) {
+  await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
+    { method: 'DELETE' });
+  await loadAll();
+}
+
+// ── Toggle active ─────────────────────────────────────────────────────────────
+
+async function toggleActive(btn) {
+  const ticker = btn.dataset.ticker;
+  const wasActive = btn.dataset.active === 'true';
+  const newActive = !wasActive;
+
+  btn.dataset.active = newActive;
+  btn.textContent = newActive ? '●' : '○';
+  btn.className = 'toggle-btn ' + (newActive ? 'on' : 'off');
+  btn.title = newActive ? '已啟用，點擊停用' : '已停用，點擊啟用';
+  const tr = btn.closest('tr');
+  tr.className = newActive ? '' : 'row-inactive';
+
+  // Update local cache
+  const row = currentRows.find(r => r.ticker === ticker);
+  if (row) row.active = newActive;
+
+  await fetch(
+    `/watchlists/${encodeURIComponent(currentWl)}/active/${encodeURIComponent(ticker)}`,
+    { method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ active: newActive }) }
+  );
+}
+
+// ── Custom column ─────────────────────────────────────────────────────────────
+
+function editCustomCell(td) {
+  if (td.querySelector('input')) return;
+  const ticker = td.dataset.ticker;
+  const oldVal = td.textContent;
+  td.classList.add('editing');
+  td.innerHTML = `<input type="text" value="${escAttr(oldVal)}" placeholder="備註…">`;
+  const input = td.querySelector('input');
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    const val = input.value;
+    td.classList.remove('editing');
+    td.textContent = val;
+    saveCustomValue(ticker, val);
+  };
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { td.classList.remove('editing'); td.textContent = oldVal; }
+  });
+}
+
+async function saveCustomValue(ticker, value) {
+  if (!currentWl) return;
+  await fetch(
+    `/watchlists/${encodeURIComponent(currentWl)}/custom/${encodeURIComponent(ticker)}`,
+    { method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ value }) }
+  );
+  // Update local cache
+  const row = currentRows.find(r => r.ticker === ticker);
+  if (row) row.custom = value;
+}
+
+function editCustomLabel() {
+  const th = document.getElementById('th-custom');
+  if (th.querySelector('input')) return;
+  const oldLabel = th.dataset.label || th.textContent || '備註';
+  th.innerHTML = `<input type="text" value="${escAttr(oldLabel)}" placeholder="備註">`;
+  const input = th.querySelector('input');
+  input.focus();
+  input.select();
+
+  const commit = () => {
+    const label = input.value.trim() || '備註';
+    th.dataset.label = label;
+    th.textContent = label;
+    saveCustomLabel(label);
+  };
+
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { th.textContent = oldLabel; }
+  });
+}
+
+async function saveCustomLabel(label) {
+  if (!currentWl) return;
+  await fetch(
+    `/watchlists/${encodeURIComponent(currentWl)}/custom_label`,
+    { method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ label }) }
+  );
+}
+
+// ── Rename ────────────────────────────────────────────────────────────────────
+
+function startRename() {
+  const title = document.getElementById('wl-title');
+  const input = document.getElementById('wl-title-input');
+  const btn = document.getElementById('btn-rename');
+  input.value = currentWl;
+  title.style.display = 'none';
+  input.style.display = '';
+  btn.style.display = 'none';
+  input.focus();
+  input.select();
+}
+
+function cancelRename() {
+  document.getElementById('wl-title').style.display = '';
+  document.getElementById('wl-title-input').style.display = 'none';
+  document.getElementById('btn-rename').style.display = '';
+}
+
+async function commitRename() {
+  const input = document.getElementById('wl-title-input');
+  const newName = input.value.trim();
+  if (!newName || newName === currentWl) { cancelRename(); return; }
+
+  // Get tickers from current summary rows
+  const tickers = currentRows.map(r => r.ticker);
+
+  await fetch('/watchlists/' + encodeURIComponent(newName), { method: 'POST' });
+  await Promise.all(tickers.map(t =>
+    fetch(`/watchlists/${encodeURIComponent(newName)}/tickers/${encodeURIComponent(t)}`,
+      { method: 'PUT' })
+  ));
+  await fetch('/watchlists/' + encodeURIComponent(currentWl), { method: 'DELETE' });
+  currentWl = newName;
+  await loadAll();
+}
+
+function handleRenameKey(e) {
+  if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+  if (e.key === 'Escape') cancelRename();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function openChart(ticker) {
+  window.open(`/static/screener.html#kline-${ticker}`, '_blank');
+}
+
+function pctClass(v) {
+  if (v == null) return 'pct-zero';
+  if (v > 0) return 'pct-pos';
+  if (v < 0) return 'pct-neg';
+  return 'pct-zero';
+}
+
+function fmtPct(v) {
+  if (v == null) return '—';
+  return (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(s) {
+  return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
+// Init
+loadAll();
+</script>
+</body>
+</html>

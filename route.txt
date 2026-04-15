@@ -1,0 +1,122 @@
+HISTORICAL DATA ROUTES
+======================
+Base path: /Users/yanyifu/Documents/_Coding/Trading/history_data/tw/
+Config var: TRADING_DATA_PATH (app/config.py)
+
+READ-ONLY — do not write to these paths.
+
+────────────────────────────────────────────────────────────────────────────────
+1. ADJUSTED DAILY PRICES
+   Path:    stock_price_adj/self_calculate/{ticker}.csv
+   Config:  PRICE_ADJ_PATH
+   Files:   1894 CSVs (one per ticker)
+   Columns: date, stock_id, Trading_Volume, Trading_money, open, max, min, close,
+            spread, Trading_turnover
+   Notes:   - Column name "max" = high, "min" = low (NOT standard OHLC names)
+            - Column "Trading_Volume" = volume (NOT named "volume")
+            - Use in DuckDB queries; cast max→high, min→low, Trading_Volume→volume
+            - Prices are split/dividend adjusted
+   Size:    ~1.1 GB total
+
+────────────────────────────────────────────────────────────────────────────────
+2. 籌碼集中度 (Concentration)
+   Path:    concentration/{ticker}.csv
+   Config:  CONCENTRATION_PATH
+   Files:   897 CSVs
+   Columns: date, total_volume, buy_volume, sell_volume, amount,
+            concentration_5d, concentration_20d
+   Notes:   - Early rows may have null concentration values (insufficient history)
+            - Join with price data on ticker+date for combined signals
+   Size:    ~51 MB
+
+────────────────────────────────────────────────────────────────────────────────
+3. 三大法人 (Institutional Traders)
+   Path:    traderinfo/{ticker}/{date}.csv
+   Config:  TRADER_INFO_PATH
+   Structure: per-ticker directory, one CSV per trading date
+   Columns: securities_trader, price, buy, sell, securities_trader_id, stock_id, date
+   Notes:   - 49 GB total — NEVER do a full scan
+            - Always filter by specific ticker directory
+            - Query pattern: traderinfo/{ticker}/*.csv
+   Size:    ~49 GB
+
+────────────────────────────────────────────────────────────────────────────────
+4. PER / PBR / 殖利率
+   Path:    PER_PBR/{ticker}.csv
+   Files:   483 CSVs
+   Columns: date, stock_id, dividend_yield, PER, PBR
+   Notes:   - Daily valuation data per ticker
+
+────────────────────────────────────────────────────────────────────────────────
+5. ROA / ROE
+   Path:    ROA_ROE/{ticker}.csv
+   Columns: date, ROA, ROE, AnnualizedROA, AnnualizedROE
+   Notes:   - Quarterly cadence (early rows may be null)
+
+────────────────────────────────────────────────────────────────────────────────
+6. 市值 (Market Cap)
+   Path:    market_value_twse_tpex/{date}.csv
+   Structure: one CSV per trading date (cross-sectional)
+   Columns: date, stock_id, market_value
+   Notes:   - Files named by date (YYYY-MM-DD.csv)
+            - For latest snapshot, read the most recent date file
+
+────────────────────────────────────────────────────────────────────────────────
+7. TICKER INFO (股票基本資料)
+   Path:    ticker_info.csv   (single file)
+   Config:  TICKER_INFO_PATH
+   Columns: industry_category, stock_id, stock_name, type, date
+   Rows:    ~3960 (includes duplicates — use QUALIFY ROW_NUMBER()...ORDER BY date DESC = 1)
+   Notes:   - stock_id is VARCHAR (some ETFs have letters, e.g. "00835B")
+            - type: "twse" or "tpex"
+            - date = listing/IPO date
+
+────────────────────────────────────────────────────────────────────────────────
+8. UNADJUSTED PRICES
+   Path:    stock_price/{ticker}.csv
+   Notes:   - Same column format as stock_price_adj
+            - Use stock_price_adj for all analysis (this is raw/unadjusted)
+
+────────────────────────────────────────────────────────────────────────────────
+DUCKDB QUERY PATTERNS
+─────────────────────
+Reading specific tickers (fast):
+  read_csv_auto(['/path/2330.csv', '/path/2609.csv'], filename=true)
+
+Reading all tickers (slow, 1.1GB scan):
+  read_csv_auto('/path/stock_price_adj/*.csv', filename=true)
+  → Extract ticker: regexp_extract(filename, '([^/]+)\.csv$', 1)
+
+Column name remapping (always apply for price data):
+  CAST("max" AS DOUBLE) AS high
+  CAST("min" AS DOUBLE) AS low
+  CAST("Trading_Volume" AS DOUBLE) AS volume
+
+Duplicate-safe ticker name lookup:
+  SELECT stock_id AS ticker, stock_name AS name
+  FROM read_csv_auto('ticker_info.csv')
+  WHERE stock_id IN ('2330', '2603')
+  QUALIFY ROW_NUMBER() OVER (PARTITION BY stock_id ORDER BY date DESC) = 1
+
+────────────────────────────────────────────────────────────────────────────────
+API ENDPOINTS (app/api.py) — read this before writing new routes
+────────────────────────
+GET  /screen                    Screener with MA/BB/RSI/volume/concentration filters
+GET  /kline/{ticker}            OHLCV + MA + Bollinger for single ticker
+POST /pattern_match             DTW pattern matching against market
+GET  /watchlists                List all watchlists {name: count}
+GET  /watchlists/{name}         Ticker list for watchlist
+POST /watchlists/{name}         Create watchlist
+DELETE /watchlists/{name}       Delete watchlist
+PUT  /watchlists/{name}/tickers/{ticker}     Add ticker to watchlist
+DELETE /watchlists/{name}/tickers/{ticker}   Remove ticker
+GET  /watchlists/{name}/summary Price summary table (close, day%, 5d%, 10d%, 20d%, custom)
+PUT  /watchlists/{name}/custom_label         Update custom column label
+PUT  /watchlists/{name}/custom/{ticker}      Update custom column value for ticker
+GET  /health                    Health check
+
+STATIC PAGES:
+  /             → index.html (home)
+  /static/*.html → direct file access
+  /draw         → kline_draw.html
+  /watchlist-manager → watchlist.html
