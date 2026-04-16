@@ -376,7 +376,7 @@ body {
   white-space: nowrap;
 }
 #stock-table td:first-child { text-align: left; }
-#stock-table td:nth-child(2) { text-align: left; color: #9598a1; font-size: 12px; }
+#stock-table td:nth-child(2) { text-align: left; }
 
 .ticker-link {
   font-weight: 700;
@@ -550,7 +550,6 @@ tr.row-inactive td:not(.toggle-col) {
             <tr>
               <th style="width:28px"></th>
               <th class="sortable" onclick="sortBy('ticker')">代號</th>
-              <th>名稱</th>
               <th class="sortable" onclick="sortBy('close')">收盤</th>
               <th class="sortable" onclick="sortBy('day_pct')">日%</th>
               <th class="sortable" onclick="sortBy('pct_5d')">5d%</th>
@@ -824,7 +823,7 @@ function renderAllTable(rows) {
   if (!rows.length) {
     const tr = document.createElement('tr');
     tr.className = 'empty-row';
-    tr.innerHTML = '<td colspan="9">No tickers in any watchlist.</td>';
+    tr.innerHTML = '<td colspan="8">No tickers in any watchlist.</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -851,8 +850,7 @@ function renderAllTable(rows) {
     const wlName = row._wlName || '';
     tr.innerHTML = `
       <td class="toggle-col"></td>
-      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a></td>
-      <td>${escHtml(row.stock_name || '')}</td>
+      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a>${row.stock_name ? `<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${escHtml(row.stock_name)}</span>` : ''}</td>
       <td>${row.close != null ? row.close : '—'}</td>
       <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
       <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
@@ -894,7 +892,7 @@ function renderTable(rows) {
   if (!rows.length) {
     const tr = document.createElement('tr');
     tr.className = 'empty-row';
-    tr.innerHTML = '<td colspan="9">No tickers yet — add some above.</td>';
+    tr.innerHTML = '<td colspan="8">No tickers yet — add some above.</td>';
     tbody.appendChild(tr);
     return;
   }
@@ -913,8 +911,7 @@ function renderTable(rows) {
           ${isActive ? '●' : '○'}
         </button>
       </td>
-      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a></td>
-      <td>${escHtml(row.stock_name || '')}</td>
+      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a>${row.stock_name ? `<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${escHtml(row.stock_name)}</span>` : ''}</td>
       <td>${row.close != null ? row.close : '—'}</td>
       <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
       <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
@@ -948,7 +945,7 @@ function sortBy(col) {
   }
   clearSortIndicators();
   const headers = document.querySelectorAll('#stock-table thead th');
-  const colMap = [null, 'ticker', null, 'close', 'day_pct', 'pct_5d', 'pct_10d', 'pct_20d', null, null, null];
+  const colMap = [null, 'ticker', 'close', 'day_pct', 'pct_5d', 'pct_10d', 'pct_20d', null, null, null];
   const idx = colMap.indexOf(col);
   if (idx >= 0) {
     headers[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');

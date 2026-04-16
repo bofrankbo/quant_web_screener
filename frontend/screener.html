@@ -329,72 +329,104 @@ select:focus { outline: none; border-color: #2962ff; }
 <div id="body">
   <!-- Sidebar -->
   <div id="sidebar">
-    <div class="section-title">Price / MA</div>
 
+    <div class="section-title">技術指標</div>
+
+    <!-- MA -->
     <div class="field">
-      <label>MA Window</label>
+      <label class="check-row" style="margin-bottom:2px">
+        <input type="checkbox" id="price_above_ma" checked> MA
+        <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
+      </label>
       <div class="field-row">
-        <input type="range" id="ma_window" min="5" max="120" value="20"
-               oninput="document.getElementById('ma_window_val').textContent=this.value">
-        <span class="val" id="ma_window_val">20</span>
+        <input type="range" id="ma_window" min="5" max="120" value="10"
+               oninput="syncN('ma_window')">
+        <input type="number" id="ma_window_n" value="10" min="5" max="120"
+               oninput="syncR('ma_window')" style="width:46px">
+        <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
       </div>
     </div>
 
-    <label class="check-row">
-      <input type="checkbox" id="price_above_ma" checked> Close &gt; MA
-    </label>
+    <!-- Bollinger -->
+    <div class="field">
+      <label class="check-row" style="margin-bottom:2px">
+        <input type="checkbox" id="bb_breakout"> Bollinger
+        <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
+      </label>
+      <div class="field-row">
+        <input type="range" id="bb_window" min="5" max="120" value="22"
+               oninput="syncN('bb_window')">
+        <input type="number" id="bb_window_n" value="22" min="5" max="120"
+               oninput="syncR('bb_window')" style="width:46px">
+        <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+      </div>
+    </div>
 
-    <label class="check-row">
-      <input type="checkbox" id="bb_breakout"> Bollinger Upper Breakout
-    </label>
+    <!-- RSI -->
+    <div class="field">
+      <label class="check-row" style="margin-bottom:2px">
+        <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
+      </label>
+      <div class="field-row">
+        <input type="range" id="rsi_period" min="5" max="50" value="14"
+               oninput="syncN('rsi_period')" disabled>
+        <input type="number" id="rsi_period_n" value="14" min="5" max="50"
+               oninput="syncR('rsi_period')" style="width:46px" disabled>
+        <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+      </div>
+      <div class="field-row" style="margin-top:3px">
+        <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
+        <input type="number" id="rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
+        <span style="font-size:11px;color:#787b86">–</span>
+        <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
+      </div>
+    </div>
 
     <div class="section-title">Volume</div>
 
     <div class="field">
-      <label>Min Volume Ratio (× MA vol)</label>
+      <label>Min Vol Ratio (× MA vol)</label>
       <div class="field-row">
         <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
-               oninput="document.getElementById('vol_ratio_val').textContent=parseFloat(this.value).toFixed(1)">
+               oninput="syncVolLabel()">
         <span class="val" id="vol_ratio_val">1.5</span>
       </div>
     </div>
 
-    <div class="section-title">RSI</div>
-
-    <div class="field">
-      <label>RSI Period</label>
-      <div class="field-row">
-        <input type="range" id="rsi_period" min="5" max="50" value="14"
-               oninput="document.getElementById('rsi_period_val').textContent=this.value">
-        <span class="val" id="rsi_period_val">14</span>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>RSI Range</label>
-      <div class="field-row">
-        <input type="number" id="rsi_min" value="0" min="0" max="100" step="1"> –
-        <input type="number" id="rsi_max" value="100" min="0" max="100" step="1">
-      </div>
-    </div>
-
-    <div class="section-title">Concentration</div>
+    <div class="section-title">籌碼指標</div>
 
     <label class="check-row">
       <input type="checkbox" id="use_concentration"
-             onchange="document.getElementById('conc_min').disabled=!this.checked">
-      Filter by Concentration 20d
+             onchange="toggleConcInputs(this.checked)">
+      集中度
     </label>
 
-    <div class="field">
-      <label>Min concentration_20d</label>
-      <input type="number" id="conc_min" value="0" step="0.5" disabled style="width:100%">
+    <div class="field" style="padding-left:18px">
+      <div class="field-row" style="margin-top:2px">
+        <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
+        <input type="number" id="conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+      </div>
+      <div class="field-row" style="margin-top:4px">
+        <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
+        <input type="number" id="conc_min" value="0.10" step="0.005" disabled style="flex:1">
+      </div>
     </div>
 
-    <div class="section-title">Results</div>
+    <div class="section-title">篩選標的</div>
 
+    <!-- Market cap filter -->
     <div class="field">
-      <label>Top N</label>
+      <label class="check-row" style="margin-bottom:2px">
+        <input type="checkbox" id="use_market_cap" onchange="toggleMcInput(this.checked)">
+        市值 top
+        <input type="number" id="market_cap_rank" value="200" min="1" max="2000" step="10"
+               disabled style="width:56px;margin-left:6px">
+      </label>
+    </div>
+
+    <!-- Top K -->
+    <div class="field">
+      <label>Top K 結果</label>
       <div class="field-row">
         <input type="range" id="top_n" min="10" max="200" value="50"
                oninput="document.getElementById('top_n_val').textContent=this.value">
@@ -443,6 +475,7 @@ select:focus { outline: none; border-color: #2962ff; }
             <th>BB-</th>
             <th>Vol Ratio</th>
             <th>RSI</th>
+            <th>Conc 5d</th>
             <th>Conc 20d</th>
             <th></th>
           </tr>
@@ -476,19 +509,58 @@ let activeRow = null;
 let watchlistData = {};  // { name: [ticker, ...] }
 let popupTicker = null;
 
+// Sync slider → number input
+function syncN(id) {
+  const v = document.getElementById(id).value;
+  document.getElementById(id + '_n').value = v;
+}
+// Sync number input → slider
+function syncR(id) {
+  const n = document.getElementById(id + '_n');
+  const r = document.getElementById(id);
+  let v = Math.min(Math.max(+n.value, +r.min), +r.max);
+  r.value = v;
+  n.value = v;
+}
+function syncVolLabel() {
+  document.getElementById('vol_ratio_val').textContent =
+    parseFloat(document.getElementById('volume_ratio').value).toFixed(1);
+}
+
+function toggleRsiInputs(enabled) {
+  ['rsi_period', 'rsi_period_n', 'rsi_min', 'rsi_max'].forEach(id => {
+    document.getElementById(id).disabled = !enabled;
+  });
+}
+
+function toggleConcInputs(enabled) {
+  document.getElementById('conc_5d_min').disabled = !enabled;
+  document.getElementById('conc_min').disabled = !enabled;
+}
+
+function toggleMcInput(enabled) {
+  document.getElementById('market_cap_rank').disabled = !enabled;
+}
+
 function getParams() {
+  const useRsi = document.getElementById('use_rsi').checked;
   const params = {
-    ma_window:        +document.getElementById('ma_window').value,
-    volume_ratio:     +document.getElementById('volume_ratio').value,
-    price_above_ma:   document.getElementById('price_above_ma').checked,
-    bb_breakout:      document.getElementById('bb_breakout').checked,
-    rsi_period:       +document.getElementById('rsi_period').value,
-    rsi_min:          +document.getElementById('rsi_min').value,
-    rsi_max:          +document.getElementById('rsi_max').value,
+    ma_window:         +document.getElementById('ma_window_n').value,
+    bb_window:         +document.getElementById('bb_window_n').value,
+    volume_ratio:      parseFloat(document.getElementById('volume_ratio').value),
+    price_above_ma:    document.getElementById('price_above_ma').checked,
+    bb_breakout:       document.getElementById('bb_breakout').checked,
+    rsi_period:        +document.getElementById('rsi_period_n').value,
+    rsi_min:           useRsi ? +document.getElementById('rsi_min').value : 0,
+    rsi_max:           useRsi ? +document.getElementById('rsi_max').value : 100,
     use_concentration: document.getElementById('use_concentration').checked,
-    conc_min:         +document.getElementById('conc_min').value,
-    top_n:            +document.getElementById('top_n').value,
+    conc_5d_min:       +document.getElementById('conc_5d_min').value,
+    conc_min:          +document.getElementById('conc_min').value,
+    top_n:             +document.getElementById('top_n').value,
   };
+  if (document.getElementById('use_market_cap').checked) {
+    params.market_cap_rank = +document.getElementById('market_cap_rank').value;
+  }
   const wl = document.getElementById('watchlistSel').value;
   if (wl) params.watchlist = wl;
   return params;
@@ -507,7 +579,7 @@ async function screenStocks() {
     const resp = await fetch('/screen?' + new URLSearchParams(params));
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    renderTable(data, params.ma_window, params.rsi_period);
+    renderTable(data, params.ma_window, params.rsi_period, params.bb_window);
     status.textContent = data.length ? `${data.length} matched` : '';
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
@@ -520,7 +592,7 @@ async function screenStocks() {
   }
 }
 
-function renderTable(data, maWindow, rsiPeriod) {
+function renderTable(data, maWindow, rsiPeriod, bbWindow) {
   const empty = document.getElementById('empty-msg');
   const table = document.getElementById('results-table');
   const tbody = document.getElementById('results-body');
@@ -532,8 +604,10 @@ function renderTable(data, maWindow, rsiPeriod) {
     return;
   }
 
-  // Update MA/RSI header labels
+  // Update MA/BB/RSI header labels
   table.querySelector('thead tr').children[3].textContent = `MA${maWindow}`;
+  table.querySelector('thead tr').children[4].textContent = `BB+${bbWindow}`;
+  table.querySelector('thead tr').children[5].textContent = `BB-${bbWindow}`;
   table.querySelector('thead tr').children[7].textContent = `RSI${rsiPeriod}`;
 
   tbody.innerHTML = '';
@@ -541,9 +615,10 @@ function renderTable(data, maWindow, rsiPeriod) {
 
   for (const row of data) {
     const tr = document.createElement('tr');
-    const conc = row.concentration_20d != null ? row.concentration_20d.toFixed(2) : '—';
+    const conc5 = row.concentration_5d != null ? row.concentration_5d.toFixed(3) : '—';
+    const conc20 = row.concentration_20d != null ? row.concentration_20d.toFixed(3) : '—';
     tr.innerHTML = `
-      <td>${row.ticker}</td>
+      <td>${row.ticker}${row.name ? `<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${row.name}</span>` : ''}</td>
       <td>${row.date}</td>
       <td>${row.close.toFixed(2)}</td>
       <td>${row.ma != null ? row.ma.toFixed(2) : '—'}</td>
@@ -551,7 +626,8 @@ function renderTable(data, maWindow, rsiPeriod) {
       <td>${row.bb_lower != null ? row.bb_lower.toFixed(2) : '—'}</td>
       <td class="${row.vol_ratio >= 2 ? 'bull' : ''}">${row.vol_ratio.toFixed(2)}</td>
       <td class="${row.rsi > 70 ? 'bear' : row.rsi < 30 ? 'bull' : ''}">${row.rsi != null ? row.rsi.toFixed(1) : '—'}</td>
-      <td>${conc}</td>
+      <td>${conc5}</td>
+      <td>${conc20}</td>
       <td></td>
     `;
     // WL button in last cell (don't use innerHTML to attach handler)
@@ -601,9 +677,10 @@ function debouncedFetch() {
 }
 
 async function fetchKline(ticker, lookback) {
-  const maWindow = +document.getElementById('ma_window').value;
+  const maWindow = +document.getElementById('ma_window_n').value;
+  const bbWindow = +document.getElementById('bb_window_n').value;
   try {
-    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${maWindow}`);
+    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${maWindow}&bb_window=${bbWindow}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     renderChart(data, ticker);

@@ -65,7 +65,8 @@ def health():
 
 @app.get("/screen")
 def screen(
-    ma_window: int = Query(default=20, ge=5, le=120),
+    ma_window: int = Query(default=10, ge=5, le=120),
+    bb_window: int = Query(default=22, ge=5, le=120),
     volume_ratio: float = Query(default=1.5, ge=1.0, le=10.0),
     price_above_ma: bool = Query(default=True),
     bb_breakout: bool = Query(default=False),
@@ -74,6 +75,8 @@ def screen(
     rsi_max: float = Query(default=100.0, ge=0.0, le=100.0),
     use_concentration: bool = Query(default=False),
     conc_min: float = Query(default=0.0),
+    conc_5d_min: float = Query(default=0.0),
+    market_cap_rank: int | None = Query(default=None, ge=1, le=2000),
     top_n: int = Query(default=50, ge=1, le=200),
     watchlist: str | None = Query(default=None),
 ):
@@ -84,6 +87,7 @@ def screen(
         tickers = _tickers(entry) if entry is not None else []
     df = screen_stocks(
         ma_window=ma_window,
+        bb_window=bb_window,
         volume_ratio=volume_ratio,
         price_above_ma=price_above_ma,
         bb_breakout=bb_breakout,
@@ -92,9 +96,18 @@ def screen(
         rsi_max=rsi_max,
         use_concentration=use_concentration,
         conc_min=conc_min,
+        conc_5d_min=conc_5d_min,
+        market_cap_rank=market_cap_rank,
         top_n=top_n,
         tickers=tickers,
     )
+    if not df.is_empty():
+        names_df = get_ticker_names(df["ticker"].to_list())
+        if not names_df.is_empty():
+            df = df.join(names_df, on="ticker", how="left")
+        else:
+            df = df.with_columns(pl.lit(None).cast(pl.Utf8).alias("name"))
+        df = df.with_columns(pl.col("date").cast(pl.Utf8))
     return JSONResponse(content=df.to_dicts())
 
 
@@ -102,9 +115,10 @@ def screen(
 def kline(
     ticker: str,
     lookback: int = Query(default=120, ge=20, le=500),
-    ma_window: int = Query(default=20, ge=5, le=120),
+    ma_window: int = Query(default=10, ge=5, le=120),
+    bb_window: int = Query(default=22, ge=5, le=120),
 ):
-    df = get_kline(ticker=ticker, lookback=lookback, ma_window=ma_window)
+    df = get_kline(ticker=ticker, lookback=lookback, ma_window=ma_window, bb_window=bb_window)
     if df.is_empty():
         return JSONResponse(status_code=404, content={"detail": f"{ticker} not found"})
     return JSONResponse(content=df.with_columns(pl.col("date").cast(pl.Utf8)).to_dicts())

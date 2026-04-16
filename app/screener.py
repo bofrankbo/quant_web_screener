@@ -4,28 +4,34 @@ Filters: MA, Bollinger Band, Volume Ratio, RSI, Concentration.
 """
 import duckdb
 import polars as pl
-from app.config import PRICE_ADJ_PATH, CONCENTRATION_PATH, DB_PATH, TICKER_INFO_PATH
+from app.config import PRICE_ADJ_PATH, CONCENTRATION_PATH, MARKET_VALUE_PATH, DB_PATH, TICKER_INFO_PATH
 
 
 def get_conn() -> duckdb.DuckDBPyConnection:
     return duckdb.connect(str(DB_PATH))
 
 
-def _compute_indicators(df: pl.DataFrame, ma_window: int, rsi_period: int) -> pl.DataFrame:
+def _compute_indicators(df: pl.DataFrame, ma_window: int, bb_window: int, rsi_period: int) -> pl.DataFrame:
     """Compute MA, Bollinger, vol_ratio, RSI per ticker using Polars window ops."""
     df = df.sort(["ticker", "date"])
 
-    # MA + Bollinger
+    # MA
     df = df.with_columns([
         pl.col("close").rolling_mean(window_size=ma_window).over("ticker").alias("ma"),
-        pl.col("close").rolling_std(window_size=ma_window).over("ticker").alias("ma_std"),
         pl.col("volume").rolling_mean(window_size=ma_window).over("ticker").alias("avg_vol"),
     ])
+
+    # Bollinger (uses separate bb_window)
     df = df.with_columns([
-        (pl.col("ma") + 2.0 * pl.col("ma_std")).alias("bb_upper"),
-        (pl.col("ma") - 2.0 * pl.col("ma_std")).alias("bb_lower"),
+        pl.col("close").rolling_mean(window_size=bb_window).over("ticker").alias("bb_mid"),
+        pl.col("close").rolling_std(window_size=bb_window).over("ticker").alias("bb_std"),
+    ])
+    df = df.with_columns([
+        (pl.col("bb_mid") + 2.0 * pl.col("bb_std")).alias("bb_upper"),
+        (pl.col("bb_mid") - 2.0 * pl.col("bb_std")).alias("bb_lower"),
         (pl.col("volume") / pl.col("avg_vol").replace(0, None)).alias("vol_ratio"),
     ])
+    df = df.drop(["bb_mid", "bb_std"])
 
     # RSI via Wilder's smoothing approximation (simple moving avg variant)
     df = df.with_columns(
@@ -47,7 +53,8 @@ def _compute_indicators(df: pl.DataFrame, ma_window: int, rsi_period: int) -> pl
 
 
 def screen_stocks(
-    ma_window: int = 20,
+    ma_window: int = 10,
+    bb_window: int = 22,
     volume_ratio: float = 1.5,
     price_above_ma: bool = True,
     bb_breakout: bool = False,
@@ -56,6 +63,8 @@ def screen_stocks(
     rsi_max: float = 100.0,
     use_concentration: bool = False,
     conc_min: float = 0.0,
+    conc_5d_min: float = 0.0,
+    market_cap_rank: int | None = None,
     top_n: int = 50,
     tickers: list[str] | None = None,
 ) -> pl.DataFrame:
@@ -69,8 +78,27 @@ def screen_stocks(
       volume_ratio    : volume > volume_ratio * MA(volume)
       use_concentration: concentration_20d >= conc_min (join concentration CSVs)
     """
-    lookback = max(ma_window, rsi_period) + 10
+    lookback = max(ma_window, bb_window, rsi_period) + 10
     csv_glob = str(PRICE_ADJ_PATH / "*.csv")
+
+    # Market cap pre-filter: narrow universe to top N by market value
+    if market_cap_rank is not None:
+        mc_files = sorted(MARKET_VALUE_PATH.glob("*.csv"))
+        if mc_files:
+            latest_mc = str(mc_files[-1])
+            mc_query = f"""
+            SELECT stock_id AS ticker
+            FROM read_csv_auto('{latest_mc}')
+            ORDER BY CAST(market_value AS DOUBLE) DESC
+            LIMIT {market_cap_rank}
+            """
+            with get_conn() as conn:
+                mc_df = conn.execute(mc_query).pl()
+            mc_tickers = mc_df["ticker"].to_list()
+            if tickers is not None:
+                tickers = [t for t in tickers if t in set(mc_tickers)]
+            else:
+                tickers = mc_tickers
 
     ticker_filter = ""
     if tickers is not None:
@@ -109,7 +137,7 @@ def screen_stocks(
         return pl.DataFrame()
 
     # Polars: compute indicators
-    df = _compute_indicators(df, ma_window, rsi_period)
+    df = _compute_indicators(df, ma_window, bb_window, rsi_period)
 
     # Keep only latest row per ticker
     latest = (
@@ -139,36 +167,41 @@ def screen_stocks(
 
     latest = latest.filter(mask)
 
-    # Optional: join concentration_20d
-    if use_concentration:
-        conc_glob = str(CONCENTRATION_PATH / "*.csv")
-        conc_query = f"""
-        WITH ranked AS (
-            SELECT
-                regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
-                CAST(date AS DATE) AS date,
-                CAST(concentration_20d AS DOUBLE) AS concentration_20d,
-                ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
-            FROM read_csv_auto('{conc_glob}', filename=true)
-        )
-        SELECT ticker, concentration_20d
-        FROM ranked
-        WHERE rn = 1
-        """
-        with get_conn() as conn:
-            conc_df = conn.execute(conc_query).pl()
+    # Always join concentration data; checkbox only controls filtering
+    conc_glob = str(CONCENTRATION_PATH / "*.csv")
+    conc_query = f"""
+    WITH ranked AS (
+        SELECT
+            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
+            CAST(concentration_5d AS DOUBLE) AS concentration_5d,
+            CAST(concentration_20d AS DOUBLE) AS concentration_20d,
+            ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
+        FROM read_csv_auto('{conc_glob}', filename=true)
+    )
+    SELECT ticker, concentration_5d, concentration_20d
+    FROM ranked
+    WHERE rn = 1
+    """
+    with get_conn() as conn:
+        conc_df = conn.execute(conc_query).pl()
 
-        latest = latest.join(conc_df, on="ticker", how="left")
+    latest = latest.join(conc_df, on="ticker", how="left")
+
+    if use_concentration:
         latest = latest.filter(
             pl.col("concentration_20d").is_not_null()
             & pl.col("concentration_20d").ge(conc_min)
         )
-    else:
-        latest = latest.with_columns(pl.lit(None).cast(pl.Float64).alias("concentration_20d"))
+        if conc_5d_min > 0.0:
+            latest = latest.filter(
+                pl.col("concentration_5d").is_not_null()
+                & pl.col("concentration_5d").ge(conc_5d_min)
+            )
 
     # Select and round output columns
     out_cols = ["ticker", "date", "close", "open", "high", "low", "volume",
-                "ma", "bb_upper", "bb_lower", "vol_ratio", "rsi", "concentration_20d"]
+                "ma", "bb_upper", "bb_lower", "vol_ratio", "rsi",
+                "concentration_5d", "concentration_20d"]
     latest = (
         latest
         .select(out_cols)
@@ -277,7 +310,7 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
         return conn.execute(query).pl()
 
 
-def get_kline(ticker: str, lookback: int = 120, ma_window: int = 20) -> pl.DataFrame:
+def get_kline(ticker: str, lookback: int = 120, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
     """Return OHLCV + MA + Bollinger for a single ticker."""
     csv_path = str(PRICE_ADJ_PATH / f"{ticker}.csv")
 
@@ -306,7 +339,7 @@ def get_kline(ticker: str, lookback: int = 120, ma_window: int = 20) -> pl.DataF
         return df
 
     df = df.with_columns(pl.lit(ticker).alias("ticker"))
-    df = _compute_indicators(df, ma_window=ma_window, rsi_period=14)
+    df = _compute_indicators(df, ma_window=ma_window, bb_window=bb_window, rsi_period=14)
     df = df.drop(["ticker"])
 
     return df.select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])

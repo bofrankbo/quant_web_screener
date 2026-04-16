@@ -23,14 +23,55 @@
       "3653"
     ],
     "custom_label": "備註",
-    "custom": {}
+    "custom": {},
+    "active": {}
   },
   "光通": {
     "tickers": [
       "3163",
       "3363",
       "3105",
-      "3081"
+      "3081",
+      "2455",
+      "4971",
+      "4979",
+      "4991",
+      "4968",
+      "6442",
+      "3450"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "被動元件": {
+    "tickers": [
+      "2327",
+      "2492",
+      "6862"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "CPU": {
+    "tickers": [
+      "3533",
+      "3037",
+      "1815"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "IC": {
+    "tickers": [
+      "3443",
+      "2454"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "ODM OEM": {
+    "tickers": [
+      "2376"
     ],
     "custom_label": "備註",
     "custom": {}

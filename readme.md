@@ -64,7 +64,7 @@ quant_web_screener/
 └── requirements.txt
 ```
 
-### Data flow
+### Data flow (current — local dev)
 
 ```
 CSV files (Trading/history_data/tw/)
@@ -118,18 +118,104 @@ bash scripts/run_dev.sh
 
 | Layer | Tool | Reason |
 |---|---|---|
-| Data source | FinMind API | Existing subscription — no migration cost |
+| Data source | FinMind API (999 plan) | Existing subscription — covers OHLCV, 三大法人, 籌碼集中度 |
 | Backend | FastAPI | Async-native, better perf than Flask |
 | Compute | Polars | Faster than Pandas for large-scale filtering |
 | Visualization | Lightweight Charts | TradingView OSS, best-in-class candlestick perf, supports signal markers |
-| Storage | DuckDB | Columnar, queries CSVs in-place, native Polars integration |
+| Storage (local) | DuckDB | Columnar, queries CSVs in-place, native Polars integration |
+| Storage (cloud target) | Supabase PostgreSQL | See cloud migration plan below |
 | Deployment | Docker | Dev/prod parity, easy cloud migration |
+
+---
+
+## Cloud Migration Plan
+
+> **Goal**: migrate from local-CSV dev setup to a hosted public website.
+> All new feature decisions should be made with this target architecture in mind.
+
+### Target architecture
+
+```
+FinMind API (999 plan)
+    ↓  daily ingest job at 15:30 TST (n8n or GitHub Actions)
+Supabase PostgreSQL
+  ├── ohlcv            ← daily OHLCV, all tickers
+  ├── trader_info      ← 三大法人
+  ├── concentration    ← 籌碼集中度
+  ├── ticker_info      ← stock names / sector
+  ├── screener_cache   ← pre-computed indicators (nightly batch)
+  └── watchlists       ← migrate from watchlists.json
+    ↓
+FastAPI on Railway / Fly.io
+    ↓
+HTML/JS frontend (served from same server or Cloudflare Pages)
+```
+
+### Key schema decisions
+
+```sql
+-- Primary time-series table
+CREATE TABLE ohlcv (
+    ticker  TEXT        NOT NULL,
+    date    DATE        NOT NULL,
+    open    NUMERIC(10,2),
+    high    NUMERIC(10,2),
+    low     NUMERIC(10,2),
+    close   NUMERIC(10,2),
+    volume  BIGINT,
+    PRIMARY KEY (ticker, date)
+);
+CREATE INDEX ON ohlcv (ticker, date DESC);
+
+-- Pre-computed screener results (nightly job writes here)
+-- /screen reads this table instead of computing on the fly
+CREATE TABLE screener_cache (
+    date        DATE        NOT NULL,
+    ticker      TEXT        NOT NULL,
+    close       NUMERIC(10,2),
+    ma_20       NUMERIC(10,2),
+    bb_upper    NUMERIC(10,2),
+    bb_lower    NUMERIC(10,2),
+    vol_ratio   NUMERIC(6,2),
+    rsi_14      NUMERIC(5,1),
+    conc_20d    NUMERIC(5,2),
+    PRIMARY KEY (date, ticker)
+);
+```
+
+### Why pre-compute (screener_cache)
+
+Current `/screen` scans 456 CSVs and computes indicators on every request → slow.
+Correct pattern: nightly batch job computes all indicators for all tickers → writes to `screener_cache`.
+API queries: `SELECT * FROM screener_cache WHERE date = today AND vol_ratio >= ? AND ...` → <50ms.
+K-line endpoint still queries `ohlcv` directly (single ticker, fast).
+
+### Migration steps (in order)
+
+1. Build Supabase schema + one-time import of existing CSVs via DuckDB COPY
+2. Rewrite `screener.py` to query `screener_cache` (PostgreSQL) instead of CSV glob
+3. Build FinMind ingest job (n8n): daily OHLCV + 三大法人 upsert → Supabase
+4. Build nightly indicator batch job → writes `screener_cache`
+5. Dockerize FastAPI, deploy to Railway; set `DATABASE_URL` env var
+6. Migrate `watchlists.json` → Supabase `watchlists` table
+7. Frontend: point API base URL at production domain
+
+### What NOT to do (past decisions)
+
+- Do NOT scan CSV glob on every API request — pre-compute instead
+- Do NOT use DuckDB as the production database — it's a local-dev tool here
+- Do NOT store watchlists as JSON in production — move to DB for multi-user safety
+- Do NOT deploy without Docker — local path assumptions will break
 
 ---
 
 ## Roadmap
 
-- [ ] FinMind API client wrapper with LRU cache (avoid redundant pulls)
-- [x] Watchlist return ranking: 5d/10d/20d leaderboard across all lists (user-named, e.g. 航運、電子)
+- [ ] FinMind ingest job (n8n: daily OHLCV → Supabase)
+- [ ] Nightly screener_cache batch job
+- [ ] Rewrite screener.py to query PostgreSQL
+- [ ] Docker + Railway deployment
+- [ ] Migrate watchlists.json → Supabase table
+- [x] Watchlist return ranking: 5d/10d/20d leaderboard across all lists
+- [ ] 三大法人 filter in screener
 - [ ] Background scheduler: auto-refresh after market close
-- [ ] Cloud deployment (Docker)
