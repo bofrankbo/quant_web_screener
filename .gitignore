@@ -5,3 +5,4 @@ data/*.duckdb
 data/*.parquet
 .DS_Store
 .venv/
+data/cache/

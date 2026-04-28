@@ -1,34 +1,55 @@
 # quant_web_screener
 
-Taiwan equity screener — reads local CSV data via DuckDB, computes indicators with Polars, serves via FastAPI + plain HTML frontend.
+Taiwan equity K-line screener — FastAPI backend + vanilla HTML/JS frontend, deployed on Railway.
+
+---
+
+## Architecture
+
+```
+FinMind API (999 plan)
+    ↓  daily 19:00 TST (APScheduler inside FastAPI)
+    ↓  scripts/ingest.py + scripts/concentration.py
+Cloudflare R2  (per-ticker Parquet)
+    tickers/{ticker}.parquet        ← adjusted OHLCV
+    concentration/{ticker}.parquet  ← 籌碼集中度 (5d, 20d)
+    meta/ticker_info.parquet        ← stock names
+    ↓  on startup + daily sync (scripts/sync_cache.py)
+Railway persistent volume  /data/cache/
+    ↓  DuckDB reads local parquet (fast, no network overhead per query)
+FastAPI (:8000)
+    ↓
+Browser (HTML/JS, Lightweight Charts)
+```
+
+**Cost: ~170 TWD/month** (Railway Hobby $5 + persistent volume $0.25/GB)
 
 ---
 
 ## Screener Filters (`/screen`)
 
-| Condition | Description | Default |
+| Filter | Description | Default |
 |---|---|---|
-| Close > MA(N) | Price above moving average | on |
+| Close > MA(N) | Price above moving average | on, N=10 |
 | Bollinger Upper Breakout | Close > MA + 2σ | off |
 | Volume Ratio ≥ X | Today's vol / MA vol | 1.5x |
-| RSI range | RSI within [min, max] | 0–100 |
-| Concentration 20d ≥ N | 籌碼集中度 20-day | off |
+| RSI range | RSI(14) within [min, max] | 0–100 |
+| 籌碼集中度 20d ≥ N | Broker concentration 20-day rolling | off |
+| Market Cap Rank | Limit universe to top N by market cap | off (local-only) |
 
-Output columns: `ticker, date, close, open, high, low, volume, ma, bb_upper, bb_lower, vol_ratio, rsi, concentration_20d`
+Output columns: `ticker, name, date, close, open, high, low, volume, ma, bb_upper, bb_lower, vol_ratio, rsi, concentration_5d, concentration_20d`
 
 ---
 
 ## Watchlist Manager (`/watchlist-manager`)
 
-- Create/rename/delete named watchlists (e.g. 晶圓, 連接器, 散熱)
-- Per-watchlist summary table: 代號, 名稱, 收盤, 日%, 5d%, 10d%, 20d%, 備註 (custom column)
-- **Overview panel** (default): table of all watchlists with average 5d/10d/20d% (active tickers only), clickable rows to open watchlist
-- **全部 view**: all tickers across all watchlists, grouped by watchlist with section headers; inactive tickers are hidden
-- **Per-ticker active toggle** (●/○): toggles whether a ticker counts toward averages and appears in 全部 view
-- Custom column label (editable per watchlist)
-- Add/remove tickers; drag-to-reorder preserved via JSON order
+- Create/rename/delete named watchlists
+- Per-watchlist summary: 代號, 名稱, 收盤, 日%, 5d%, 10d%, 20d%, custom column
+- Overview panel: all watchlists with average returns, clickable to open
+- 全部 view: all tickers across watchlists, grouped by list
+- Per-ticker active toggle (●/○): controls whether ticker counts toward averages
 
-Watchlist data stored in `data/watchlists.json`:
+Stored in `data/watchlists.json` (on Railway persistent volume):
 ```json
 {
   "晶圓": {
@@ -38,45 +59,6 @@ Watchlist data stored in `data/watchlists.json`:
     "active": {"2303": false}
   }
 }
-```
-`active` only stores `false` entries — absence means active (compact).
-
----
-
-## Architecture
-
-```
-quant_web_screener/
-├── app/
-│   ├── config.py          ← path config (points to Trading/history_data/tw)
-│   ├── screener.py        ← DuckDB reads CSV → Polars computes indicators → filter
-│   ├── api.py             ← FastAPI: /screen, /kline, /pattern_match, /watchlists/*
-│   └── pattern_matcher.py ← DTW pattern matching
-├── frontend/
-│   ├── index.html         ← screener UI
-│   ├── watchlist.html     ← watchlist manager
-│   └── kline_draw.html    ← draw pattern → match against market
-├── data/
-│   ├── screener.duckdb    ← DuckDB connection file (no data stored)
-│   └── watchlists.json    ← watchlist persistence
-├── scripts/
-│   └── run_dev.sh
-└── requirements.txt
-```
-
-### Data flow (current — local dev)
-
-```
-CSV files (Trading/history_data/tw/)
-    │
-    ▼ DuckDB read_csv_auto (glob, no data copy)
-    │  → last N rows per ticker
-    │
-    ▼ Polars: MA, Bollinger, Volume Ratio, RSI
-    │
-    ▼ Filter + sort (vol_ratio desc)
-    │
-    ▼ FastAPI → browser
 ```
 
 ---
@@ -99,123 +81,106 @@ CSV files (Trading/history_data/tw/)
 | PUT | `/watchlists/{name}/custom/{ticker}` | Update custom value |
 | PUT | `/watchlists/{name}/active/{ticker}` | Toggle ticker active state |
 
-Static pages: `/` → screener, `/draw` → kline draw, `/watchlist-manager` → watchlist manager
+Static pages: `/` → screener, `/draw` → pattern draw, `/watchlist-manager` → watchlist manager
 
 ---
 
-## Start
+## Dev Setup
 
 ```bash
-cd /Users/yanyifu/Documents/_Coding/quant_web_screener
+git clone <repo>
+cd quant_web_screener
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env   # fill in R2_* and FINMIND_API_KEY
 bash scripts/run_dev.sh
 # FastAPI: http://localhost:8000
-# API docs: http://localhost:8000/docs
+# Docs:    http://localhost:8000/docs
+```
+
+### First-time data setup
+
+```bash
+# Backfill full price history → R2 (takes ~30 min)
+python -m scripts.ingest --backfill
+
+# Backfill concentration from local CSVs → R2
+python -m scripts.concentration --backfill
+
+# Sync R2 → local cache (needed for /screen and /draw)
+python -m scripts.sync_cache --all
+```
+
+### Daily update (manual)
+
+```bash
+bash scripts/daily_update.sh          # today
+bash scripts/daily_update.sh 2026-04-25  # specific date
+```
+
+---
+
+## Railway Deployment
+
+### One-time setup
+
+1. Push repo to GitHub
+2. [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
+3. **Variables** → add all from `.env`:
+   ```
+   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+   R2_BUCKET, R2_ENDPOINT, FINMIND_API_KEY
+   ```
+4. **Service → Volumes** → New Volume, mount at `/app/data`, size 2GB
+5. Redeploy — watch logs for `[startup] Syncing cache from R2`
+6. Verify: `curl https://<app>.up.railway.app/health` → `{"status": "ok"}`
+
+### How it runs on Railway
+
+- **Startup**: `startup_sync()` downloads all R2 parquets → `/app/data/cache/` (background thread, non-blocking)
+- **Daily 19:00 TST**: APScheduler triggers `ingest → concentration → sync_cache`
+- **Persistent volume**: `/app/data/` survives restarts — cache stays populated
+
+---
+
+## Project Structure
+
+```
+quant_web_screener/
+├── app/
+│   ├── api.py             ← FastAPI routes + lifespan (scheduler start)
+│   ├── screener.py        ← DuckDB parquet scan → Polars indicators → filter
+│   ├── pattern_matcher.py ← DTW pattern matching against local cache
+│   ├── scheduler.py       ← APScheduler: daily 19:00 ingest + sync
+│   ├── r2.py              ← boto3 R2 client + download_parquet()
+│   └── config.py          ← path config (PARQUET_CACHE_PATH, etc.)
+├── scripts/
+│   ├── ingest.py          ← FinMind TaiwanStockPriceAdj → R2 tickers/
+│   ├── concentration.py   ← FinMind broker data → R2 concentration/
+│   ├── sync_cache.py      ← R2 → local data/cache/
+│   └── daily_update.sh    ← ingest + concentration + sync (manual/cron)
+├── frontend/
+│   ├── index.html         ← screener UI
+│   ├── watchlist.html     ← watchlist manager
+│   └── kline_draw.html    ← draw pattern → match against market
+├── data/
+│   ├── watchlists.json    ← watchlist persistence (on persistent volume)
+│   └── cache/             ← local parquet cache (synced from R2)
+├── railway.toml           ← Railway build + start config
+└── requirements.txt
 ```
 
 ---
 
 ## Tool Stack
 
-| Layer | Tool | Reason |
-|---|---|---|
-| Data source | FinMind API (999 plan) | Existing subscription — covers OHLCV, 三大法人, 籌碼集中度 |
-| Backend | FastAPI | Async-native, better perf than Flask |
-| Compute | Polars | Faster than Pandas for large-scale filtering |
-| Visualization | Lightweight Charts | TradingView OSS, best-in-class candlestick perf, supports signal markers |
-| Storage (local) | DuckDB | Columnar, queries CSVs in-place, native Polars integration |
-| Storage (cloud target) | Supabase PostgreSQL | See cloud migration plan below |
-| Deployment | Docker | Dev/prod parity, easy cloud migration |
-
----
-
-## Cloud Migration Plan
-
-> **Goal**: migrate from local-CSV dev setup to a hosted public website.
-> All new feature decisions should be made with this target architecture in mind.
-
-### Target architecture
-
-```
-FinMind API (999 plan)
-    ↓  daily ingest job at 15:30 TST (n8n or GitHub Actions)
-Supabase PostgreSQL
-  ├── ohlcv            ← daily OHLCV, all tickers
-  ├── trader_info      ← 三大法人
-  ├── concentration    ← 籌碼集中度
-  ├── ticker_info      ← stock names / sector
-  ├── screener_cache   ← pre-computed indicators (nightly batch)
-  └── watchlists       ← migrate from watchlists.json
-    ↓
-FastAPI on Railway / Fly.io
-    ↓
-HTML/JS frontend (served from same server or Cloudflare Pages)
-```
-
-### Key schema decisions
-
-```sql
--- Primary time-series table
-CREATE TABLE ohlcv (
-    ticker  TEXT        NOT NULL,
-    date    DATE        NOT NULL,
-    open    NUMERIC(10,2),
-    high    NUMERIC(10,2),
-    low     NUMERIC(10,2),
-    close   NUMERIC(10,2),
-    volume  BIGINT,
-    PRIMARY KEY (ticker, date)
-);
-CREATE INDEX ON ohlcv (ticker, date DESC);
-
--- Pre-computed screener results (nightly job writes here)
--- /screen reads this table instead of computing on the fly
-CREATE TABLE screener_cache (
-    date        DATE        NOT NULL,
-    ticker      TEXT        NOT NULL,
-    close       NUMERIC(10,2),
-    ma_20       NUMERIC(10,2),
-    bb_upper    NUMERIC(10,2),
-    bb_lower    NUMERIC(10,2),
-    vol_ratio   NUMERIC(6,2),
-    rsi_14      NUMERIC(5,1),
-    conc_20d    NUMERIC(5,2),
-    PRIMARY KEY (date, ticker)
-);
-```
-
-### Why pre-compute (screener_cache)
-
-Current `/screen` scans 456 CSVs and computes indicators on every request → slow.
-Correct pattern: nightly batch job computes all indicators for all tickers → writes to `screener_cache`.
-API queries: `SELECT * FROM screener_cache WHERE date = today AND vol_ratio >= ? AND ...` → <50ms.
-K-line endpoint still queries `ohlcv` directly (single ticker, fast).
-
-### Migration steps (in order)
-
-1. Build Supabase schema + one-time import of existing CSVs via DuckDB COPY
-2. Rewrite `screener.py` to query `screener_cache` (PostgreSQL) instead of CSV glob
-3. Build FinMind ingest job (n8n): daily OHLCV + 三大法人 upsert → Supabase
-4. Build nightly indicator batch job → writes `screener_cache`
-5. Dockerize FastAPI, deploy to Railway; set `DATABASE_URL` env var
-6. Migrate `watchlists.json` → Supabase `watchlists` table
-7. Frontend: point API base URL at production domain
-
-### What NOT to do (past decisions)
-
-- Do NOT scan CSV glob on every API request — pre-compute instead
-- Do NOT use DuckDB as the production database — it's a local-dev tool here
-- Do NOT store watchlists as JSON in production — move to DB for multi-user safety
-- Do NOT deploy without Docker — local path assumptions will break
-
----
-
-## Roadmap
-
-- [ ] FinMind ingest job (n8n: daily OHLCV → Supabase)
-- [ ] Nightly screener_cache batch job
-- [ ] Rewrite screener.py to query PostgreSQL
-- [ ] Docker + Railway deployment
-- [ ] Migrate watchlists.json → Supabase table
-- [x] Watchlist return ranking: 5d/10d/20d leaderboard across all lists
-- [ ] 三大法人 filter in screener
-- [ ] Background scheduler: auto-refresh after market close
+| Layer | Tool |
+|---|---|
+| Data source | FinMind API (999 plan) |
+| Data storage | Cloudflare R2 (Parquet, per-ticker) |
+| Query engine | DuckDB (reads local Parquet cache) |
+| Compute | Polars (indicators: MA, BB, RSI, concentration) |
+| Backend | FastAPI |
+| Scheduler | APScheduler (daily ingest at 19:00 TST) |
+| Visualization | Lightweight Charts (TradingView OSS) |
+| Deployment | Railway (persistent volume for Parquet cache) |

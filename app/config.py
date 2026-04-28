@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TRADING_DATA_PATH = Path(os.getenv("TRADING_DATA_PATH", "/Users/yanyifu/Documents/_Coding/Trading/history_data/tw"))
-PRICE_ADJ_PATH = TRADING_DATA_PATH / "stock_price_adj" / "self_calculate"
+PRICE_ADJ_PATH = TRADING_DATA_PATH / "stock_price_adj"
 CONCENTRATION_PATH = TRADING_DATA_PATH / "concentration"
 MARKET_VALUE_PATH = TRADING_DATA_PATH / "market_value_twse_tpex"
 TRADER_INFO_PATH = TRADING_DATA_PATH / "traderinfo"
@@ -13,3 +13,7 @@ TICKER_INFO_PATH = TRADING_DATA_PATH / "ticker_info.csv"
 
 DB_PATH = Path(__file__).parent.parent / "data" / "screener.duckdb"
 DB_PATH.parent.mkdir(exist_ok=True)
+
+PARQUET_CACHE_PATH = Path(__file__).parent.parent / "data" / "cache"
+(PARQUET_CACHE_PATH / "tickers").mkdir(parents=True, exist_ok=True)
+(PARQUET_CACHE_PATH / "meta").mkdir(parents=True, exist_ok=True)

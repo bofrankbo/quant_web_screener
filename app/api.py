@@ -1,4 +1,6 @@
 import json
+import threading
+from contextlib import asynccontextmanager
 import polars as pl
 from pathlib import Path
 from fastapi import FastAPI, Query
@@ -7,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.screener import screen_stocks, get_kline, get_ticker_summary, get_ticker_names
 from app.pattern_matcher import match_pattern
+from app.scheduler import scheduler, startup_sync
 
 WATCHLISTS_PATH = Path(__file__).parent.parent / "data" / "watchlists.json"
 
@@ -39,7 +42,15 @@ def _tickers(entry: dict | list) -> list[str]:
         return entry
     return entry.get("tickers", [])
 
-app = FastAPI(title="Quant Web Screener", version="0.3.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    threading.Thread(target=startup_sync, daemon=True).start()
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
+
+
+app = FastAPI(title="Quant Web Screener", version="0.3.0", lifespan=lifespan)
 
 
 class Candle(BaseModel):

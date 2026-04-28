@@ -4,7 +4,9 @@ Filters: MA, Bollinger Band, Volume Ratio, RSI, Concentration.
 """
 import duckdb
 import polars as pl
-from app.config import PRICE_ADJ_PATH, CONCENTRATION_PATH, MARKET_VALUE_PATH, DB_PATH, TICKER_INFO_PATH
+from app.config import MARKET_VALUE_PATH, DB_PATH, TICKER_INFO_PATH, PARQUET_CACHE_PATH
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from app.r2 import download_parquet
 
 
 def get_conn() -> duckdb.DuckDBPyConnection:
@@ -79,11 +81,14 @@ def screen_stocks(
       use_concentration: concentration_20d >= conc_min (join concentration CSVs)
     """
     lookback = max(ma_window, bb_window, rsi_period) + 10
-    csv_glob = str(PRICE_ADJ_PATH / "*.csv")
+    parquet_glob = str(PARQUET_CACHE_PATH / "tickers" / "*.parquet")
 
-    # Market cap pre-filter: narrow universe to top N by market value
+    # Market cap pre-filter: narrow universe to top N by market value (local-only)
     if market_cap_rank is not None:
-        mc_files = sorted(MARKET_VALUE_PATH.glob("*.csv"))
+        try:
+            mc_files = sorted(MARKET_VALUE_PATH.glob("*.csv")) if MARKET_VALUE_PATH.exists() else []
+        except Exception:
+            mc_files = []
         if mc_files:
             latest_mc = str(mc_files[-1])
             mc_query = f"""
@@ -107,22 +112,17 @@ def screen_stocks(
         escaped = ", ".join(f"'{t}'" for t in tickers)
         ticker_filter = f"AND ticker IN ({escaped})"
 
-    # DuckDB: read CSVs, extract last `lookback` rows per ticker
-    # Column map: max→high, min→low, Trading_Volume→volume
+    # DuckDB: read local parquet cache, extract last `lookback` rows per ticker
     fetch_query = f"""
     WITH ranked AS (
         SELECT
-            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
-            CAST(date AS DATE) AS date,
-            CAST(open AS DOUBLE)           AS open,
-            CAST("max" AS DOUBLE)          AS high,
-            CAST("min" AS DOUBLE)          AS low,
-            CAST(close AS DOUBLE)          AS close,
-            CAST("Trading_Volume" AS DOUBLE) AS volume,
+            regexp_extract(filename, '([^/\\\\]+)\\.parquet$', 1) AS ticker,
+            date,
+            open, high, low, close, volume,
             ROW_NUMBER() OVER (
                 PARTITION BY filename ORDER BY date DESC
             ) AS rn
-        FROM read_csv_auto('{csv_glob}', filename=true)
+        FROM read_parquet('{parquet_glob}', filename=true)
     )
     SELECT ticker, date, open, high, low, close, volume
     FROM ranked
@@ -167,24 +167,29 @@ def screen_stocks(
 
     latest = latest.filter(mask)
 
-    # Always join concentration data; checkbox only controls filtering
-    conc_glob = str(CONCENTRATION_PATH / "*.csv")
-    conc_query = f"""
-    WITH ranked AS (
-        SELECT
-            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
-            CAST(concentration_5d AS DOUBLE) AS concentration_5d,
-            CAST(concentration_20d AS DOUBLE) AS concentration_20d,
-            ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
-        FROM read_csv_auto('{conc_glob}', filename=true)
-    )
-    SELECT ticker, concentration_5d, concentration_20d
-    FROM ranked
-    WHERE rn = 1
-    """
-    with get_conn() as conn:
-        conc_df = conn.execute(conc_query).pl()
+    # Fetch concentration for filtered tickers only (parallel R2 downloads)
+    filtered_tickers = latest["ticker"].to_list()
 
+    def _fetch_conc(ticker: str):
+        df = download_parquet(f"concentration/{ticker}.parquet")
+        if df is None or df.is_empty():
+            return None
+        last = df.sort("date").tail(1)
+        return {
+            "ticker": ticker,
+            "concentration_5d": last["concentration_5d"][0],
+            "concentration_20d": last["concentration_20d"][0],
+        }
+
+    conc_rows = []
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        for row in pool.map(_fetch_conc, filtered_tickers):
+            if row is not None:
+                conc_rows.append(row)
+
+    conc_df = pl.DataFrame(conc_rows) if conc_rows else pl.DataFrame(schema={
+        "ticker": pl.Utf8, "concentration_5d": pl.Float64, "concentration_20d": pl.Float64,
+    })
     latest = latest.join(conc_df, on="ticker", how="left")
 
     if use_concentration:
@@ -221,125 +226,94 @@ def screen_stocks(
 
 
 def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
-    """
-    Return last close, day%, 5d%, 10d%, 20d% for each ticker.
-    Reads only the relevant CSV files (no full-market scan).
-    """
+    """Return last close, day%, 5d%, 10d%, 20d% for each ticker (reads from R2)."""
+    _empty = pl.DataFrame(schema={
+        "ticker": pl.Utf8, "close": pl.Float64,
+        "day_pct": pl.Float64, "pct_5d": pl.Float64,
+        "pct_10d": pl.Float64, "pct_20d": pl.Float64,
+    })
     if not tickers:
-        return pl.DataFrame(schema={
-            "ticker": pl.Utf8, "close": pl.Float64,
-            "day_pct": pl.Float64, "pct_5d": pl.Float64,
-            "pct_10d": pl.Float64, "pct_20d": pl.Float64,
-        })
+        return _empty
 
-    # Only read CSVs that exist
-    paths = [str(PRICE_ADJ_PATH / f"{t}.csv") for t in tickers
-             if (PRICE_ADJ_PATH / f"{t}.csv").exists()]
-    if not paths:
-        return pl.DataFrame(schema={
-            "ticker": pl.Utf8, "close": pl.Float64,
-            "day_pct": pl.Float64, "pct_5d": pl.Float64,
-            "pct_10d": pl.Float64, "pct_20d": pl.Float64,
-        })
-
-    paths_lit = ", ".join(f"'{p}'" for p in paths)
-    lookback = 22  # need 21 rows for 20d change
-
-    fetch_query = f"""
-    WITH ranked AS (
-        SELECT
-            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
-            CAST(date AS DATE) AS date,
-            CAST(close AS DOUBLE) AS close,
-            ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
-        FROM read_csv_auto([{paths_lit}], filename=true)
-    )
-    SELECT ticker, date, close
-    FROM ranked
-    WHERE rn <= {lookback}
-    ORDER BY ticker, date
-    """
-
-    with get_conn() as conn:
-        df = conn.execute(fetch_query).pl()
-
-    if df.is_empty():
-        return df
+    def _fetch(ticker: str):
+        df = download_parquet(f"tickers/{ticker}.parquet")
+        if df is None or df.is_empty():
+            return None
+        return ticker, df.sort("date").tail(22)["close"].to_list()
 
     rows = []
-    for group in df.partition_by("ticker", maintain_order=False):
-        ticker = group["ticker"][0]
-        closes = group.sort("date")["close"].to_list()
-        n = len(closes)
-        last = closes[-1]
+    with ThreadPoolExecutor(max_workers=10) as pool:
+        futures = {pool.submit(_fetch, t): t for t in tickers}
+        for fut in as_completed(futures):
+            result = fut.result()
+            if result is None:
+                continue
+            ticker, closes = result
+            n = len(closes)
+            last = closes[-1]
 
-        def _pct(back: int):
-            if n >= back + 1:
-                old = closes[-(back + 1)]
-                return round((last / old - 1) * 100, 2) if old else None
-            return None
+            def _pct(back: int, closes=closes, n=n, last=last):
+                if n >= back + 1:
+                    old = closes[-(back + 1)]
+                    return round((last / old - 1) * 100, 2) if old else None
+                return None
 
-        rows.append({
-            "ticker": ticker,
-            "close": round(last, 2),
-            "day_pct": _pct(1),
-            "pct_5d": _pct(5),
-            "pct_10d": _pct(10),
-            "pct_20d": _pct(20),
-        })
+            rows.append({
+                "ticker": ticker,
+                "close": round(last, 2),
+                "day_pct": _pct(1),
+                "pct_5d": _pct(5),
+                "pct_10d": _pct(10),
+                "pct_20d": _pct(20),
+            })
 
-    return pl.DataFrame(rows)
+    return pl.DataFrame(rows) if rows else _empty
 
 
 def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
-    """Return ticker → stock_name from ticker_info.csv (latest row per ticker)."""
+    """Return ticker → stock_name. Reads R2-synced parquet; falls back to local CSV."""
+    _empty = pl.DataFrame(schema={"ticker": pl.Utf8, "name": pl.Utf8})
     if not tickers:
-        return pl.DataFrame(schema={"ticker": pl.Utf8, "name": pl.Utf8})
+        return _empty
 
-    escaped = ", ".join(f"'{t}'" for t in tickers)
-    info_path = str(TICKER_INFO_PATH)
+    ticker_set = set(tickers)
 
-    query = f"""
-    SELECT stock_id AS ticker, stock_name AS name
-    FROM read_csv_auto('{info_path}')
-    WHERE stock_id IN ({escaped})
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY stock_id ORDER BY date DESC) = 1
-    """
+    # Primary: local parquet cache (synced from R2 meta/ticker_info.parquet)
+    cache_path = PARQUET_CACHE_PATH / "meta" / "ticker_info.parquet"
+    if cache_path.exists():
+        df = pl.read_parquet(cache_path)
+        return (
+            df.filter(pl.col("stock_id").is_in(ticker_set))
+            .select(pl.col("stock_id").alias("ticker"), pl.col("stock_name").alias("name"))
+            .unique("ticker")
+        )
 
-    with get_conn() as conn:
-        return conn.execute(query).pl()
+    # Fallback: local CSV from Trading repo
+    if TICKER_INFO_PATH.exists():
+        escaped = ", ".join(f"'{t}'" for t in tickers)
+        query = f"""
+        SELECT stock_id AS ticker, stock_name AS name
+        FROM read_csv_auto('{TICKER_INFO_PATH}')
+        WHERE stock_id IN ({escaped})
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY stock_id ORDER BY date DESC) = 1
+        """
+        with get_conn() as conn:
+            return conn.execute(query).pl()
+
+    return _empty
 
 
 def get_kline(ticker: str, lookback: int = 120, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
-    """Return OHLCV + MA + Bollinger for a single ticker."""
-    csv_path = str(PRICE_ADJ_PATH / f"{ticker}.csv")
+    """Return OHLCV + MA + Bollinger for a single ticker (reads from R2)."""
+    df = download_parquet(f"tickers/{ticker}.parquet")
+    if df is None or df.is_empty():
+        return pl.DataFrame()
 
-    fetch_query = f"""
-    WITH ranked AS (
-        SELECT
-            CAST(date AS DATE)               AS date,
-            CAST(open AS DOUBLE)             AS open,
-            CAST("max" AS DOUBLE)            AS high,
-            CAST("min" AS DOUBLE)            AS low,
-            CAST(close AS DOUBLE)            AS close,
-            CAST("Trading_Volume" AS DOUBLE) AS volume,
-            ROW_NUMBER() OVER (ORDER BY date DESC) AS rn
-        FROM read_csv_auto('{csv_path}')
-    )
-    SELECT date, open, high, low, close, volume
-    FROM ranked
-    WHERE rn <= {lookback}
-    ORDER BY date
-    """
-
-    with get_conn() as conn:
-        df = conn.execute(fetch_query).pl()
-
-    if df.is_empty():
-        return df
+    need = max(lookback, ma_window, bb_window, 14) + 10
+    df = df.sort("date").tail(need)
 
     df = df.with_columns(pl.lit(ticker).alias("ticker"))
     df = _compute_indicators(df, ma_window=ma_window, bb_window=bb_window, rsi_period=14)
     df = df.drop(["ticker"])
 
-    return df.select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])
+    return df.tail(lookback).select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])

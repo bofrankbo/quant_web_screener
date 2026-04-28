@@ -56,7 +56,9 @@
     "tickers": [
       "3533",
       "3037",
-      "1815"
+      "1815",
+      "5274",
+      "6213"
     ],
     "custom_label": "備註",
     "custom": {}
@@ -72,6 +74,21 @@
   "ODM OEM": {
     "tickers": [
       "2376"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "CCL": {
+    "tickers": [
+      "2383"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "玻璃布": {
+    "tickers": [
+      "1802",
+      "1815"
     ],
     "custom_label": "備註",
     "custom": {}

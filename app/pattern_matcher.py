@@ -8,7 +8,7 @@ import polars as pl
 import duckdb
 from dtaidistance import dtw
 
-from app.config import PRICE_ADJ_PATH
+from app.config import PARQUET_CACHE_PATH
 
 
 def _normalize(arr: np.ndarray) -> np.ndarray:
@@ -41,17 +41,17 @@ def match_pattern(
 
     # Load enough bars for all window sizes
     lookback = window_max + 5
-    csv_glob = str(PRICE_ADJ_PATH / "*.csv")
+    parquet_glob = str(PARQUET_CACHE_PATH / "tickers" / "*.parquet")
 
     query = f"""
     WITH ranked AS (
         SELECT
-            regexp_extract(filename, '([^/]+)\\.csv$', 1) AS ticker,
-            CAST(date AS DATE)                              AS date,
-            CAST(close AS DOUBLE)                          AS close,
-            CAST("Trading_Volume" AS DOUBLE)               AS volume,
+            regexp_extract(filename, '([^/\\\\]+)\\.parquet$', 1) AS ticker,
+            date,
+            close,
+            volume,
             ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
-        FROM read_csv_auto('{csv_glob}', filename=true)
+        FROM read_parquet('{parquet_glob}', filename=true)
     )
     SELECT ticker, date, close, volume
     FROM ranked
