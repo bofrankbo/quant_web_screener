@@ -289,6 +289,7 @@ canvas { position: absolute; top: 0; left: 0; cursor: crosshair; display: block;
   padding: 30px 16px;
   line-height: 2;
 }
+
 </style>
 </head>
 <body>
@@ -896,6 +897,7 @@ searchBtn.addEventListener('click', async () => {
 document.getElementById('btn-close-results').addEventListener('click', () => {
   resultsPanel.classList.remove('open');
 });
+
 
 // ─── PATTERN RECOGNITION ─────────────────────────────────────────────────────
 function bull(c)   { return c.close >  c.open; }

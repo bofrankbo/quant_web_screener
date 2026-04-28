@@ -20,62 +20,38 @@ body {
 
 /* ── Topbar ── */
 #topbar {
-  height: 44px;
-  min-height: 44px;
+  height: 44px; min-height: 44px;
   background: #1e222d;
   border-bottom: 1px solid #2a2e39;
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 16px;
+  display: flex; align-items: center;
+  padding: 0 16px; gap: 12px;
 }
-#topbar h1 {
-  font-size: 14px;
-  font-weight: 700;
-  color: #d1d4dc;
-  letter-spacing: 0.5px;
+#topbar h1 { font-size: 14px; font-weight: 700; color: #d1d4dc; letter-spacing: 0.5px; }
+#topbar-spacer { flex: 1; }
+.topbar-link {
+  font-size: 12px; color: #2962ff; text-decoration: none;
+  padding: 4px 10px; border: 1px solid #2962ff; border-radius: 4px;
 }
-#topbar a {
-  margin-left: auto;
-  font-size: 12px;
-  color: #2962ff;
-  text-decoration: none;
-  padding: 4px 10px;
-  border: 1px solid #2962ff;
-  border-radius: 4px;
-}
-#topbar a:hover { background: rgba(41,98,255,0.12); }
+.topbar-link:hover { background: rgba(41,98,255,0.12); }
 
-/* ── Body layout ── */
-#body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
+/* ── Body ── */
+#body { display: flex; flex: 1; overflow: hidden; }
 
-/* ── Sidebar ── */
+/* ── Left: Sidebar ── */
 #sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: 252px; min-width: 252px;
   background: #1e222d;
   border-right: 1px solid #2a2e39;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: 12px;
-  gap: 10px;
+  display: flex; flex-direction: column;
+  overflow-y: auto; padding: 12px; gap: 10px;
 }
 #sidebar::-webkit-scrollbar { width: 4px; }
 #sidebar::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
 
 .section-title {
-  font-size: 10px;
-  font-weight: 700;
-  color: #787b86;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding-top: 4px;
-  border-top: 1px solid #2a2e39;
+  font-size: 10px; font-weight: 700; color: #787b86;
+  text-transform: uppercase; letter-spacing: 1px;
+  padding-top: 4px; border-top: 1px solid #2a2e39;
 }
 .section-title:first-child { border-top: none; }
 
@@ -84,236 +60,238 @@ body {
 .field-row { display: flex; align-items: center; gap: 6px; }
 .val { font-size: 12px; color: #d1d4dc; min-width: 28px; text-align: right; }
 
-input[type=range] {
-  flex: 1;
-  accent-color: #2962ff;
-  cursor: pointer;
-}
+input[type=range] { flex: 1; accent-color: #2962ff; cursor: pointer; }
 input[type=number] {
-  width: 64px;
-  background: #131722;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
+  width: 64px; background: #131722; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 4px 6px; border-radius: 4px; font-size: 12px;
 }
 input[type=number]:focus { outline: none; border-color: #2962ff; }
 
 .check-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #d1d4dc;
-  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #d1d4dc; cursor: pointer;
 }
 .check-row input[type=checkbox] { accent-color: #2962ff; cursor: pointer; }
 
 #btn-screen {
-  width: 100%;
-  background: #2962ff;
-  color: #fff;
-  border: none;
-  padding: 9px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 4px;
+  width: 100%; background: #2962ff; color: #fff;
+  border: none; padding: 9px; font-size: 13px; font-weight: 600;
+  border-radius: 4px; cursor: pointer; margin-top: 4px;
 }
 #btn-screen:hover { background: #1a4fd4; }
 #btn-screen:disabled { background: #363a45; color: #787b86; cursor: default; }
 
 #status { font-size: 11px; color: #787b86; text-align: center; min-height: 16px; }
 
-/* ── Watchlist ── */
 select {
-  flex: 1;
-  background: #131722;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
+  flex: 1; background: #131722; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 4px 6px; border-radius: 4px; font-size: 12px; cursor: pointer;
 }
 select:focus { outline: none; border-color: #2962ff; }
 
 .icon-btn {
-  background: #2a2e39;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  width: 26px;
-  height: 26px;
-  border-radius: 4px;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 0;
+  background: #2a2e39; border: 1px solid #363a45; color: #d1d4dc;
+  width: 26px; height: 26px; border-radius: 4px; font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; padding: 0;
 }
 .icon-btn:hover { background: #363a45; }
 .icon-btn.danger:hover { background: #3d1f1f; border-color: #ef5350; color: #ef5350; }
 
 .new-wl-input {
-  flex: 1;
-  background: #131722;
-  border: 1px solid #363a45;
-  color: #d1d4dc;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
+  flex: 1; background: #131722; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 4px 6px; border-radius: 4px; font-size: 12px;
 }
 .new-wl-input:focus { outline: none; border-color: #2962ff; }
 .new-wl-input::placeholder { color: #4c525e; }
 
 /* ── WL popup ── */
 #wl-popup {
-  position: fixed;
-  background: #1e222d;
-  border: 1px solid #2a2e39;
-  border-radius: 4px;
-  min-width: 130px;
-  z-index: 200;
-  display: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-  overflow: hidden;
+  position: fixed; background: #1e222d; border: 1px solid #2a2e39;
+  border-radius: 4px; min-width: 130px; z-index: 200; display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5); overflow: hidden;
 }
 #wl-popup.visible { display: block; }
 .wl-popup-item {
-  padding: 7px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  color: #d1d4dc;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  padding: 7px 12px; font-size: 12px; cursor: pointer;
+  color: #d1d4dc; display: flex; align-items: center; gap: 6px; white-space: nowrap;
 }
 .wl-popup-item:hover { background: #2a2e39; }
 .wl-popup-item.in-list { color: #26a69a; }
 .wl-popup-empty { padding: 7px 12px; font-size: 11px; color: #4c525e; }
 
-/* ── WL button in table ── */
 .wl-btn {
-  background: none;
-  border: 1px solid #363a45;
-  color: #787b86;
-  border-radius: 3px;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 2px 5px;
-  line-height: 1;
+  background: none; border: 1px solid #363a45; color: #787b86;
+  border-radius: 3px; font-size: 11px; cursor: pointer; padding: 2px 5px; line-height: 1;
 }
 .wl-btn:hover { border-color: #2962ff; color: #2962ff; }
 
-/* ── Main area ── */
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* ── Content area (col 2+3) ── */
+#content-area {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
 }
 
-/* ── Table area ── */
-#table-wrap {
-  flex: 1;
-  overflow: auto;
-  min-height: 100px;
+/* ── Top row: results + backtest ── */
+#top-row {
+  flex: 1; display: flex; overflow: hidden; min-height: 0;
 }
+
+/* ── Middle: screener results ── */
+#main {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid #2a2e39;
+}
+
+#main-header {
+  height: 36px; min-height: 36px;
+  background: #1a1e2d; border-bottom: 1px solid #2a2e39;
+  display: flex; align-items: center; padding: 0 12px; gap: 8px; flex-shrink: 0;
+}
+#main-title {
+  font-size: 10px; font-weight: 700; color: #787b86;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+#main-count { font-size: 11px; color: #4c525e; margin-left: auto; }
+
+#table-wrap { flex: 1; overflow: auto; }
 #table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
 #table-wrap::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
 
-#results-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
+#results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 #results-table thead th {
-  background: #1e222d;
-  color: #787b86;
-  font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 8px 10px;
-  text-align: right;
-  border-bottom: 1px solid #2a2e39;
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  background: #1e222d; color: #787b86; font-weight: 600;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 8px 10px; text-align: right;
+  border-bottom: 1px solid #2a2e39; position: sticky; top: 0; z-index: 1;
 }
 #results-table thead th:first-child { text-align: left; }
 #results-table tbody tr {
-  border-bottom: 1px solid #1c2030;
-  cursor: pointer;
-  transition: background 0.1s;
+  border-bottom: 1px solid #1c2030; cursor: pointer; transition: background 0.1s;
 }
 #results-table tbody tr:hover { background: #1e222d; }
 #results-table tbody tr.active { background: #2a2e39; }
 #results-table td {
-  padding: 7px 10px;
-  text-align: right;
-  white-space: nowrap;
-  color: #d1d4dc;
+  padding: 7px 10px; text-align: right; white-space: nowrap; color: #d1d4dc;
 }
-#results-table td:first-child {
-  text-align: left;
-  font-weight: 600;
-  color: #fff;
-}
+#results-table td:first-child { text-align: left; font-weight: 600; color: #fff; }
 .bull { color: #26a69a; }
 .bear { color: #ef5350; }
 
-#empty-msg {
-  padding: 32px;
-  text-align: center;
-  color: #4c525e;
-  font-size: 13px;
+#empty-msg { padding: 32px; text-align: center; color: #4c525e; font-size: 13px; }
+
+/* ── Right: backtest panel ── */
+#right-panel {
+  width: 400px; min-width: 400px;
+  display: flex; flex-direction: column;
+  background: #1e222d; overflow: hidden;
 }
 
-/* ── Chart panel ── */
-#chart-panel {
-  height: 380px;
-  min-height: 380px;
-  border-top: 1px solid #2a2e39;
-  display: none;
-  flex-direction: column;
+#bt-header {
+  height: 44px; min-height: 44px;
+  background: #1e222d; border-bottom: 1px solid #2a2e39;
+  display: flex; align-items: center; padding: 0 12px; gap: 7px; flex-shrink: 0;
 }
-#chart-panel.visible { display: flex; }
+#bt-header-title {
+  font-size: 10px; font-weight: 700; color: #787b86;
+  text-transform: uppercase; letter-spacing: 1px; flex: 1;
+}
+#bt-lookback {
+  width: 52px; background: #131722; border: 1px solid #363a45;
+  color: #d1d4dc; padding: 4px 6px; border-radius: 4px; font-size: 12px;
+}
+#bt-days-label { font-size: 11px; color: #787b86; flex-shrink: 0; }
+#btn-run-bt {
+  background: #2962ff; border: 1px solid #2962ff; color: #fff;
+  padding: 5px 11px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  cursor: pointer; flex-shrink: 0;
+}
+#btn-run-bt:hover { background: #1a4fd6; }
+#btn-run-bt:disabled { background: #2a2e39; border-color: #363a45; color: #4c525e; cursor: not-allowed; }
 
-#chart-header {
-  background: #1e222d;
-  border-bottom: 1px solid #2a2e39;
-  padding: 6px 12px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+#bt-stats {
+  display: none; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: #2a2e39; border-bottom: 1px solid #2a2e39; flex-shrink: 0;
 }
-#chart-ticker {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  min-width: 48px;
+#bt-stats.visible { display: grid; }
+.bt-stat { background: #1e222d; padding: 9px 10px; text-align: center; }
+.bt-stat-val { font-size: 15px; font-weight: 700; font-family: monospace; }
+.bt-stat-lbl { font-size: 10px; color: #787b86; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+#bt-tabs { display: none; border-bottom: 1px solid #2a2e39; flex-shrink: 0; padding: 0 4px; }
+#bt-tabs.visible { display: flex; }
+.bt-tab-btn {
+  padding: 8px 14px; font-size: 12px; font-weight: 600; color: #787b86;
+  cursor: pointer; background: none; border: none;
+  border-bottom: 2px solid transparent; border-radius: 0;
 }
-#chart-header label { font-size: 11px; color: #787b86; }
+.bt-tab-btn:hover { color: #d1d4dc; }
+.bt-tab-btn.active { color: #d1d4dc; border-bottom-color: #2962ff; }
+
+#bt-col-bar {
+  display: none; flex-wrap: wrap; gap: 5px;
+  padding: 7px 10px; border-bottom: 1px solid #2a2e39; flex-shrink: 0;
+}
+#bt-col-bar.visible { display: flex; }
+.bt-col-chip {
+  font-size: 11px; padding: 3px 9px; border-radius: 10px;
+  background: #131722; border: 1px solid #363a45; color: #787b86;
+  cursor: pointer; user-select: none; transition: all 0.1s;
+}
+.bt-col-chip.on { background: rgba(41,98,255,0.12); border-color: #2962ff; color: #2962ff; }
+
+#bt-body { flex: 1; overflow-y: auto; }
+#bt-body::-webkit-scrollbar { width: 4px; }
+#bt-body::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+#bt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+#bt-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  background: #1a1e2d; color: #787b86; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.7px;
+  padding: 6px 10px; text-align: right;
+  border-bottom: 1px solid #2a2e39; white-space: nowrap;
+}
+#bt-table thead th:first-child { text-align: left; }
+#bt-table tbody td {
+  padding: 8px 10px; border-bottom: 1px solid #1a1e2a;
+  text-align: right; color: #d1d4dc; white-space: nowrap;
+}
+#bt-table tbody td:first-child { text-align: left; }
+#bt-table tbody tr:hover td { background: #242838; }
+
+.bt-ticker { font-weight: 700; font-family: 'SF Mono','Consolas',monospace; color: #d1d4dc; }
+.bt-name { font-size: 10px; color: #787b86; margin-left: 5px; font-weight: 400; }
+.bt-pos { color: #26a69a; }
+.bt-neg { color: #ef5350; }
+.bt-muted { color: #4c525e; }
+.bt-held-badge { font-size: 9px; color: #ffa726; margin-left: 4px; }
+.bt-msg { text-align: center !important; color: #4c525e; padding: 24px 12px !important; }
+.bt-status { text-align: center; color: #787b86; font-size: 12px; padding: 28px 16px; }
+.bt-status.err { color: #ef5350; }
+
+/* ── K-line panel (bottom, spans col 2+3) ── */
+#kline-panel {
+  height: 350px; min-height: 350px;
+  display: none; flex-direction: column;
+  border-top: 2px solid #2a2e39;
+  background: #131722;
+}
+#kline-panel.visible { display: flex; }
+
+#kline-header {
+  height: 40px; min-height: 40px;
+  background: #1a1e2d; border-bottom: 1px solid #2a2e39;
+  display: flex; align-items: center; padding: 0 12px; gap: 10px; flex-shrink: 0;
+}
+#kline-ticker { font-size: 13px; font-weight: 700; color: #fff; min-width: 60px; }
+#kline-header label { font-size: 11px; color: #787b86; flex-shrink: 0; }
 #lookback-val { font-size: 11px; color: #d1d4dc; min-width: 28px; }
 #lookback { width: 100px; accent-color: #2962ff; cursor: pointer; }
-#chart-close {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: #787b86;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0 4px;
-  line-height: 1;
+#btn-kline-close {
+  margin-left: auto; background: none; border: none;
+  color: #787b86; font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
 }
-#chart-close:hover { color: #d1d4dc; }
+#btn-kline-close:hover { color: #d1d4dc; }
 
 #lwc-container { flex: 1; }
 </style>
@@ -322,47 +300,44 @@ select:focus { outline: none; border-color: #2962ff; }
 
 <div id="topbar">
   <h1>K-LINE SCREENER</h1>
-  <a href="/static/watchlist.html">Watchlists</a>
-  <a href="/draw" target="_blank">Pattern Draw →</a>
+  <div id="topbar-spacer"></div>
+  <a class="topbar-link" href="/static/watchlist.html">Watchlists</a>
+  <a class="topbar-link" href="/draw" target="_blank">Pattern Draw →</a>
 </div>
 
 <div id="body">
-  <!-- Sidebar -->
+
+  <!-- ── Left: Sidebar ── -->
   <div id="sidebar">
 
     <div class="section-title">技術指標</div>
 
-    <!-- MA -->
     <div class="field">
       <label class="check-row" style="margin-bottom:2px">
         <input type="checkbox" id="price_above_ma" checked> MA
         <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
       </label>
       <div class="field-row">
-        <input type="range" id="ma_window" min="5" max="120" value="10"
-               oninput="syncN('ma_window')">
+        <input type="range" id="ma_window" min="5" max="120" value="10" oninput="syncN('ma_window')">
         <input type="number" id="ma_window_n" value="10" min="5" max="120"
                oninput="syncR('ma_window')" style="width:46px">
         <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
       </div>
     </div>
 
-    <!-- Bollinger -->
     <div class="field">
       <label class="check-row" style="margin-bottom:2px">
         <input type="checkbox" id="bb_breakout"> Bollinger
         <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
       </label>
       <div class="field-row">
-        <input type="range" id="bb_window" min="5" max="120" value="22"
-               oninput="syncN('bb_window')">
+        <input type="range" id="bb_window" min="5" max="120" value="22" oninput="syncN('bb_window')">
         <input type="number" id="bb_window_n" value="22" min="5" max="120"
                oninput="syncR('bb_window')" style="width:46px">
         <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
       </div>
     </div>
 
-    <!-- RSI -->
     <div class="field">
       <label class="check-row" style="margin-bottom:2px">
         <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
@@ -396,11 +371,9 @@ select:focus { outline: none; border-color: #2962ff; }
     <div class="section-title">籌碼指標</div>
 
     <label class="check-row">
-      <input type="checkbox" id="use_concentration"
-             onchange="toggleConcInputs(this.checked)">
+      <input type="checkbox" id="use_concentration" onchange="toggleConcInputs(this.checked)">
       集中度
     </label>
-
     <div class="field" style="padding-left:18px">
       <div class="field-row" style="margin-top:2px">
         <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
@@ -414,7 +387,6 @@ select:focus { outline: none; border-color: #2962ff; }
 
     <div class="section-title">篩選標的</div>
 
-    <!-- Market cap filter -->
     <div class="field">
       <label class="check-row" style="margin-bottom:2px">
         <input type="checkbox" id="use_market_cap" onchange="toggleMcInput(this.checked)">
@@ -424,7 +396,6 @@ select:focus { outline: none; border-color: #2962ff; }
       </label>
     </div>
 
-    <!-- Top K -->
     <div class="field">
       <label>Top K 結果</label>
       <div class="field-row">
@@ -460,42 +431,89 @@ select:focus { outline: none; border-color: #2962ff; }
     <div id="status"></div>
   </div>
 
-  <!-- Main -->
-  <div id="main">
-    <div id="table-wrap">
-      <div id="empty-msg">Set filters and click Screen</div>
-      <table id="results-table" style="display:none">
-        <thead>
-          <tr>
-            <th>Ticker</th>
-            <th>Date</th>
-            <th>Close</th>
-            <th>MA</th>
-            <th>BB+</th>
-            <th>BB-</th>
-            <th>Vol Ratio</th>
-            <th>RSI</th>
-            <th>Conc 5d</th>
-            <th>Conc 20d</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="results-body"></tbody>
-      </table>
-    </div>
+  <!-- ── Col 2+3: content area ── -->
+  <div id="content-area">
 
-    <div id="chart-panel">
-      <div id="chart-header">
-        <span id="chart-ticker">—</span>
+    <!-- Top row: results | backtest -->
+    <div id="top-row">
+
+      <!-- Middle: screener results -->
+      <div id="main">
+        <div id="main-header">
+          <span id="main-title">Entry Signals</span>
+          <span id="main-count">Set filters and click Screen</span>
+        </div>
+        <div id="table-wrap">
+          <div id="empty-msg" style="display:none"></div>
+          <table id="results-table" style="display:none">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Date</th>
+                <th>Close</th>
+                <th id="th-ma">MA</th>
+                <th id="th-bbu">BB+</th>
+                <th id="th-bbl">BB-</th>
+                <th>Vol Ratio</th>
+                <th id="th-rsi">RSI</th>
+                <th>Conc 5d</th>
+                <th>Conc 20d</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: backtest -->
+      <div id="right-panel">
+        <div id="bt-header">
+          <span id="bt-header-title">Backtest</span>
+          <span id="bt-days-label">Days</span>
+          <input type="number" id="bt-lookback" value="365" min="30" max="730">
+          <button id="btn-run-bt">Run</button>
+        </div>
+        <div id="bt-stats">
+          <div class="bt-stat">
+            <div class="bt-stat-val" id="bt-val-return">—</div>
+            <div class="bt-stat-lbl">Total Return</div>
+          </div>
+          <div class="bt-stat">
+            <div class="bt-stat-val" id="bt-val-value">—</div>
+            <div class="bt-stat-lbl">Final Value</div>
+          </div>
+          <div class="bt-stat">
+            <div class="bt-stat-val" id="bt-val-winrate">—</div>
+            <div class="bt-stat-lbl">Win Rate</div>
+          </div>
+        </div>
+        <div id="bt-tabs">
+          <button class="bt-tab-btn active" data-tab="signals">Signals</button>
+          <button class="bt-tab-btn" data-tab="positions">Positions</button>
+        </div>
+        <div id="bt-col-bar"></div>
+        <div id="bt-body">
+          <div class="bt-status">Run Screen to load data</div>
+        </div>
+      </div>
+
+    </div><!-- /top-row -->
+
+    <!-- K-line panel (bottom, spans col 2+3, hidden until row clicked) -->
+    <div id="kline-panel">
+      <div id="kline-header">
+        <span id="kline-ticker">—</span>
         <label>Lookback</label>
         <input type="range" id="lookback" min="30" max="500" value="120"
-               oninput="document.getElementById('lookback_val').textContent=this.value; debouncedFetch()">
-        <span id="lookback_val">120</span>
-        <button id="chart-close" onclick="closeChart()">✕</button>
+               oninput="document.getElementById('lookback-val').textContent=this.value; debouncedFetch()">
+        <span id="lookback-val">120</span>
+        <button id="btn-kline-close" onclick="closeKline()">✕</button>
       </div>
       <div id="lwc-container"></div>
     </div>
-  </div>
+
+  </div><!-- /content-area -->
 </div>
 
 <!-- Watchlist popup -->
@@ -506,45 +524,38 @@ let currentChart = null;
 let currentTicker = null;
 let debounceTimer = null;
 let activeRow = null;
-let watchlistData = {};  // { name: [ticker, ...] }
+let watchlistData = {};
 let popupTicker = null;
 
-// Sync slider → number input
+// ── Slider sync ───────────────────────────────────────────────────────────────
 function syncN(id) {
-  const v = document.getElementById(id).value;
-  document.getElementById(id + '_n').value = v;
+  document.getElementById(id + '_n').value = document.getElementById(id).value;
 }
-// Sync number input → slider
 function syncR(id) {
-  const n = document.getElementById(id + '_n');
-  const r = document.getElementById(id);
-  let v = Math.min(Math.max(+n.value, +r.min), +r.max);
-  r.value = v;
-  n.value = v;
+  const n = document.getElementById(id + '_n'), r = document.getElementById(id);
+  const v = Math.min(Math.max(+n.value, +r.min), +r.max);
+  r.value = v; n.value = v;
 }
 function syncVolLabel() {
   document.getElementById('vol_ratio_val').textContent =
     parseFloat(document.getElementById('volume_ratio').value).toFixed(1);
 }
-
-function toggleRsiInputs(enabled) {
-  ['rsi_period', 'rsi_period_n', 'rsi_min', 'rsi_max'].forEach(id => {
-    document.getElementById(id).disabled = !enabled;
-  });
+function toggleRsiInputs(en) {
+  ['rsi_period','rsi_period_n','rsi_min','rsi_max'].forEach(id =>
+    document.getElementById(id).disabled = !en);
+}
+function toggleConcInputs(en) {
+  document.getElementById('conc_5d_min').disabled = !en;
+  document.getElementById('conc_min').disabled = !en;
+}
+function toggleMcInput(en) {
+  document.getElementById('market_cap_rank').disabled = !en;
 }
 
-function toggleConcInputs(enabled) {
-  document.getElementById('conc_5d_min').disabled = !enabled;
-  document.getElementById('conc_min').disabled = !enabled;
-}
-
-function toggleMcInput(enabled) {
-  document.getElementById('market_cap_rank').disabled = !enabled;
-}
-
+// ── Screener ──────────────────────────────────────────────────────────────────
 function getParams() {
   const useRsi = document.getElementById('use_rsi').checked;
-  const params = {
+  const p = {
     ma_window:         +document.getElementById('ma_window_n').value,
     bb_window:         +document.getElementById('bb_window_n').value,
     volume_ratio:      parseFloat(document.getElementById('volume_ratio').value),
@@ -558,21 +569,19 @@ function getParams() {
     conc_min:          +document.getElementById('conc_min').value,
     top_n:             +document.getElementById('top_n').value,
   };
-  if (document.getElementById('use_market_cap').checked) {
-    params.market_cap_rank = +document.getElementById('market_cap_rank').value;
-  }
+  if (document.getElementById('use_market_cap').checked)
+    p.market_cap_rank = +document.getElementById('market_cap_rank').value;
   const wl = document.getElementById('watchlistSel').value;
-  if (wl) params.watchlist = wl;
-  return params;
+  if (wl) p.watchlist = wl;
+  return p;
 }
 
 async function screenStocks() {
   const btn = document.getElementById('btn-screen');
   const status = document.getElementById('status');
-  btn.disabled = true;
-  btn.textContent = 'Scanning...';
+  btn.disabled = true; btn.textContent = 'Scanning…';
   status.textContent = '';
-  closeChart();
+  closeKline();
 
   try {
     const params = getParams();
@@ -580,15 +589,16 @@ async function screenStocks() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     renderTable(data, params.ma_window, params.rsi_period, params.bb_window);
-    status.textContent = data.length ? `${data.length} matched` : '';
+    const countEl = document.getElementById('main-count');
+    countEl.textContent = data.length ? `${data.length} matched` : 'No matches';
+    countEl.style.color = data.length ? '#26a69a' : '#4c525e';
+    // Auto-run backtest after screening
+    runBacktest();
   } catch (e) {
     status.textContent = 'Error: ' + e.message;
-    document.getElementById('empty-msg').textContent = 'Request failed: ' + e.message;
-    document.getElementById('empty-msg').style.display = 'block';
-    document.getElementById('results-table').style.display = 'none';
+    document.getElementById('main-count').textContent = 'Error';
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Screen';
+    btn.disabled = false; btn.textContent = 'Screen';
   }
 }
 
@@ -604,41 +614,32 @@ function renderTable(data, maWindow, rsiPeriod, bbWindow) {
     return;
   }
 
-  // Update MA/BB/RSI header labels
-  table.querySelector('thead tr').children[3].textContent = `MA${maWindow}`;
-  table.querySelector('thead tr').children[4].textContent = `BB+${bbWindow}`;
-  table.querySelector('thead tr').children[5].textContent = `BB-${bbWindow}`;
-  table.querySelector('thead tr').children[7].textContent = `RSI${rsiPeriod}`;
+  document.getElementById('th-ma').textContent  = `MA${maWindow}`;
+  document.getElementById('th-bbu').textContent = `BB+${bbWindow}`;
+  document.getElementById('th-bbl').textContent = `BB-${bbWindow}`;
+  document.getElementById('th-rsi').textContent = `RSI${rsiPeriod}`;
 
   tbody.innerHTML = '';
   activeRow = null;
 
   for (const row of data) {
     const tr = document.createElement('tr');
-    const conc5 = row.concentration_5d != null ? row.concentration_5d.toFixed(3) : '—';
-    const conc20 = row.concentration_20d != null ? row.concentration_20d.toFixed(3) : '—';
+    const c5  = row.concentration_5d  != null ? row.concentration_5d.toFixed(3)  : '—';
+    const c20 = row.concentration_20d != null ? row.concentration_20d.toFixed(3) : '—';
     tr.innerHTML = `
-      <td>${row.ticker}${row.name ? `<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${row.name}</span>` : ''}</td>
+      <td>${row.ticker}${row.name?`<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${row.name}</span>`:''}</td>
       <td>${row.date}</td>
       <td>${row.close.toFixed(2)}</td>
-      <td>${row.ma != null ? row.ma.toFixed(2) : '—'}</td>
-      <td>${row.bb_upper != null ? row.bb_upper.toFixed(2) : '—'}</td>
-      <td>${row.bb_lower != null ? row.bb_lower.toFixed(2) : '—'}</td>
-      <td class="${row.vol_ratio >= 2 ? 'bull' : ''}">${row.vol_ratio.toFixed(2)}</td>
-      <td class="${row.rsi > 70 ? 'bear' : row.rsi < 30 ? 'bull' : ''}">${row.rsi != null ? row.rsi.toFixed(1) : '—'}</td>
-      <td>${conc5}</td>
-      <td>${conc20}</td>
-      <td></td>
-    `;
-    // WL button in last cell (don't use innerHTML to attach handler)
-    const wlTd = tr.lastElementChild;
+      <td>${row.ma       !=null?row.ma.toFixed(2)      :'—'}</td>
+      <td>${row.bb_upper !=null?row.bb_upper.toFixed(2):'—'}</td>
+      <td>${row.bb_lower !=null?row.bb_lower.toFixed(2):'—'}</td>
+      <td class="${row.vol_ratio>=2?'bull':''}">${row.vol_ratio.toFixed(2)}</td>
+      <td class="${row.rsi>70?'bear':row.rsi<30?'bull':''}">${row.rsi!=null?row.rsi.toFixed(1):'—'}</td>
+      <td>${c5}</td><td>${c20}</td><td></td>`;
     const wlBtn = document.createElement('button');
-    wlBtn.className = 'wl-btn';
-    wlBtn.textContent = '+';
-    wlBtn.title = 'Add to watchlist';
+    wlBtn.className = 'wl-btn'; wlBtn.textContent = '+'; wlBtn.title = 'Add to watchlist';
     wlBtn.addEventListener('click', e => { e.stopPropagation(); openWlPopup(row.ticker, wlBtn); });
-    wlTd.appendChild(wlBtn);
-
+    tr.lastElementChild.appendChild(wlBtn);
     tr.addEventListener('click', () => onRowClick(row.ticker, tr));
     tbody.appendChild(tr);
   }
@@ -647,21 +648,20 @@ function renderTable(data, maWindow, rsiPeriod, bbWindow) {
   table.style.display = 'table';
 }
 
+// ── K-line (bottom panel) ─────────────────────────────────────────────────────
 function onRowClick(ticker, tr) {
   if (activeRow) activeRow.classList.remove('active');
   tr.classList.add('active');
   activeRow = tr;
-
   currentTicker = ticker;
-  document.getElementById('chart-ticker').textContent = ticker;
-  document.getElementById('chart-panel').classList.add('visible');
 
-  const lookback = +document.getElementById('lookback').value;
-  fetchKline(ticker, lookback);
+  document.getElementById('kline-ticker').textContent = ticker;
+  document.getElementById('kline-panel').classList.add('visible');
+  fetchKline(ticker, +document.getElementById('lookback').value);
 }
 
-function closeChart() {
-  document.getElementById('chart-panel').classList.remove('visible');
+function closeKline() {
+  document.getElementById('kline-panel').classList.remove('visible');
   if (currentChart) { currentChart.remove(); currentChart = null; }
   if (activeRow) { activeRow.classList.remove('active'); activeRow = null; }
   currentTicker = null;
@@ -670,39 +670,27 @@ function closeChart() {
 function debouncedFetch() {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    if (currentTicker) {
-      fetchKline(currentTicker, +document.getElementById('lookback').value);
-    }
+    if (currentTicker) fetchKline(currentTicker, +document.getElementById('lookback').value);
   }, 300);
 }
 
 async function fetchKline(ticker, lookback) {
-  const maWindow = +document.getElementById('ma_window_n').value;
-  const bbWindow = +document.getElementById('bb_window_n').value;
+  const ma = +document.getElementById('ma_window_n').value;
+  const bb = +document.getElementById('bb_window_n').value;
   try {
-    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${maWindow}&bb_window=${bbWindow}`);
+    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${ma}&bb_window=${bb}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    renderChart(data, ticker);
-  } catch (e) {
-    console.error('kline fetch failed:', e);
-  }
+    renderChart(await resp.json());
+  } catch (e) { console.error('kline fetch:', e); }
 }
 
-function renderChart(rows, ticker) {
+function renderChart(rows) {
   const container = document.getElementById('lwc-container');
-
   if (currentChart) { currentChart.remove(); currentChart = null; }
 
   currentChart = LightweightCharts.createChart(container, {
-    layout: {
-      background: { color: '#131722' },
-      textColor: '#d1d4dc',
-    },
-    grid: {
-      vertLines: { color: '#1c2030' },
-      horzLines: { color: '#1c2030' },
-    },
+    layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
+    grid: { vertLines: { color: '#1c2030' }, horzLines: { color: '#1c2030' } },
     crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     rightPriceScale: { borderColor: '#2a2e39' },
     timeScale: { borderColor: '#2a2e39', timeVisible: false },
@@ -710,96 +698,69 @@ function renderChart(rows, ticker) {
     height: container.clientHeight,
   });
 
-  // Candlestick
   const candles = currentChart.addCandlestickSeries({
     upColor: '#26a69a', downColor: '#ef5350',
     borderUpColor: '#26a69a', borderDownColor: '#ef5350',
     wickUpColor: '#26a69a', wickDownColor: '#ef5350',
   });
-  candles.setData(rows.map(r => ({
-    time: r.date, open: r.open, high: r.high, low: r.low, close: r.close,
-  })));
+  candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
 
-  // MA
-  const maSeries = currentChart.addLineSeries({
-    color: '#ffa726', lineWidth: 1, priceLineVisible: false,
-  });
-  maSeries.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+  const ma = currentChart.addLineSeries({ color: '#ffa726', lineWidth: 1, priceLineVisible: false });
+  ma.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
 
-  // BB Upper
-  const bbUpper = currentChart.addLineSeries({
-    color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false,
-  });
-  bbUpper.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+  const bbu = currentChart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+  bbu.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
 
-  // BB Lower
-  const bbLower = currentChart.addLineSeries({
-    color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false,
-  });
-  bbLower.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+  const bbl = currentChart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+  bbl.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
 
-  // Volume histogram
-  const volSeries = currentChart.addHistogramSeries({
-    priceFormat: { type: 'volume' },
-    priceScaleId: 'vol',
+  const vol = currentChart.addHistogramSeries({
+    priceFormat: { type: 'volume' }, priceScaleId: 'vol',
     scaleMargins: { top: 0.82, bottom: 0 },
   });
-  volSeries.setData(rows.map(r => ({
-    time: r.date,
-    value: r.volume,
+  vol.setData(rows.map(r => ({
+    time: r.date, value: r.volume,
     color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
   })));
 
   currentChart.timeScale().fitContent();
 
-  // Responsive resize
   const ro = new ResizeObserver(() => {
-    if (currentChart) {
-      currentChart.applyOptions({
-        width: container.clientWidth,
-        height: container.clientHeight,
-      });
-    }
+    if (currentChart) currentChart.applyOptions({
+      width: container.clientWidth, height: container.clientHeight,
+    });
   });
   ro.observe(container);
 }
 
-// ── Watchlist functions ───────────────────────────────────────────────────────
-
+// ── Watchlist ─────────────────────────────────────────────────────────────────
 async function loadWatchlists() {
   try {
     const resp = await fetch('/watchlists');
     if (!resp.ok) return;
-    const counts = await resp.json();  // { name: count }
+    const counts = await resp.json();
     const names = Object.keys(counts);
-
-    // Fetch full ticker lists into cache
     watchlistData = {};
-    await Promise.all(names.map(async name => {
-      const r = await fetch('/watchlists/' + encodeURIComponent(name));
-      if (r.ok) watchlistData[name] = await r.json();
+    await Promise.all(names.map(async n => {
+      const r = await fetch('/watchlists/' + encodeURIComponent(n));
+      if (r.ok) watchlistData[n] = await r.json();
     }));
-
-    // Repopulate select
     const sel = document.getElementById('watchlistSel');
     const prev = sel.value;
     sel.innerHTML = '<option value="">全市場 (All)</option>';
-    for (const name of names) {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = `${name} (${counts[name]})`;
-      sel.appendChild(opt);
+    for (const n of names) {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = `${n} (${counts[n]})`;
+      sel.appendChild(o);
     }
     if (prev && names.includes(prev)) sel.value = prev;
     onWatchlistSelChange();
-  } catch (e) {
-    console.error('loadWatchlists failed:', e);
-  }
+  } catch (e) { console.error('loadWatchlists:', e); }
 }
 
 function onWatchlistSelChange() {
-  const sel = document.getElementById('watchlistSel');
-  document.getElementById('btn-del-wl').style.display = sel.value ? 'flex' : 'none';
+  document.getElementById('btn-del-wl').style.display =
+    document.getElementById('watchlistSel').value ? 'flex' : 'none';
 }
 
 async function createWatchlist() {
@@ -809,78 +770,222 @@ async function createWatchlist() {
   await fetch('/watchlists/' + encodeURIComponent(name), { method: 'POST' });
   input.value = '';
   await loadWatchlists();
-  // Auto-select the newly created watchlist
-  const sel = document.getElementById('watchlistSel');
-  sel.value = name;
+  document.getElementById('watchlistSel').value = name;
   onWatchlistSelChange();
 }
 
 async function deleteCurrentWatchlist() {
   const sel = document.getElementById('watchlistSel');
   const name = sel.value;
-  if (!name) return;
-  if (!confirm(`Delete watchlist "${name}"?`)) return;
+  if (!name || !confirm(`Delete watchlist "${name}"?`)) return;
   await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
   await loadWatchlists();
 }
 
-async function addToWatchlist(ticker, wlName) {
-  await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
-    { method: 'PUT' });
+async function addToWatchlist(ticker, wl) {
+  await fetch(`/watchlists/${encodeURIComponent(wl)}/tickers/${encodeURIComponent(ticker)}`, { method: 'PUT' });
 }
-
-async function removeFromWatchlist(ticker, wlName) {
-  await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
-    { method: 'DELETE' });
+async function removeFromWatchlist(ticker, wl) {
+  await fetch(`/watchlists/${encodeURIComponent(wl)}/tickers/${encodeURIComponent(ticker)}`, { method: 'DELETE' });
 }
 
 function openWlPopup(ticker, btn) {
   popupTicker = ticker;
   const popup = document.getElementById('wl-popup');
   popup.innerHTML = '';
-
   const names = Object.keys(watchlistData);
   if (!names.length) {
     popup.innerHTML = '<div class="wl-popup-empty">No watchlists yet</div>';
   } else {
-    for (const name of names) {
-      const inList = (watchlistData[name] || []).includes(ticker);
+    for (const n of names) {
+      const inList = (watchlistData[n] || []).includes(ticker);
       const item = document.createElement('div');
       item.className = 'wl-popup-item' + (inList ? ' in-list' : '');
-      item.textContent = (inList ? '✓ ' : '+ ') + name;
+      item.textContent = (inList ? '✓ ' : '+ ') + n;
       item.addEventListener('click', async () => {
         popup.classList.remove('visible');
-        if (inList) {
-          await removeFromWatchlist(ticker, name);
-        } else {
-          await addToWatchlist(ticker, name);
-        }
+        if (inList) await removeFromWatchlist(ticker, n);
+        else await addToWatchlist(ticker, n);
         await loadWatchlists();
       });
       popup.appendChild(item);
     }
   }
-
   const rect = btn.getBoundingClientRect();
-  popup.style.top = (rect.bottom + 4) + 'px';
+  popup.style.top  = (rect.bottom + 4) + 'px';
   popup.style.left = Math.max(4, rect.right - 130) + 'px';
   popup.classList.add('visible');
 }
 
-// Close popup on outside click
 document.addEventListener('click', e => {
   const popup = document.getElementById('wl-popup');
   if (!popup.contains(e.target)) popup.classList.remove('visible');
 });
 
-// Enter key triggers screen
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.activeElement.closest('#sidebar')) {
-    screenStocks();
-  }
+  if (e.key === 'Enter' && document.activeElement.closest('#sidebar')) screenStocks();
 });
 
-// Init
+// ── Backtest ──────────────────────────────────────────────────────────────────
+const btStats  = document.getElementById('bt-stats');
+const btTabs   = document.getElementById('bt-tabs');
+const btColBar = document.getElementById('bt-col-bar');
+const btBody   = document.getElementById('bt-body');
+
+let btData = null, btActiveTab = 'signals';
+const btColState = {
+  signals:   { bb_upper: false, conc_5d: false, conc_20d: false, already_held: false },
+  positions: { buy_date: false, cost_price: false, unrealized_pnl: false },
+};
+const BT_COLS = {
+  signals:   [
+    { key: 'bb_upper',     label: 'BB Upper' },
+    { key: 'conc_5d',      label: 'Conc 5d'  },
+    { key: 'conc_20d',     label: 'Conc 20d' },
+    { key: 'already_held', label: 'Held'     },
+  ],
+  positions: [
+    { key: 'buy_date',       label: 'Buy Date'    },
+    { key: 'cost_price',     label: 'Cost'        },
+    { key: 'unrealized_pnl', label: 'Unreal. PnL' },
+  ],
+};
+
+document.getElementById('btn-run-bt').addEventListener('click', runBacktest);
+btTabs.querySelectorAll('.bt-tab-btn').forEach(btn =>
+  btn.addEventListener('click', () => switchBtTab(btn.dataset.tab)));
+
+async function runBacktest() {
+  const days = parseInt(document.getElementById('bt-lookback').value) || 365;
+  const p = getParams();
+  const runBtn = document.getElementById('btn-run-bt');
+  runBtn.disabled = true; runBtn.textContent = '…';
+  btBody.innerHTML = '<div class="bt-status">Running…</div>';
+  btStats.classList.remove('visible');
+  btTabs.classList.remove('visible');
+  btColBar.classList.remove('visible');
+  document.getElementById('bt-header-title').textContent = 'Backtest';
+
+  const qp = new URLSearchParams({
+    lookback_days:    days,
+    ma_window:        p.ma_window,
+    bb_window:        p.bb_window,
+    volume_ratio:     p.volume_ratio,
+    price_above_ma:   p.price_above_ma,
+    bb_breakout:      p.bb_breakout,
+    rsi_period:       p.rsi_period,
+    rsi_min:          p.rsi_min,
+    rsi_max:          p.rsi_max,
+    use_concentration: p.use_concentration,
+    conc_5d_min:      p.conc_5d_min,
+    conc_20d_min:     p.conc_min,
+  });
+  if (p.market_cap_rank != null) qp.set('market_cap_rank', p.market_cap_rank);
+
+  try {
+    const resp = await fetch(`/backtest/run?` + qp, { method: 'POST' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    btData = await resp.json();
+    if (btData.error) { btBody.innerHTML = `<div class="bt-status err">${btData.error}</div>`; return; }
+    document.getElementById('bt-header-title').textContent =
+      `Backtest ${days}d · ${btData.as_of || ''}`;
+    renderBtStats(btData.stats);
+    btStats.classList.add('visible');
+    btTabs.classList.add('visible');
+    btColBar.classList.add('visible');
+    switchBtTab('signals');
+  } catch (err) {
+    btBody.innerHTML = `<div class="bt-status err">Error: ${err.message}</div>`;
+  } finally {
+    runBtn.disabled = false; runBtn.textContent = 'Run';
+  }
+}
+
+function renderBtStats(s) {
+  const ret = s.total_return_pct;
+  const retEl = document.getElementById('bt-val-return');
+  retEl.textContent = (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%';
+  retEl.className = 'bt-stat-val ' + (ret > 0 ? 'bt-pos' : ret < 0 ? 'bt-neg' : '');
+  const val = s.final_value;
+  document.getElementById('bt-val-value').textContent =
+    val >= 1e6 ? (val / 1e6).toFixed(2) + 'M' : Math.round(val).toLocaleString();
+  document.getElementById('bt-val-winrate').textContent = s.total_trades > 0
+    ? (s.winning_trades / s.total_trades * 100).toFixed(1) + '%' : '—';
+}
+
+function switchBtTab(tab) {
+  btActiveTab = tab;
+  btTabs.querySelectorAll('.bt-tab-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab));
+  renderColBar();
+  renderBtTable();
+}
+
+function renderColBar() {
+  btColBar.innerHTML = '';
+  for (const col of BT_COLS[btActiveTab] || []) {
+    const chip = document.createElement('span');
+    chip.className = 'bt-col-chip' + (btColState[btActiveTab][col.key] ? ' on' : '');
+    chip.textContent = col.label;
+    chip.addEventListener('click', () => {
+      btColState[btActiveTab][col.key] = !btColState[btActiveTab][col.key];
+      chip.classList.toggle('on', btColState[btActiveTab][col.key]);
+      renderBtTable();
+    });
+    btColBar.appendChild(chip);
+  }
+}
+
+function renderBtTable() {
+  if (!btData) return;
+  const rows = btActiveTab === 'signals' ? btData.signals : btData.positions;
+  const extra = BT_COLS[btActiveTab].filter(c => btColState[btActiveTab][c.key]);
+
+  let head, body;
+  if (btActiveTab === 'signals') {
+    head = `<tr><th>Ticker</th><th>Close</th>${extra.map(c=>`<th>${c.label}</th>`).join('')}</tr>`;
+    body = !rows.length
+      ? `<tr><td colspan="${2+extra.length}" class="bt-msg">No signals on last date</td></tr>`
+      : rows.map(r => {
+          const badge = r.already_held ? '<span class="bt-held-badge">★</span>' : '';
+          const cols = extra.map(c => {
+            if (c.key === 'already_held')
+              return `<td class="${r.already_held?'bt-pos':'bt-muted'}">${r.already_held?'Yes':'No'}</td>`;
+            return `<td>${r[c.key]!=null?r[c.key]:'—'}</td>`;
+          }).join('');
+          return `<tr>
+            <td><span class="bt-ticker">${esc(r.ticker)}</span>${r.name?`<span class="bt-name">${esc(r.name)}</span>`:''}${badge}</td>
+            <td>${r.close!=null?r.close.toFixed(2):'—'}</td>${cols}</tr>`;
+        }).join('');
+  } else {
+    head = `<tr><th>Ticker</th><th>Price</th><th>Return</th>${extra.map(c=>`<th>${c.label}</th>`).join('')}</tr>`;
+    body = !rows.length
+      ? `<tr><td colspan="${3+extra.length}" class="bt-msg">No open positions</td></tr>`
+      : rows.map(r => {
+          const rc = r.return_pct>0?'bt-pos':r.return_pct<0?'bt-neg':'';
+          const rs = r.return_pct!=null?(r.return_pct>=0?'+':'')+r.return_pct.toFixed(2)+'%':'—';
+          const cols = extra.map(c => {
+            const v = r[c.key];
+            if (c.key==='unrealized_pnl'&&v!=null) {
+              return `<td class="${v>0?'bt-pos':v<0?'bt-neg':''}">${(v>=0?'+':'')+Math.round(v).toLocaleString()}</td>`;
+            }
+            return `<td>${v!=null?v:'—'}</td>`;
+          }).join('');
+          return `<tr>
+            <td><span class="bt-ticker">${esc(r.ticker)}</span>${r.name?`<span class="bt-name">${esc(r.name)}</span>`:''}</td>
+            <td>${r.current_price!=null?r.current_price.toFixed(2):'—'}</td>
+            <td class="${rc}">${rs}</td>${cols}</tr>`;
+        }).join('');
+  }
+
+  btBody.innerHTML = `<table id="bt-table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 loadWatchlists();
 </script>
 </body>

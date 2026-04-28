@@ -26,6 +26,7 @@ def daily_update() -> None:
     logger.info("=== Daily update start ===")
     _run("scripts.fetch_prices")
     _run("scripts.fetch_concentration")
+    _run("scripts.fetch_market_value")
     _run("scripts.sync_cache", "--all")
     logger.info("=== Daily update done ===")
 

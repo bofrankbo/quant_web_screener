@@ -1,19 +1,19 @@
 """
 Sync R2 parquet files → local cache (data/cache/).
 Run after daily ingest so screener queries hit local disk, not R2 network.
+Uses ETag comparison to skip unchanged files (fast on redeploy).
 
 Usage:
   python -m scripts.sync_cache           # sync tickers/ only
   python -m scripts.sync_cache --all     # sync tickers/ + concentration/
 """
 import argparse
-import io
+import hashlib
 import os
 import sys
 from pathlib import Path
 
 import boto3
-import polars as pl
 from botocore.config import Config
 from dotenv import load_dotenv
 
@@ -34,32 +34,45 @@ s3 = boto3.client(
 CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"
 
 
+def _local_etag(path: Path) -> str:
+    """MD5 of local file, matching R2's ETag format for single-part uploads."""
+    return hashlib.md5(path.read_bytes()).hexdigest()
+
+
 def sync_prefix(prefix: str) -> None:
     local_dir = CACHE_DIR / prefix
     local_dir.mkdir(parents=True, exist_ok=True)
 
     paginator = s3.get_paginator("list_objects_v2")
-    keys = [
-        obj["Key"]
+    objects = [
+        obj
         for page in paginator.paginate(Bucket=R2_BUCKET, Prefix=f"{prefix}/")
         for obj in page.get("Contents", [])
         if obj["Key"].endswith(".parquet")
     ]
 
-    print(f"[sync] {prefix}/ — {len(keys)} files")
-    ok = err = 0
-    for key in keys:
+    print(f"[sync] {prefix}/ — {len(objects)} files")
+    ok = skipped = err = 0
+    for obj in objects:
+        key = obj["Key"]
         fname = Path(key).name
         dest = local_dir / fname
+        r2_etag = obj["ETag"].strip('"')
+
+        # Skip if local file exists and ETag matches
+        if dest.exists() and _local_etag(dest) == r2_etag:
+            skipped += 1
+            continue
+
         try:
-            obj = s3.get_object(Bucket=R2_BUCKET, Key=key)
-            dest.write_bytes(obj["Body"].read())
+            data = s3.get_object(Bucket=R2_BUCKET, Key=key)["Body"].read()
+            dest.write_bytes(data)
             ok += 1
         except Exception as e:
             print(f"  ✗ {fname}: {e}", file=sys.stderr)
             err += 1
 
-    print(f"[sync] {prefix}/ done — {ok} ok, {err} errors")
+    print(f"[sync] {prefix}/ done — {ok} downloaded, {skipped} skipped, {err} errors")
 
 
 def main():
@@ -68,6 +81,7 @@ def main():
     args = parser.parse_args()
 
     sync_prefix("tickers")
+    sync_prefix("market_value")
     if args.all:
         sync_prefix("concentration")
         sync_prefix("meta")

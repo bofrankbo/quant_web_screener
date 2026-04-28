@@ -92,5 +92,20 @@
     ],
     "custom_label": "備註",
     "custom": {}
+  },
+  "pcb": {
+    "tickers": [
+      "2313",
+      "4958"
+    ],
+    "custom_label": "備註",
+    "custom": {}
+  },
+  "BBU": {
+    "tickers": [
+      "4931"
+    ],
+    "custom_label": "備註",
+    "custom": {}
   }
 }

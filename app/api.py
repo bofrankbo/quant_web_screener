@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from app.screener import screen_stocks, get_kline, get_ticker_summary, get_ticker_names
 from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
+from app.backtest import run_backtest
 
 WATCHLISTS_PATH = Path(__file__).parent.parent / "data" / "watchlists.json"
 
@@ -125,11 +126,10 @@ def screen(
 @app.get("/kline/{ticker}")
 def kline(
     ticker: str,
-    lookback: int = Query(default=120, ge=20, le=500),
     ma_window: int = Query(default=10, ge=5, le=120),
     bb_window: int = Query(default=22, ge=5, le=120),
 ):
-    df = get_kline(ticker=ticker, lookback=lookback, ma_window=ma_window, bb_window=bb_window)
+    df = get_kline(ticker=ticker, ma_window=ma_window, bb_window=bb_window)
     if df.is_empty():
         return JSONResponse(status_code=404, content={"detail": f"{ticker} not found"})
     return JSONResponse(content=df.with_columns(pl.col("date").cast(pl.Utf8)).to_dicts())
@@ -145,6 +145,43 @@ def pattern_match(req: PatternMatchRequest):
         top_n=req.top_n,
     )
     return JSONResponse(content=df.to_dicts())
+
+
+
+# ── Backtest ──────────────────────────────────────────────────────────────────
+
+@app.post("/backtest/run")
+def backtest_run(
+    lookback_days: int = Query(default=365, ge=30, le=730),
+    ma_window: int = Query(default=10, ge=5, le=120),
+    bb_window: int = Query(default=22, ge=5, le=120),
+    volume_ratio: float = Query(default=1.5, ge=1.0, le=10.0),
+    price_above_ma: bool = Query(default=True),
+    bb_breakout: bool = Query(default=False),
+    rsi_period: int = Query(default=14, ge=5, le=50),
+    rsi_min: float = Query(default=0.0, ge=0.0, le=100.0),
+    rsi_max: float = Query(default=100.0, ge=0.0, le=100.0),
+    use_concentration: bool = Query(default=False),
+    conc_5d_min: float = Query(default=0.0),
+    conc_20d_min: float = Query(default=0.0),
+    market_cap_rank: int | None = Query(default=None, ge=1, le=2000),
+):
+    result = run_backtest(
+        lookback_days=lookback_days,
+        ma_window=ma_window,
+        bb_window=bb_window,
+        volume_ratio=volume_ratio,
+        price_above_ma=price_above_ma,
+        bb_breakout=bb_breakout,
+        rsi_period=rsi_period,
+        rsi_min=rsi_min,
+        rsi_max=rsi_max,
+        use_concentration=use_concentration,
+        conc_5d_min=conc_5d_min,
+        conc_20d_min=conc_20d_min,
+        market_cap_rank=market_cap_rank,
+    )
+    return JSONResponse(content=result)
 
 
 # ── Watchlist CRUD ────────────────────────────────────────────────────────────

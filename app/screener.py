@@ -83,23 +83,19 @@ def screen_stocks(
     lookback = max(ma_window, bb_window, rsi_period) + 10
     parquet_glob = str(PARQUET_CACHE_PATH / "tickers" / "*.parquet")
 
-    # Market cap pre-filter: narrow universe to top N by market value (local-only)
+    # Market cap pre-filter: use T-1 market value file (one parquet per date)
     if market_cap_rank is not None:
-        try:
-            mc_files = sorted(MARKET_VALUE_PATH.glob("*.csv")) if MARKET_VALUE_PATH.exists() else []
-        except Exception:
-            mc_files = []
-        if mc_files:
-            latest_mc = str(mc_files[-1])
-            mc_query = f"""
-            SELECT stock_id AS ticker
-            FROM read_csv_auto('{latest_mc}')
-            ORDER BY CAST(market_value AS DOUBLE) DESC
-            LIMIT {market_cap_rank}
-            """
-            with get_conn() as conn:
-                mc_df = conn.execute(mc_query).pl()
-            mc_tickers = mc_df["ticker"].to_list()
+        mv_dir = PARQUET_CACHE_PATH / "market_value"
+        mv_files = sorted(mv_dir.glob("????-??-??.parquet"))
+        if mv_files:
+            t1_file = mv_files[-1]  # latest available date = T-1
+            mv = pl.read_parquet(t1_file)
+            mc_tickers = (
+                mv.sort("market_value", descending=True)
+                  .head(market_cap_rank)
+                  ["stock_id"]
+                  .to_list()
+            )
             if tickers is not None:
                 tickers = [t for t in tickers if t in set(mc_tickers)]
             else:
@@ -303,17 +299,15 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
     return _empty
 
 
-def get_kline(ticker: str, lookback: int = 120, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
-    """Return OHLCV + MA + Bollinger for a single ticker (reads from R2)."""
+def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
+    """Return full OHLCV + MA + Bollinger history for a single ticker (reads from R2)."""
     df = download_parquet(f"tickers/{ticker}.parquet")
     if df is None or df.is_empty():
         return pl.DataFrame()
 
-    need = max(lookback, ma_window, bb_window, 14) + 10
-    df = df.sort("date").tail(need)
-
+    df = df.sort("date")
     df = df.with_columns(pl.lit(ticker).alias("ticker"))
     df = _compute_indicators(df, ma_window=ma_window, bb_window=bb_window, rsi_period=14)
     df = df.drop(["ticker"])
 
-    return df.tail(lookback).select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])
+    return df.select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])

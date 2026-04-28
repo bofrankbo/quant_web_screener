@@ -1253,7 +1253,7 @@ function closeChart() {
 
 async function fetchKline(ticker) {
   try {
-    const resp = await fetch(`/kline/${ticker}?lookback=120&ma_window=10&bb_window=22`);
+    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
     renderChart(_chartData);
@@ -1305,7 +1305,14 @@ function renderChart(rows) {
     color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
   })));
 
-  _chart.timeScale().fitContent();
+  // Default view: last 3 months, but full history is loaded and scrollable
+  const lastDate = new Date(rows[rows.length - 1].date);
+  const fromDate = new Date(lastDate);
+  fromDate.setMonth(fromDate.getMonth() - 3);
+  _chart.timeScale().setVisibleRange({
+    from: fromDate.toISOString().slice(0, 10),
+    to: lastDate.toISOString().slice(0, 10),
+  });
 
   const ro = new ResizeObserver(() => {
     if (_chart) _chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });

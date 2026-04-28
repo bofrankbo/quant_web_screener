@@ -17,3 +17,4 @@ DB_PATH.parent.mkdir(exist_ok=True)
 PARQUET_CACHE_PATH = Path(__file__).parent.parent / "data" / "cache"
 (PARQUET_CACHE_PATH / "tickers").mkdir(parents=True, exist_ok=True)
 (PARQUET_CACHE_PATH / "meta").mkdir(parents=True, exist_ok=True)
+(PARQUET_CACHE_PATH / "market_value").mkdir(parents=True, exist_ok=True)
