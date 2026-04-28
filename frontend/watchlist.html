@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Watchlist Manager</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -481,6 +482,64 @@ tr.row-inactive td:not(.toggle-col) {
   border-top: 2px solid #2a2e39;
   text-align: left !important;
 }
+
+/* ── Chart Panel ── */
+#chart-panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 560px;
+  height: 100vh;
+  background: #131722;
+  border-left: 1px solid #2a2e39;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.2s ease;
+  z-index: 200;
+}
+#chart-panel.visible { transform: translateX(0); }
+
+#chart-panel-header {
+  height: 44px;
+  min-height: 44px;
+  background: #1e222d;
+  border-bottom: 1px solid #2a2e39;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+}
+#chart-ticker-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #d1d4dc;
+  flex: 1;
+}
+#chart-bb-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #787b86;
+  cursor: pointer;
+  user-select: none;
+}
+#chart-bb-toggle input { cursor: pointer; accent-color: #ab47bc; }
+#chart-close-btn {
+  background: none;
+  border: none;
+  color: #787b86;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 4px;
+}
+#chart-close-btn:hover { color: #d1d4dc; background: #2a2e39; }
+#lwc-container {
+  flex: 1;
+  min-height: 0;
+}
 </style>
 </head>
 <body>
@@ -565,6 +624,18 @@ tr.row-inactive td:not(.toggle-col) {
       </div>
     </div>
   </div>
+</div>
+
+<!-- K-line chart panel -->
+<div id="chart-panel">
+  <div id="chart-panel-header">
+    <span id="chart-ticker-label">—</span>
+    <label id="chart-bb-toggle">
+      <input type="checkbox" id="chart-bb-cb"> BB
+    </label>
+    <button id="chart-close-btn" onclick="closeChart()">✕</button>
+  </div>
+  <div id="lwc-container"></div>
 </div>
 
 <script>
@@ -1159,9 +1230,92 @@ function handleRenameKey(e) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+// ── Chart panel ──────────────────────────────────────────────────────────────
+
+let _chart = null;
+let _bbSeries = [];
+let _chartTicker = null;
+let _chartData = null;
+
 function openChart(ticker) {
-  window.open(`/static/screener.html#kline-${ticker}`, '_blank');
+  _chartTicker = ticker;
+  document.getElementById('chart-ticker-label').textContent = ticker;
+  document.getElementById('chart-panel').classList.add('visible');
+  fetchKline(ticker);
 }
+
+function closeChart() {
+  document.getElementById('chart-panel').classList.remove('visible');
+  if (_chart) { _chart.remove(); _chart = null; }
+  _chartTicker = null;
+  _chartData = null;
+}
+
+async function fetchKline(ticker) {
+  try {
+    const resp = await fetch(`/kline/${ticker}?lookback=120&ma_window=10&bb_window=22`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    _chartData = await resp.json();
+    renderChart(_chartData);
+  } catch (e) {
+    console.error('kline fetch failed:', e);
+  }
+}
+
+function renderChart(rows) {
+  const container = document.getElementById('lwc-container');
+  if (_chart) { _chart.remove(); _chart = null; }
+
+  _chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
+    grid: { vertLines: { color: '#1c2030' }, horzLines: { color: '#1c2030' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#2a2e39' },
+    timeScale: { borderColor: '#2a2e39', timeVisible: false },
+    width: container.clientWidth,
+    height: container.clientHeight,
+  });
+
+  const candles = _chart.addCandlestickSeries({
+    upColor: '#26a69a', downColor: '#ef5350',
+    borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+    wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+  });
+  candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
+
+  const maSeries = _chart.addLineSeries({ color: '#ffa726', lineWidth: 1, priceLineVisible: false });
+  maSeries.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+
+  const showBB = document.getElementById('chart-bb-cb').checked;
+  _bbSeries = [];
+  if (showBB) {
+    const bbU = _chart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+    bbU.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+    const bbL = _chart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
+    bbL.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+    _bbSeries = [bbU, bbL];
+  }
+
+  const volSeries = _chart.addHistogramSeries({
+    priceFormat: { type: 'volume' }, priceScaleId: 'vol',
+    scaleMargins: { top: 0.82, bottom: 0 },
+  });
+  volSeries.setData(rows.map(r => ({
+    time: r.date, value: r.volume,
+    color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
+  })));
+
+  _chart.timeScale().fitContent();
+
+  const ro = new ResizeObserver(() => {
+    if (_chart) _chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+  });
+  ro.observe(container);
+}
+
+document.getElementById('chart-bb-cb').addEventListener('change', () => {
+  if (_chartData) renderChart(_chartData);
+});
 
 function pctClass(v) {
   if (v == null) return 'pct-zero';
