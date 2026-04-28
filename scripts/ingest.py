@@ -50,7 +50,7 @@ NOT_STOCK_CATEGORIES = {
 
 # --- FinMind helpers ---
 def _finmind_get(dataset: str, start_date: str, end_date: str,
-                 stock_id: str | None = None) -> list[dict]:
+                 stock_id: str | None = None) -> tuple[list[dict], str]:
     params = {
         "dataset": dataset,
         "start_date": start_date,
@@ -62,14 +62,15 @@ def _finmind_get(dataset: str, start_date: str, end_date: str,
     resp = requests.get(FINMIND_API, params=params, timeout=60)
     resp.raise_for_status()
     data = resp.json()
+    msg = data.get("msg", "")
     if data.get("status") != 200:
-        raise RuntimeError(f"FinMind error: {data.get('msg')}")
-    return data["data"]
+        raise RuntimeError(f"FinMind status={data.get('status')} msg={msg}")
+    return data["data"], msg
 
 
 def _get_all_tickers() -> list[str]:
     today = str(date.today())
-    records = _finmind_get("TaiwanStockInfo", today, today)
+    records, _ = _finmind_get("TaiwanStockInfo", today, today)
     if not records:
         raise RuntimeError("TaiwanStockInfo returned empty data")
     df = pl.DataFrame(records)
@@ -129,7 +130,7 @@ def _parse_price_df(records: list[dict]) -> pl.DataFrame:
 def ingest_ticker_info() -> None:
     print("[meta] Fetching TaiwanStockInfo ...")
     today = str(date.today())
-    records = _finmind_get("TaiwanStockInfo", today, today)
+    records, _ = _finmind_get("TaiwanStockInfo", today, today)
     if not records:
         print("[meta] No data returned.")
         return
@@ -141,7 +142,7 @@ def ingest_ticker_info() -> None:
 # --- Daily ingest (all tickers, one date) ---
 def ingest_price(target_date: str) -> None:
     print(f"[price] Fetching TaiwanStockPriceAdj for {target_date} ...")
-    records = _finmind_get("TaiwanStockPriceAdj", target_date, target_date)
+    records, _ = _finmind_get("TaiwanStockPriceAdj", target_date, target_date)
     if not records:
         print("[price] No data returned.")
         return
@@ -166,19 +167,20 @@ def backfill_ticker(ticker: str, end_date: str, delay: float) -> tuple[str, str]
     if existing is not None:
         latest = existing["date"].max()
         if str(latest) >= end_date:
-            return "skip", f"up-to-date ({latest})"
+            return "current", f"up-to-date ({latest})"
         start_date = str(latest + timedelta(days=1))
     else:
         start_date = "1994-10-01"
 
     try:
-        records = _finmind_get("TaiwanStockPriceAdj", start_date, end_date, stock_id=ticker)
+        records, msg = _finmind_get("TaiwanStockPriceAdj", start_date, end_date, stock_id=ticker)
         if not records:
-            return "skip", "no data"
+            detail = f" msg={msg}" if msg else ""
+            return "empty", f"no data [{start_date} → {end_date}]{detail}"
         df = _parse_price_df(records).drop("ticker")
         added = _upsert_ticker("tickers", ticker, df)
         time.sleep(delay)
-        return "updated", f"{added} rows → {df['date'].max()}"
+        return "updated", f"{added} rows [{df['date'].min()} → {df['date'].max()}]"
     except Exception as e:
         return "error", str(e)
 
@@ -192,19 +194,26 @@ def run_backfill(start_from: str | None, limit: int | None, end_date: str, delay
         tickers = tickers[:limit]
 
     print(f"Backfill: {len(tickers)} tickers → R2 (TaiwanStockPriceAdj, up to {end_date})")
-    counts = {"updated": 0, "skip": 0, "error": 0}
+    counts = {"updated": 0, "current": 0, "empty": 0, "error": 0}
+    empties = []
     errors = []
     for i, ticker in enumerate(tickers, 1):
         status, reason = backfill_ticker(ticker, end_date, delay)
         counts[status] += 1
-        sym = {"updated": "✓", "skip": "–", "error": "✗"}[status]
+        sym = {"updated": "✓", "current": "○", "empty": "–", "error": "✗"}[status]
         print(f"[{i:4d}/{len(tickers)}] {ticker} {sym}  {reason}")
+        if status == "empty":
+            empties.append((ticker, reason))
         if status == "error":
             errors.append((ticker, reason))
 
-    print(f"\nDone — updated: {counts['updated']}, skipped: {counts['skip']}, errors: {counts['error']}")
+    print(f"\nDone — updated: {counts['updated']}, current: {counts['current']}, empty: {counts['empty']}, errors: {counts['error']}")
+    if empties:
+        print(f"\nEmpty ({len(empties)} tickers — no FinMind data):")
+        for ticker, reason in empties:
+            print(f"  {ticker}: {reason}")
     if errors:
-        print("\nErrors:")
+        print(f"\nErrors ({len(errors)}):")
         for ticker, reason in errors:
             print(f"  {ticker}: {reason}")
 
