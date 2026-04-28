@@ -1,19 +1,19 @@
 """
-Daily ingest: FinMind API → per-ticker Parquet → Cloudflare R2
-Run: python -m scripts.ingest [--date YYYY-MM-DD]
+Fetch adjusted OHLCV from FinMind → per-ticker Parquet → Cloudflare R2
+Run: python -m scripts.fetch_prices [--date YYYY-MM-DD]
 
 R2 layout:
-  tickers/{ticker}.parquet        ← adjusted OHLCV (date, open, high, low, close, volume)
-  concentration/{ticker}.parquet  ← (date, concentration_5d, concentration_20d)
+  tickers/{ticker}.parquet  ← adjusted OHLCV (date, open, high, low, close, volume)
 
 Backfill (one-time):
-  python -m scripts.ingest --backfill [--start-from 1101] [--limit 100]
+  python -m scripts.fetch_prices --backfill [--start-from 1101] [--limit 100]
+  python -m scripts.fetch_prices --backfill --from-start  # fetch full history from 1994
 """
 import argparse
 import io
 import os
 import time
-from datetime import date, timedelta
+from datetime import date
 
 import boto3
 import polars as pl
@@ -161,15 +161,16 @@ def ingest_price(target_date: str) -> None:
 
 
 # --- Backfill (per-ticker, full history) ---
-def backfill_ticker(ticker: str, end_date: str, delay: float) -> tuple[str, str]:
+def backfill_ticker(ticker: str, end_date: str, delay: float, from_start: bool = False) -> tuple[str, str]:
     key = f"tickers/{ticker}.parquet"
     existing = _download_parquet(key)
-    if existing is not None:
-        latest = existing["date"].max()
-        if str(latest) >= end_date:
-            return "current", f"up-to-date ({latest})"
-        start_date = str(latest + timedelta(days=1))
+    if from_start or existing is None:
+        start_date = "1994-10-01"
     else:
+        latest = existing["date"].max()
+        earliest = existing["date"].min()
+        if str(latest) >= end_date and str(earliest) <= "1994-10-02":
+            return "current", f"up-to-date ({latest})"
         start_date = "1994-10-01"
 
     try:
@@ -185,7 +186,7 @@ def backfill_ticker(ticker: str, end_date: str, delay: float) -> tuple[str, str]
         return "error", str(e)
 
 
-def run_backfill(start_from: str | None, limit: int | None, end_date: str, delay: float) -> None:
+def run_backfill(start_from: str | None, limit: int | None, end_date: str, delay: float, from_start: bool = False) -> None:
     print("Fetching ticker list ...")
     tickers = _get_all_tickers()
     if start_from:
@@ -193,12 +194,12 @@ def run_backfill(start_from: str | None, limit: int | None, end_date: str, delay
     if limit:
         tickers = tickers[:limit]
 
-    print(f"Backfill: {len(tickers)} tickers → R2 (TaiwanStockPriceAdj, up to {end_date})")
+    print(f"Backfill: {len(tickers)} tickers → R2 (TaiwanStockPriceAdj, up to {end_date}){' [from-start]' if from_start else ''}")
     counts = {"updated": 0, "current": 0, "empty": 0, "error": 0}
     empties = []
     errors = []
     for i, ticker in enumerate(tickers, 1):
-        status, reason = backfill_ticker(ticker, end_date, delay)
+        status, reason = backfill_ticker(ticker, end_date, delay, from_start=from_start)
         counts[status] += 1
         sym = {"updated": "✓", "current": "○", "empty": "–", "error": "✗"}[status]
         print(f"[{i:4d}/{len(tickers)}] {ticker} {sym}  {reason}")
@@ -227,10 +228,11 @@ def main():
     parser.add_argument("--start-from", help="Backfill: start from this ticker (inclusive)")
     parser.add_argument("--limit", type=int, help="Backfill: max tickers to process")
     parser.add_argument("--delay", type=float, default=0.3, help="Seconds between API calls (backfill)")
+    parser.add_argument("--from-start", action="store_true", help="Backfill from 1994 even if R2 already has data")
     args = parser.parse_args()
 
     if args.backfill:
-        run_backfill(args.start_from, args.limit, args.date, args.delay)
+        run_backfill(args.start_from, args.limit, args.date, args.delay, from_start=args.from_start)
         return
 
     target = args.date

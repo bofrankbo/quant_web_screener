@@ -24,8 +24,8 @@ def _run(module: str, *args: str) -> None:
 
 def daily_update() -> None:
     logger.info("=== Daily update start ===")
-    _run("scripts.ingest")
-    _run("scripts.concentration")
+    _run("scripts.fetch_prices")
+    _run("scripts.fetch_concentration")
     _run("scripts.sync_cache", "--all")
     logger.info("=== Daily update done ===")
 

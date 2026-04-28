@@ -1,5 +1,5 @@
 """
-Concentration ingest: local CSVs → R2 (backfill) + FinMind daily update
+Fetch broker concentration data → Cloudflare R2
 
 Concentration formula (top-15 brokers):
   buy_volume  = sum of top-15 net-buyers' net shares
@@ -11,9 +11,9 @@ R2 layout:
   concentration/{ticker}.parquet
 
 Usage:
-  python -m scripts.concentration --backfill          # upload all local CSVs → R2
-  python -m scripts.concentration [--date YYYY-MM-DD] # daily FinMind update (default: today)
-  python -m scripts.concentration --tickers 2330 2454 # limit to specific tickers
+  python -m scripts.fetch_concentration --backfill          # upload all local CSVs → R2
+  python -m scripts.fetch_concentration [--date YYYY-MM-DD] # daily FinMind update (default: today)
+  python -m scripts.fetch_concentration --tickers 2330 2454 # limit to specific tickers
 """
 import argparse
 import io
