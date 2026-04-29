@@ -50,6 +50,7 @@ Output columns: `ticker, name, date, close, open, high, low, volume, ma, bb_uppe
 - Overview panel: all watchlists with average returns, clickable to open
 - 全部 view: all tickers across watchlists, grouped by list
 - Per-ticker active toggle (●/○): controls whether ticker counts toward averages
+- Logged-in users can export/import their watchlists as JSON from the watchlist manager page, which is useful for moving data between localhost and Railway.
 
 Stored in `APP_DATA_PATH/watchlists.json` (on Railway persistent volume):
 ```json

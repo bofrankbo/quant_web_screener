@@ -114,6 +114,34 @@ body {
 }
 #btn-create-wl:hover { background: #1a4fd4; }
 
+#transfer-tools {
+  padding: 10px;
+  border-bottom: 1px solid #2a2e39;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+}
+#transfer-tools.visible { display: flex; }
+.transfer-row {
+  display: flex;
+  gap: 6px;
+}
+.transfer-btn {
+  background: #2a2e39;
+  color: #d1d4dc;
+  border: 1px solid #363a45;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.transfer-btn:hover { border-color: #2962ff; color: #2962ff; }
+.transfer-note {
+  font-size: 11px;
+  color: #787b86;
+  line-height: 1.4;
+}
+
 #wl-list {
   flex: 1;
   overflow-y: auto;
@@ -580,6 +608,16 @@ tr.row-inactive td:not(.toggle-col) {
 <div id="body">
   <!-- Left: watchlist list -->
   <div id="left">
+    <div id="transfer-tools">
+      <div class="transfer-row">
+        <button class="transfer-btn" onclick="exportWatchlists()">Export JSON</button>
+        <button class="transfer-btn" onclick="pickImportFile()">Import JSON</button>
+        <input id="import-file" type="file" accept="application/json" style="display:none" onchange="importWatchlistsFile()">
+      </div>
+      <div class="transfer-note">
+        用來在 localhost 和 Railway 之間手動搬移 watchlist。匯入會覆蓋目前登入者的清單。
+      </div>
+    </div>
     <div id="new-wl-form">
       <input id="new-wl-input" type="text" placeholder="New watchlist name…"
              onkeydown="if(event.key==='Enter')createWatchlist()">
@@ -1379,6 +1417,7 @@ async function loadAuthStatus() {
     const user = resp.ok ? (await resp.json()).user : null;
     const userLabel = document.getElementById('auth-user');
     const authLink = document.getElementById('auth-link');
+    const transferTools = document.getElementById('transfer-tools');
     if (user) {
       userLabel.textContent = user.name || user.email || 'Signed in';
       authLink.textContent = 'Logout';
@@ -1388,15 +1427,57 @@ async function loadAuthStatus() {
         await fetch('/auth/logout', { method: 'POST' });
         window.location.reload();
       };
+      transferTools.classList.add('visible');
     } else {
       userLabel.textContent = 'Not signed in';
       authLink.textContent = 'Sign in with Google';
       authLink.href = '/auth/google/login';
       authLink.onclick = null;
+      transferTools.classList.remove('visible');
     }
   } catch (e) {
     console.error('auth status failed:', e);
   }
+}
+
+async function exportWatchlists() {
+  const resp = await fetch('/watchlists/export');
+  if (!resp.ok) {
+    alert('Export failed');
+    return;
+  }
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'watchlists-export.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function pickImportFile() {
+  document.getElementById('import-file').click();
+}
+
+async function importWatchlistsFile() {
+  const input = document.getElementById('import-file');
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  const resp = await fetch('/watchlists/import?replace=true', {
+    method: 'POST',
+    body: form,
+  });
+  input.value = '';
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    alert(data.detail || 'Import failed');
+    return;
+  }
+  await loadAll();
 }
 
 // Init
