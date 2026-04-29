@@ -2,8 +2,9 @@
 Polars-based backtest engine driven by the same screener params set in the sidebar.
 
 Entry: built from price_above_ma, bb_breakout, volume_ratio, concentration, RSI, market cap
-Exit:  close < SMA(ma_window)
-Size:  1/MAX_POS of portfolio per position  Commission: 0.3%  Max positions: 30
+Exit:  mirrored exit controls with separate MA, BB, RSI, volume, concentration settings
+Model: signal-only (no position sizing) — each trade records price delta minus commission.
+       Win rate and avg return are computed from completed trades.
 """
 import io
 import os
@@ -33,9 +34,7 @@ s3 = boto3.client(
     region_name="auto",
 )
 
-COMMISSION = 0.003
-INIT_CASH  = 1_000_000.0
-MAX_POS    = 30
+_DEFAULT_COMMISSION = 0.001425
 
 
 # ── Data loading ──────────────────────────────────────────────────────────────
@@ -87,8 +86,59 @@ def _load_concentration(start_date: str) -> pl.DataFrame:
     return df
 
 
-def _load_market_value() -> pl.DataFrame | None:
-    return _read_parquet_r2("market_value/top200.parquet")
+def _load_market_value(start_date: str, market_cap_rank: int) -> pl.DataFrame | None:
+    """Load date-based market-cap membership from local cache.
+
+    Prefer the per-day `market_value/YYYY-MM-DD.parquet` snapshots so the
+    backtest can honor arbitrary `market_cap_rank` values. Fall back to the
+    precomputed `top200.parquet` file if the daily snapshots are unavailable.
+    """
+    mv_dir = CACHE_DIR / "market_value"
+    daily_files = sorted(
+        p for p in mv_dir.glob("????-??-??.parquet")
+        if p.name != "top200.parquet"
+    )
+
+    if daily_files:
+        frames = []
+        for path in daily_files:
+            try:
+                frames.append(
+                    pl.read_parquet(path).select(["date", "stock_id", "market_value"])
+                )
+            except Exception:
+                continue
+
+        if frames:
+            mv_df = pl.concat(frames, how="vertical_relaxed")
+            mv_df = mv_df.with_columns(pl.col("date").cast(pl.Date))
+            mv_df = mv_df.filter(pl.col("date") >= pl.lit(start_date).cast(pl.Date))
+            mv_df = mv_df.with_columns(
+                pl.col("market_value")
+                .rank(method="ordinal", descending=True)
+                .over("date")
+                .alias("rank")
+            )
+            mv_df = mv_df.filter(pl.col("rank") <= market_cap_rank)
+            return mv_df.select(
+                pl.col("date"),
+                pl.col("stock_id").alias("ticker"),
+            ).with_columns(pl.lit(True).alias("in_mc"))
+
+    top200 = _read_parquet_r2("market_value/top200.parquet")
+    if top200 is None:
+        return None
+    return (
+        top200
+        .with_columns(pl.col("date").cast(pl.Date))
+        .filter(pl.col("date") >= pl.lit(start_date).cast(pl.Date))
+        .filter(pl.col("rank") <= market_cap_rank)
+        .select(
+            pl.col("date"),
+            pl.col("stock_id").alias("ticker"),
+        )
+        .with_columns(pl.lit(True).alias("in_mc"))
+    )
 
 
 def _load_ticker_names() -> dict[str, str]:
@@ -105,22 +155,31 @@ def _compute_indicators(
     ma_window: int,
     bb_window: int,
     rsi_period: int,
+    exit_ma_window: int,
+    exit_bb_window: int,
+    exit_rsi_period: int,
 ) -> pl.DataFrame:
-    """SMA, BB_upper, vol_ratio, RSI per ticker — mirrors screener.py logic."""
+    """Compute entry and exit indicators per ticker."""
     df = df.sort(["ticker", "date"])
 
     df = df.with_columns([
         pl.col("close").rolling_mean(ma_window).over("ticker").alias("sma"),
         pl.col("volume").rolling_mean(ma_window).over("ticker").alias("vol_ma"),
+        pl.col("close").rolling_mean(exit_ma_window).over("ticker").alias("exit_sma"),
+        pl.col("volume").rolling_mean(exit_ma_window).over("ticker").alias("exit_vol_ma"),
     ])
 
     df = df.with_columns([
         pl.col("close").rolling_mean(bb_window).over("ticker").alias("bb_mid"),
         pl.col("close").rolling_std(bb_window).over("ticker").alias("bb_std"),
+        pl.col("close").rolling_mean(exit_bb_window).over("ticker").alias("exit_bb_mid"),
+        pl.col("close").rolling_std(exit_bb_window).over("ticker").alias("exit_bb_std"),
     ]).with_columns([
         (pl.col("bb_mid") + 2.0 * pl.col("bb_std")).alias("bb_upper"),
         (pl.col("volume") / pl.col("vol_ma").replace(0, None)).alias("vol_ratio"),
-    ]).drop(["bb_mid", "bb_std", "vol_ma"])
+        (pl.col("volume") / pl.col("exit_vol_ma").replace(0, None)).alias("exit_vol_ratio"),
+        (pl.col("exit_bb_mid") - 2.0 * pl.col("exit_bb_std")).alias("exit_bb_lower"),
+    ]).drop(["bb_mid", "bb_std", "vol_ma", "exit_vol_ma"])
 
     df = df.with_columns(
         pl.col("close").diff().over("ticker").alias("_d")
@@ -130,9 +189,13 @@ def _compute_indicators(
     ]).with_columns([
         pl.col("_g").rolling_mean(rsi_period).over("ticker").alias("_ag"),
         pl.col("_l").rolling_mean(rsi_period).over("ticker").alias("_al"),
+        pl.col("_g").rolling_mean(exit_rsi_period).over("ticker").alias("_exit_ag"),
+        pl.col("_l").rolling_mean(exit_rsi_period).over("ticker").alias("_exit_al"),
     ]).with_columns(
         (100.0 - 100.0 / (1.0 + pl.col("_ag") / (pl.col("_al") + 1e-10))).alias("rsi")
-    ).drop(["_d", "_g", "_l", "_ag", "_al"])
+    ).with_columns(
+        (100.0 - 100.0 / (1.0 + pl.col("_exit_ag") / (pl.col("_exit_al") + 1e-10))).alias("exit_rsi")
+    ).drop(["_d", "_g", "_l", "_ag", "_al", "_exit_ag", "_exit_al", "exit_bb_mid", "exit_bb_std"])
 
     return df
 
@@ -176,56 +239,95 @@ def _entry_mask(
     return mask
 
 
-# ── Portfolio ─────────────────────────────────────────────────────────────────
+def _exit_mask(
+    exit_price_below_ma: bool,
+    exit_bb_breakdown: bool,
+    exit_use_rsi: bool,
+    exit_rsi_min: float,
+    exit_rsi_max: float,
+    exit_use_volume: bool,
+    exit_volume_ratio: float,
+    exit_use_concentration: bool,
+    exit_conc_5d_min: float,
+    exit_conc_min: float,
+) -> pl.Expr:
+    mask = pl.lit(False)
 
-class _Portfolio:
-    def __init__(self):
-        self.cash = INIT_CASH
-        self.positions: dict[str, dict] = {}
-        self.trades: list[dict] = []
-
-    def portfolio_value(self, prices: dict[str, float]) -> float:
-        return self.cash + sum(
-            p["shares"] * prices.get(t, p["cost_price"])
-            for t, p in self.positions.items()
+    if exit_price_below_ma:
+        mask = mask | (pl.col("close") < pl.col("exit_sma"))
+    if exit_bb_breakdown:
+        mask = mask | (pl.col("close") < pl.col("exit_bb_lower"))
+    if exit_use_rsi and (exit_rsi_min > 0.0 or exit_rsi_max < 100.0):
+        mask = mask | (
+            pl.col("exit_rsi").is_not_null()
+            & (
+                (pl.col("exit_rsi") <= exit_rsi_min)
+                | (pl.col("exit_rsi") >= exit_rsi_max)
+            )
         )
+    if exit_use_volume and exit_volume_ratio > 1.0:
+        mask = mask | (
+            pl.col("exit_vol_ratio").is_not_null()
+            & (pl.col("exit_vol_ratio") <= exit_volume_ratio)
+        )
+    if exit_use_concentration:
+        conc_mask = pl.lit(False)
+        if exit_conc_5d_min > 0.0:
+            conc_mask = conc_mask | (
+                pl.col("concentration_5d").is_not_null()
+                & (pl.col("concentration_5d") <= exit_conc_5d_min)
+            )
+        if exit_conc_min > 0.0:
+            conc_mask = conc_mask | (
+                pl.col("concentration_20d").is_not_null()
+                & (pl.col("concentration_20d") <= exit_conc_min)
+            )
+        mask = mask | conc_mask
 
-    def buy(self, ticker: str, price: float, pv: float, buy_date: date) -> bool:
-        if len(self.positions) >= MAX_POS or ticker in self.positions:
+    return mask
+
+
+# ── Trade tracker ─────────────────────────────────────────────────────────────
+
+class _TradeTracker:
+    def __init__(self, commission: float = _DEFAULT_COMMISSION):
+        self.commission = commission
+        self.open_trades: dict[str, dict] = {}  # ticker -> {entry_price, entry_date}
+        self.completed: list[dict] = []
+
+    def enter(self, ticker: str, price: float, entry_date: date) -> bool:
+        if ticker in self.open_trades:
             return False
-        shares = int(pv / MAX_POS / price / 1000) * 1000
-        if shares <= 0:
-            return False
-        cost = shares * price * (1 + COMMISSION)
-        if cost > self.cash:
-            return False
-        self.cash -= cost
-        self.positions[ticker] = {"shares": shares, "cost_price": price, "buy_date": buy_date}
-        self.trades.append({"type": "buy", "ticker": ticker, "date": buy_date,
-                            "price": price, "shares": shares})
+        self.open_trades[ticker] = {"entry_price": price, "entry_date": entry_date}
         return True
 
-    def sell(self, ticker: str, price: float, sell_date: date) -> None:
-        if ticker not in self.positions:
-            return
-        pos = self.positions.pop(ticker)
-        self.cash += pos["shares"] * price * (1 - COMMISSION)
-        self.trades.append({"type": "sell", "ticker": ticker, "date": sell_date,
-                            "price": price, "shares": pos["shares"],
-                            "cost_price": pos["cost_price"]})
+    def exit(self, ticker: str, price: float, exit_date: date) -> bool:
+        if ticker not in self.open_trades:
+            return False
+        pos = self.open_trades.pop(ticker)
+        net_return_pct = (price * (1 - self.commission)) / (pos["entry_price"] * (1 + self.commission)) - 1
+        self.completed.append({
+            "ticker": ticker,
+            "entry_date": str(pos["entry_date"]),
+            "exit_date": str(exit_date),
+            "entry_price": round(float(pos["entry_price"]), 2),
+            "exit_price": round(float(price), 2),
+            "net_return_pct": round(net_return_pct * 100, 4),
+        })
+        return True
 
-    def get_stats(self, prices: dict[str, float]) -> dict:
-        fv = self.portfolio_value(prices)
-        sells = [t for t in self.trades if t["type"] == "sell"]
-        pnls = [(t["price"] - t["cost_price"]) * t["shares"] for t in sells]
-        wins = sum(1 for p in pnls if p > 0)
+    def get_stats(self) -> dict:
+        n = len(self.completed)
+        if n == 0:
+            return {"total_trades": 0, "wins": 0, "losses": 0, "win_rate": 0.0, "avg_return_pct": 0.0}
+        wins = sum(1 for t in self.completed if t["net_return_pct"] > 0)
+        avg = sum(t["net_return_pct"] for t in self.completed) / n
         return {
-            "total_trades": len(sells),
-            "winning_trades": wins,
-            "losing_trades": len(sells) - wins,
-            "total_net_profit": round(sum(pnls), 2),
-            "total_return_pct": round((fv - INIT_CASH) / INIT_CASH * 100, 2),
-            "final_value": round(fv, 2),
+            "total_trades": n,
+            "wins": wins,
+            "losses": n - wins,
+            "win_rate": round(wins / n * 100, 2),
+            "avg_return_pct": round(avg, 4),
         }
 
 
@@ -245,8 +347,23 @@ def run_backtest(
     conc_5d_min: float = 0.0,
     conc_20d_min: float = 0.0,
     market_cap_rank: int | None = None,
+    exit_price_below_ma: bool = True,
+    exit_ma_window: int = 10,
+    exit_bb_breakdown: bool = False,
+    exit_bb_window: int = 22,
+    exit_use_rsi: bool = False,
+    exit_rsi_period: int = 14,
+    exit_rsi_min: float = 0.0,
+    exit_rsi_max: float = 75.0,
+    exit_use_volume: bool = False,
+    exit_volume_ratio: float = 1.5,
+    exit_use_concentration: bool = False,
+    exit_conc_5d_min: float = 0.0,
+    exit_conc_min: float = 0.0,
+    commission: float = _DEFAULT_COMMISSION,
+    debug: bool = False,
 ) -> dict:
-    warmup = max(ma_window, bb_window, rsi_period) + 10
+    warmup = max(ma_window, bb_window, rsi_period, exit_ma_window, exit_bb_window, exit_rsi_period) + 10
     start_date = str(date.today() - timedelta(days=lookback_days + warmup))
 
     print("[backtest] Loading price data...")
@@ -255,7 +372,9 @@ def run_backtest(
         return {"error": "No price data in local cache. Run sync_cache first."}
 
     print("[backtest] Computing indicators...")
-    price_df = _compute_indicators(price_df, ma_window, bb_window, rsi_period)
+    price_df = _compute_indicators(
+        price_df, ma_window, bb_window, rsi_period, exit_ma_window, exit_bb_window, exit_rsi_period
+    )
 
     sim_start = str(date.today() - timedelta(days=lookback_days))
     df = price_df.filter(pl.col("date") >= pl.lit(sim_start).cast(pl.Date))
@@ -283,12 +402,9 @@ def run_backtest(
     # Market cap
     if market_cap_rank is not None:
         print("[backtest] Loading market value data...")
-        mv_df = _load_market_value()
+        mv_df = _load_market_value(start_date, market_cap_rank)
         if mv_df is not None:
-            mv_set = (mv_df.select(["date", "stock_id"])
-                      .with_columns(pl.lit(True).alias("in_mc"))
-                      .rename({"stock_id": "ticker"}))
-            df = df.join(mv_set, on=["ticker", "date"], how="left")
+            df = df.join(mv_df, on=["ticker", "date"], how="left")
             df = df.with_columns(pl.col("in_mc").fill_null(False))
         else:
             df = df.with_columns(pl.lit(True).alias("in_mc"))
@@ -306,49 +422,97 @@ def run_backtest(
         use_concentration, conc_5d_min, conc_20d_min,
         rsi_min, rsi_max, market_cap_rank,
     )
+    exit_cond = _exit_mask(
+        exit_price_below_ma,
+        exit_bb_breakdown,
+        exit_use_rsi,
+        exit_rsi_min,
+        exit_rsi_max,
+        exit_use_volume,
+        exit_volume_ratio,
+        exit_use_concentration,
+        exit_conc_5d_min,
+        exit_conc_min,
+    )
 
-    portfolio = _Portfolio()
+    tracker = _TradeTracker(commission=commission)
+    pending_orders: list[dict] = []
+    debug_days: list[dict] = []
 
-    for dt in trading_dates:
+    for idx, dt in enumerate(trading_dates):
         day = df.filter(pl.col("date") == dt)
-        prices = dict(zip(day["ticker"].to_list(), day["close"].to_list()))
-        pv = portfolio.portfolio_value(prices)
+        open_prices = dict(zip(day["ticker"].to_list(), day["open"].to_list()))
 
-        # Exit: close < SMA
-        for ticker in list(portfolio.positions.keys()):
+        # Execute orders generated on the previous trading day at today's open.
+        todays_orders = [o for o in pending_orders if o["execute_date"] == dt]
+        if todays_orders:
+            for order in todays_orders:
+                if order["type"] != "sell":
+                    continue
+                price = open_prices.get(order["ticker"])
+                if price is not None:
+                    tracker.exit(order["ticker"], price, dt)
+            for order in todays_orders:
+                if order["type"] != "buy":
+                    continue
+                price = open_prices.get(order["ticker"])
+                if price is not None:
+                    tracker.enter(order["ticker"], price, dt)
+            pending_orders = [o for o in pending_orders if o["execute_date"] != dt]
+
+        next_dt = trading_dates[idx + 1] if idx + 1 < len(trading_dates) else None
+        if next_dt is None:
+            continue
+
+        held = set(tracker.open_trades.keys())
+
+        # Exit signals generated on today's close → execute at next open.
+        for ticker in list(held):
             row = day.filter(pl.col("ticker") == ticker)
             if row.is_empty():
                 continue
-            sma = row["sma"][0]
-            if sma is not None and row["close"][0] < sma:
-                portfolio.sell(ticker, row["close"][0], dt)
+            if not row.filter(exit_cond).is_empty() and not any(
+                o["type"] == "sell" and o["ticker"] == ticker for o in pending_orders
+            ):
+                pending_orders.append({"type": "sell", "ticker": ticker, "execute_date": next_dt})
 
-        # Entry
+        # Entry signals → execute at next open.
         for row in day.filter(cond).iter_rows(named=True):
-            portfolio.buy(row["ticker"], row["close"], pv, dt)
+            ticker = row["ticker"]
+            if ticker in held:
+                continue
+            if any(
+                o["type"] == "buy" and o["ticker"] == ticker and o["execute_date"] == next_dt
+                for o in pending_orders
+            ):
+                continue
+            pending_orders.append({"type": "buy", "ticker": ticker, "execute_date": next_dt})
+
+        if debug:
+            debug_days.append({
+                "date": str(dt),
+                "open_trades": len(tracker.open_trades),
+                "pending": len(pending_orders),
+            })
 
     last_dt = trading_dates[-1]
     last_day = df.filter(pl.col("date") == last_dt)
     last_prices = dict(zip(last_day["ticker"].to_list(), last_day["close"].to_list()))
-    stats = portfolio.get_stats(last_prices)
 
-    # Open positions
-    positions = []
-    for ticker, pos in portfolio.positions.items():
-        cp = last_prices.get(ticker, pos["cost_price"])
-        positions.append({
-            "ticker": ticker,
-            "name": names.get(ticker, ""),
-            "buy_date": str(pos["buy_date"]),
-            "cost_price": round(pos["cost_price"], 2),
-            "current_price": round(cp, 2),
-            "return_pct": round((cp - pos["cost_price"]) / pos["cost_price"] * 100, 2),
-            "unrealized_pnl": round((cp - pos["cost_price"]) * pos["shares"], 2),
-        })
-    positions.sort(key=lambda x: x["buy_date"], reverse=True)
+    # Open trades still running at end of period
+    open_trades = sorted([
+        {
+            "ticker": t,
+            "name": names.get(t, ""),
+            "entry_date": str(pos["entry_date"]),
+            "entry_price": round(float(pos["entry_price"]), 2),
+            "current_price": round(float(last_prices.get(t, pos["entry_price"])), 2),
+        }
+        for t, pos in tracker.open_trades.items()
+    ], key=lambda x: x["entry_date"], reverse=True)
 
-    # Next-day signals
-    held = set(portfolio.positions.keys())
+    # Next-day entry signals
+    held = set(tracker.open_trades.keys())
     signals = [
         {
             "ticker": r["ticker"],
@@ -362,10 +526,15 @@ def run_backtest(
         for r in last_day.filter(cond).iter_rows(named=True)
     ]
 
-    print(f"[backtest] Done. signals={len(signals)}, positions={len(positions)}")
-    return {
+    stats = tracker.get_stats()
+    result = {
         "as_of": str(last_dt),
         "signals": signals,
-        "positions": positions,
+        "open_trades": open_trades,
         "stats": stats,
+        "trades": tracker.completed,
     }
+    if debug:
+        result["debug"] = {"days": debug_days, "final_pending": pending_orders}
+    print(f"[backtest] Done. trades={stats['total_trades']}, win_rate={stats['win_rate']}%, open={len(open_trades)}")
+    return result
