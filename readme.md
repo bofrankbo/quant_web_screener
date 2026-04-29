@@ -15,12 +15,14 @@ Cloudflare R2  (per-ticker Parquet)
     concentration/{ticker}.parquet  ← 籌碼集中度 (5d, 20d)
     meta/ticker_info.parquet        ← stock names
     ↓  on startup + daily sync (scripts/sync_cache.py)
-Railway persistent volume  /data/cache/
+Railway persistent volume  `APP_DATA_PATH`/cache/
     ↓  DuckDB reads local parquet (fast, no network overhead per query)
 FastAPI (:8000)
     ↓
 Browser (HTML/JS, Lightweight Charts)
 ```
+
+User-facing app data such as SQLite auth/profile/watchlist storage also lives under the Railway persistent volume at the path pointed to by `APP_DATA_PATH`.
 
 **Cost: ~170 TWD/month** (Railway Hobby $5 + persistent volume $0.25/GB)
 
@@ -49,7 +51,7 @@ Output columns: `ticker, name, date, close, open, high, low, volume, ma, bb_uppe
 - 全部 view: all tickers across watchlists, grouped by list
 - Per-ticker active toggle (●/○): controls whether ticker counts toward averages
 
-Stored in `data/watchlists.json` (on Railway persistent volume):
+Stored in `APP_DATA_PATH/watchlists.json` (on Railway persistent volume):
 ```json
 {
   "晶圓": {
@@ -130,16 +132,18 @@ bash scripts/daily_update.sh 2026-04-25  # specific date
    ```
    R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
    R2_BUCKET, R2_ENDPOINT, FINMIND_API_KEY
+   SESSION_SECRET_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
    ```
-4. **Service → Volumes** → New Volume, mount at `/app/data`, size 2GB
+4. **Service → Volumes** → New Volume, mount at `/data`, size 2GB
 5. Redeploy — watch logs for `[startup] Syncing cache from R2`
 6. Verify: `curl https://<app>.up.railway.app/health` → `{"status": "ok"}`
 
 ### How it runs on Railway
 
-- **Startup**: `startup_sync()` downloads all R2 parquets → `/app/data/cache/` (background thread, non-blocking)
+- **Startup**: `startup_sync()` downloads all R2 parquets → `APP_DATA_PATH/cache/` (background thread, non-blocking)
 - **Daily 19:00 TST**: APScheduler triggers `ingest → concentration → sync_cache`
-- **Persistent volume**: `/app/data/` survives restarts — cache stays populated
+- **Persistent volume**: the directory pointed to by `APP_DATA_PATH` survives restarts — cache stays populated
+- **SQLite app data**: `APP_DATA_PATH/app.sqlite` stores users, watchlists, preferences, and activity logs
 
 ---
 

@@ -6,30 +6,60 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background: #131722;
+  background:
+    radial-gradient(circle at top, rgba(41,98,255,0.18), transparent 35%),
+    linear-gradient(180deg, #10131b 0%, #131722 100%);
   color: #d1d4dc;
   font-family: -apple-system, 'Segoe UI', sans-serif;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  padding: 24px;
 }
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 40px;
+  width: min(100%, 760px);
 }
 h1 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #787b86;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
+.topbar {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.login-link {
+  font-size: 12px;
+  color: #d1d4dc;
+  text-decoration: none;
+  background: #2962ff;
+  border: 1px solid #2962ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+.login-link:hover { background: #1a4fd4; border-color: #1a4fd4; }
+.user-chip {
+  font-size: 12px;
+  color: #d1d4dc;
+  border: 1px solid #2a2e39;
+  background: rgba(30,34,45,0.9);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
 .cards {
   display: flex;
   gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .card {
   width: 200px;
@@ -52,6 +82,9 @@ h1 {
 </head>
 <body>
 <div class="container">
+  <div class="topbar">
+    <a class="login-link" id="auth-link" href="/auth/google/login">Sign in with Google</a>
+  </div>
   <h1>Quant Backtest</h1>
   <div class="cards">
     <a class="card" href="/backtest">
@@ -71,5 +104,30 @@ h1 {
     </a>
   </div>
 </div>
+<script>
+async function loadAuthStatus() {
+  try {
+    const resp = await fetch('/auth/me');
+    const link = document.getElementById('auth-link');
+    if (resp.ok) {
+      const data = await resp.json();
+      const user = data.user || {};
+      const label = user.name || user.email || 'Signed in';
+      link.className = 'user-chip';
+      link.textContent = label;
+      link.href = '#';
+      link.onclick = async (e) => {
+        e.preventDefault();
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.reload();
+      };
+    }
+  } catch (e) {
+    console.error('auth status failed:', e);
+  }
+}
+
+loadAuthStatus();
+</script>
 </body>
 </html>

@@ -18,6 +18,7 @@ from botocore.config import Config
 from dotenv import load_dotenv
 
 load_dotenv()
+from app.config import PARQUET_CACHE_PATH
 
 R2_BUCKET   = os.environ["R2_BUCKET"]
 R2_ENDPOINT = os.environ["R2_ENDPOINT"]
@@ -31,7 +32,7 @@ s3 = boto3.client(
     region_name="auto",
 )
 
-CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"
+CACHE_DIR = PARQUET_CACHE_PATH
 
 
 def _local_etag(path: Path) -> str:

@@ -20,12 +20,12 @@ import duckdb
 import polars as pl
 from botocore.config import Config
 from dotenv import load_dotenv
-from app.config import DB_PATH, TICKER_INFO_PATH
+from app.config import DB_PATH, PARQUET_CACHE_PATH, TICKER_INFO_PATH
 from app.r2 import download_parquet
 
 load_dotenv()
 
-CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"
+CACHE_DIR = PARQUET_CACHE_PATH
 
 R2_BUCKET            = os.environ["R2_BUCKET"]
 R2_ENDPOINT          = os.environ["R2_ENDPOINT"]

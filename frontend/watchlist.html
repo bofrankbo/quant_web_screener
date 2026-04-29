@@ -40,6 +40,29 @@ body {
 }
 .nav-link:hover { border-color: #2962ff; color: #2962ff; }
 .nav-link:first-of-type { margin-left: auto; }
+.auth-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.auth-user {
+  font-size: 12px;
+  color: #787b86;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.auth-button {
+  font-size: 12px;
+  color: #d1d4dc;
+  text-decoration: none;
+  padding: 3px 9px;
+  border: 1px solid #2a2e39;
+  border-radius: 4px;
+}
+.auth-button:hover { border-color: #2962ff; color: #2962ff; }
 
 /* ── Body layout ── */
 #body {
@@ -548,6 +571,10 @@ tr.row-inactive td:not(.toggle-col) {
   <h1>WATCHLIST MANAGER</h1>
   <a class="nav-link" href="/">← Home</a>
   <a class="nav-link" href="/backtest">Backtest</a>
+  <div class="auth-box">
+    <span class="auth-user" id="auth-user">Not signed in</span>
+    <a class="auth-button" id="auth-link" href="/auth/google/login">Sign in with Google</a>
+  </div>
 </div>
 
 <div id="body">
@@ -1346,7 +1373,34 @@ function escAttr(s) {
   return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
+async function loadAuthStatus() {
+  try {
+    const resp = await fetch('/auth/me');
+    const user = resp.ok ? (await resp.json()).user : null;
+    const userLabel = document.getElementById('auth-user');
+    const authLink = document.getElementById('auth-link');
+    if (user) {
+      userLabel.textContent = user.name || user.email || 'Signed in';
+      authLink.textContent = 'Logout';
+      authLink.href = '#';
+      authLink.onclick = async (e) => {
+        e.preventDefault();
+        await fetch('/auth/logout', { method: 'POST' });
+        window.location.reload();
+      };
+    } else {
+      userLabel.textContent = 'Not signed in';
+      authLink.textContent = 'Sign in with Google';
+      authLink.href = '/auth/google/login';
+      authLink.onclick = null;
+    }
+  } catch (e) {
+    console.error('auth status failed:', e);
+  }
+}
+
 // Init
+loadAuthStatus();
 loadAll();
 </script>
 </body>
