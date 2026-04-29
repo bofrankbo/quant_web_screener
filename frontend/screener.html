@@ -39,26 +39,39 @@ body {
 
 /* ── Left: Sidebar ── */
 #sidebar {
-  width: 252px; min-width: 252px;
+  width: 420px; min-width: 420px;
   background: #1e222d;
   border-right: 1px solid #2a2e39;
   display: flex; flex-direction: column;
   overflow: hidden;
 }
-#sidebar-scroll {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-  padding: 12px;
+#sidebar-body {
+  flex: 1; display: flex; min-height: 0; overflow: hidden;
 }
+#sidebar-conditions {
+  width: 245px; min-width: 245px;
+  display: flex; flex-direction: column; overflow: hidden;
+  border-right: 1px solid #2a2e39;
+}
+#sidebar-conditions-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 10px;
+}
+#sidebar-conditions-scroll::-webkit-scrollbar { width: 4px; }
+#sidebar-conditions-scroll::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+#sidebar-settings {
+  flex: 1; display: flex; flex-direction: column; overflow: hidden;
+}
+#sidebar-settings-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 10px;
+}
+#sidebar-settings-scroll::-webkit-scrollbar { width: 4px; }
+#sidebar-settings-scroll::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
 #sidebar-footer {
   flex-shrink: 0;
   border-top: 1px solid #2a2e39;
-  padding: 12px;
+  padding: 10px 12px;
   background: #1e222d;
 }
-#sidebar-scroll::-webkit-scrollbar { width: 4px; }
-#sidebar-scroll::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
 
 .section-title {
   font-size: 10px; font-weight: 700; color: #787b86;
@@ -74,12 +87,12 @@ body {
   background: #171b26;
 }
 .condition-card.entry {
-  border-color: rgba(38, 166, 154, 0.35);
-  background: linear-gradient(180deg, rgba(38, 166, 154, 0.08), #171b26 38%);
-}
-.condition-card.exit {
   border-color: rgba(239, 83, 80, 0.35);
   background: linear-gradient(180deg, rgba(239, 83, 80, 0.08), #171b26 38%);
+}
+.condition-card.exit {
+  border-color: rgba(38, 166, 154, 0.35);
+  background: linear-gradient(180deg, rgba(38, 166, 154, 0.08), #171b26 38%);
 }
 .condition-card .section-title {
   border-top: none;
@@ -89,26 +102,26 @@ body {
   align-items: center;
   justify-content: space-between;
 }
-.condition-card.entry .section-title { color: #45d0bd; }
-.condition-card.exit .section-title { color: #ff7b74; }
+.condition-card.entry .section-title { color: #ff7b74; }
+.condition-card.exit .section-title { color: #45d0bd; }
 .condition-card.entry .section-title::after {
   content: "entry";
-  color: #26a69a;
+  color: #ef5350;
   font-size: 9px;
   letter-spacing: 0.8px;
 }
 .condition-card.exit .section-title::after {
   content: "exit";
-  color: #ef5350;
+  color: #26a69a;
   font-size: 9px;
   letter-spacing: 0.8px;
 }
 .condition-card.entry input[type=range],
-.condition-card.entry input[type=checkbox] { accent-color: #26a69a; }
+.condition-card.entry input[type=checkbox] { accent-color: #ef5350; }
 .condition-card.exit input[type=range],
-.condition-card.exit input[type=checkbox] { accent-color: #ef5350; }
-.condition-card.entry input[type=number]:focus { border-color: #26a69a; }
-.condition-card.exit input[type=number]:focus { border-color: #ef5350; }
+.condition-card.exit input[type=checkbox] { accent-color: #26a69a; }
+.condition-card.entry input[type=number]:focus { border-color: #ef5350; }
+.condition-card.exit input[type=number]:focus { border-color: #26a69a; }
 
 .field { display: flex; flex-direction: column; gap: 3px; }
 .field label { font-size: 11px; color: #787b86; }
@@ -277,7 +290,22 @@ select:focus { outline: none; border-color: #2962ff; }
   background: #1e222d;
 }
 #bt-middle-column { flex: 1; min-width: 0; }
-#bt-history-column { flex: 1; min-width: 0; border-left: 1px solid #2a2e39; }
+#bt-history-column {
+  flex: 1; min-width: 0;
+  border-left: 1px solid #2a2e39;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+#bt-history-section {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  border-bottom: none;
+}
+#bt-history-section > summary { flex-shrink: 0; }
+#bt-history-body {
+  flex: 1; min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+}
 
 .bt-section {
   border-bottom: 1px solid #2a2e39;
@@ -381,222 +409,233 @@ select:focus { outline: none; border-color: #2962ff; }
 
   <!-- ── Left: Sidebar ── -->
   <div id="sidebar">
-    <div id="sidebar-scroll">
-      <section class="filter-group condition-card entry">
-        <div class="section-title">Entry Conditions</div>
+    <div id="sidebar-body">
 
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="price_above_ma" checked> MA
-            <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
-          </label>
-          <div class="field-row">
-            <input type="range" id="ma_window" min="5" max="120" value="10" oninput="syncN('ma_window')">
-            <input type="number" id="ma_window_n" value="10" min="5" max="120"
-                   oninput="syncR('ma_window')" style="width:46px">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-        </div>
+      <!-- Left sub-col: Entry + Exit conditions -->
+      <div id="sidebar-conditions">
+        <div id="sidebar-conditions-scroll">
+          <section class="filter-group condition-card entry">
+            <div class="section-title">Entry Conditions</div>
 
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="bb_breakout"> Bollinger
-            <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
-          </label>
-          <div class="field-row">
-            <input type="range" id="bb_window" min="5" max="120" value="22" oninput="syncN('bb_window')">
-            <input type="number" id="bb_window_n" value="22" min="5" max="120"
-                   oninput="syncR('bb_window')" style="width:46px">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
-          </label>
-          <div class="field-row">
-            <input type="range" id="rsi_period" min="5" max="50" value="14"
-                   oninput="syncN('rsi_period')" disabled>
-            <input type="number" id="rsi_period_n" value="14" min="5" max="50"
-                   oninput="syncR('rsi_period')" style="width:46px" disabled>
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-          <div class="field-row" style="margin-top:3px">
-            <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
-            <input type="number" id="rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
-            <span style="font-size:11px;color:#787b86">–</span>
-            <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Min Vol Ratio (× MA vol)</label>
-          <div class="field-row">
-            <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
-                   oninput="syncVolLabel()">
-            <span class="val" id="vol_ratio_val">1.5</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row">
-            <input type="checkbox" id="use_concentration" onchange="toggleConcInputs(this.checked)">
-            集中度
-          </label>
-          <div class="field" style="padding-left:18px">
-            <div class="field-row" style="margin-top:2px">
-              <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
-              <input type="number" id="conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="price_above_ma" checked> MA
+                <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
+              </label>
+              <div class="field-row">
+                <input type="range" id="ma_window" min="5" max="120" value="10" oninput="syncN('ma_window')">
+                <input type="number" id="ma_window_n" value="10" min="5" max="120"
+                       oninput="syncR('ma_window')" style="width:46px">
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
             </div>
-            <div class="field-row" style="margin-top:4px">
-              <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
-              <input type="number" id="conc_min" value="0.10" step="0.005" disabled style="flex:1">
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="bb_breakout"> Bollinger
+                <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
+              </label>
+              <div class="field-row">
+                <input type="range" id="bb_window" min="5" max="120" value="22" oninput="syncN('bb_window')">
+                <input type="number" id="bb_window_n" value="22" min="5" max="120"
+                       oninput="syncR('bb_window')" style="width:46px">
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
+              </label>
+              <div class="field-row">
+                <input type="range" id="rsi_period" min="5" max="50" value="14"
+                       oninput="syncN('rsi_period')" disabled>
+                <input type="number" id="rsi_period_n" value="14" min="5" max="50"
+                       oninput="syncR('rsi_period')" style="width:46px" disabled>
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
+              <div class="field-row" style="margin-top:3px">
+                <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
+                <input type="number" id="rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
+                <span style="font-size:11px;color:#787b86">–</span>
+                <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Min Vol Ratio (× MA vol)</label>
+              <div class="field-row">
+                <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
+                       oninput="syncVolLabel()">
+                <span class="val" id="vol_ratio_val">1.5</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row">
+                <input type="checkbox" id="use_concentration" onchange="toggleConcInputs(this.checked)">
+                集中度
+              </label>
+              <div class="field" style="padding-left:18px">
+                <div class="field-row" style="margin-top:2px">
+                  <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
+                  <input type="number" id="conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+                </div>
+                <div class="field-row" style="margin-top:4px">
+                  <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
+                  <input type="number" id="conc_min" value="0.10" step="0.005" disabled style="flex:1">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="filter-group condition-card exit" style="margin-top:10px">
+            <div class="section-title">Exit Conditions</div>
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="exit_price_below_ma" checked> MA
+                <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; MA</span>
+              </label>
+              <div class="field-row">
+                <input type="range" id="exit_ma_window" min="5" max="120" value="10" oninput="syncN('exit_ma_window')">
+                <input type="number" id="exit_ma_window_n" value="10" min="5" max="120"
+                       oninput="syncR('exit_ma_window')" style="width:46px">
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="exit_bb_breakdown"> Bollinger
+                <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; BB-</span>
+              </label>
+              <div class="field-row">
+                <input type="range" id="exit_bb_window" min="5" max="120" value="22" oninput="syncN('exit_bb_window')">
+                <input type="number" id="exit_bb_window_n" value="22" min="5" max="120"
+                       oninput="syncR('exit_bb_window')" style="width:46px">
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="exit_use_rsi" onchange="toggleExitRsiInputs(this.checked)"> RSI
+              </label>
+              <div class="field-row">
+                <input type="range" id="exit_rsi_period" min="5" max="50" value="14"
+                       oninput="syncN('exit_rsi_period')" disabled>
+                <input type="number" id="exit_rsi_period_n" value="14" min="5" max="50"
+                       oninput="syncR('exit_rsi_period')" style="width:46px" disabled>
+                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+              </div>
+              <div class="field-row" style="margin-top:3px">
+                <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
+                <input type="number" id="exit_rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
+                <span style="font-size:11px;color:#787b86">–</span>
+                <input type="number" id="exit_rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row" style="margin-bottom:2px">
+                <input type="checkbox" id="exit_use_volume" onchange="toggleExitVolumeInputs(this.checked)"> Volume
+              </label>
+              <div class="field-row">
+                <input type="range" id="exit_volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
+                       oninput="syncExitVolLabel()" disabled>
+                <span class="val" id="exit_vol_ratio_val">1.5</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="check-row">
+                <input type="checkbox" id="exit_use_concentration" onchange="toggleExitConcInputs(this.checked)">
+                集中度
+              </label>
+              <div class="field" style="padding-left:18px">
+                <div class="field-row" style="margin-top:2px">
+                  <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
+                  <input type="number" id="exit_conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+                </div>
+                <div class="field-row" style="margin-top:4px">
+                  <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
+                  <input type="number" id="exit_conc_min" value="0.10" step="0.005" disabled style="flex:1">
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Right sub-col: filter / backtest settings -->
+      <div id="sidebar-settings">
+        <div id="sidebar-settings-scroll">
+          <div class="section-title">篩選標的</div>
+
+          <div class="field" style="margin-top:6px">
+            <label class="check-row" style="margin-bottom:2px;flex-wrap:wrap;gap:4px">
+              <input type="checkbox" id="use_market_cap" onchange="toggleMcInput(this.checked)">
+              市值 top
+              <input type="number" id="market_cap_rank" value="200" min="1" max="2000" step="10"
+                     disabled style="width:52px;margin-left:2px">
+            </label>
+          </div>
+
+          <div class="field" style="margin-top:6px">
+            <label>Top K</label>
+            <div class="field-row">
+              <input type="number" id="top_n" value="50" min="10" max="200" style="width:100%"
+                     oninput="document.getElementById('top_n_val').textContent=this.value">
+              <span class="val" id="top_n_val" style="display:none">50</span>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:8px">Watchlist</div>
+
+          <div class="field" style="margin-top:6px">
+            <label>Scope</label>
+            <div class="field-row" style="gap:4px">
+              <select id="watchlistSel" onchange="onWatchlistSelChange()">
+                <option value="">All</option>
+              </select>
+              <button class="icon-btn danger" id="btn-del-wl" onclick="deleteCurrentWatchlist()"
+                      title="Delete" style="display:none">✕</button>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:6px">
+            <div class="field-row" style="gap:4px">
+              <input class="new-wl-input" id="new-wl-name" placeholder="New list…"
+                     onkeydown="if(event.key==='Enter')createWatchlist()">
+              <button class="icon-btn" onclick="createWatchlist()" title="Create">＋</button>
+            </div>
+          </div>
+
+          <div class="section-title" style="margin-top:8px">Backtest</div>
+
+          <div class="field" style="margin-top:6px">
+            <label>Lookback</label>
+            <div class="field-row">
+              <input type="number" id="bt-lookback" value="365" min="30" max="730" style="width:100%">
+              <span style="font-size:10px;color:#787b86;white-space:nowrap">d</span>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:6px">
+            <label>Commission</label>
+            <div class="field-row">
+              <input type="number" id="bt-commission" value="0.1425" min="0" max="5" step="0.0001" style="width:100%">
+              <span style="font-size:10px;color:#787b86;white-space:nowrap">%</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section class="filter-group condition-card exit">
-        <div class="section-title">Exit Conditions</div>
-
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="exit_price_below_ma" checked> MA
-            <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; MA</span>
-          </label>
-          <div class="field-row">
-            <input type="range" id="exit_ma_window" min="5" max="120" value="10" oninput="syncN('exit_ma_window')">
-            <input type="number" id="exit_ma_window_n" value="10" min="5" max="120"
-                   oninput="syncR('exit_ma_window')" style="width:46px">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="exit_bb_breakdown"> Bollinger
-            <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; BB-</span>
-          </label>
-          <div class="field-row">
-            <input type="range" id="exit_bb_window" min="5" max="120" value="22" oninput="syncN('exit_bb_window')">
-            <input type="number" id="exit_bb_window_n" value="22" min="5" max="120"
-                   oninput="syncR('exit_bb_window')" style="width:46px">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="exit_use_rsi" onchange="toggleExitRsiInputs(this.checked)"> RSI
-          </label>
-          <div class="field-row">
-            <input type="range" id="exit_rsi_period" min="5" max="50" value="14"
-                   oninput="syncN('exit_rsi_period')" disabled>
-            <input type="number" id="exit_rsi_period_n" value="14" min="5" max="50"
-                   oninput="syncR('exit_rsi_period')" style="width:46px" disabled>
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-          </div>
-          <div class="field-row" style="margin-top:3px">
-            <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
-            <input type="number" id="exit_rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
-            <span style="font-size:11px;color:#787b86">–</span>
-            <input type="number" id="exit_rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row" style="margin-bottom:2px">
-            <input type="checkbox" id="exit_use_volume" onchange="toggleExitVolumeInputs(this.checked)"> Volume
-          </label>
-          <div class="field-row">
-            <input type="range" id="exit_volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
-                   oninput="syncExitVolLabel()" disabled>
-            <span class="val" id="exit_vol_ratio_val">1.5</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label class="check-row">
-            <input type="checkbox" id="exit_use_concentration" onchange="toggleExitConcInputs(this.checked)">
-            集中度
-          </label>
-          <div class="field" style="padding-left:18px">
-            <div class="field-row" style="margin-top:2px">
-              <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
-              <input type="number" id="exit_conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
-            </div>
-            <div class="field-row" style="margin-top:4px">
-              <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
-              <input type="number" id="exit_conc_min" value="0.10" step="0.005" disabled style="flex:1">
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
 
+    <!-- Full-width footer spanning both sub-columns -->
     <div id="sidebar-footer">
-      <div class="section-title">篩選標的</div>
-
-      <div class="field">
-        <label class="check-row" style="margin-bottom:2px">
-          <input type="checkbox" id="use_market_cap" onchange="toggleMcInput(this.checked)">
-          市值 top
-          <input type="number" id="market_cap_rank" value="200" min="1" max="2000" step="10"
-                 disabled style="width:56px;margin-left:6px">
-        </label>
-      </div>
-
-      <div class="field">
-        <label>Top K 結果</label>
-        <div class="field-row">
-          <input type="range" id="top_n" min="10" max="200" value="50"
-                 oninput="document.getElementById('top_n_val').textContent=this.value">
-          <span class="val" id="top_n_val">50</span>
-        </div>
-      </div>
-
-      <div class="section-title">Watchlist</div>
-
-      <div class="field">
-        <label>Filter Scope</label>
-        <div class="field-row" style="gap:4px">
-          <select id="watchlistSel" onchange="onWatchlistSelChange()">
-            <option value="">全市場 (All)</option>
-          </select>
-          <button class="icon-btn danger" id="btn-del-wl" onclick="deleteCurrentWatchlist()"
-                  title="Delete watchlist" style="display:none">✕</button>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>New Watchlist</label>
-        <div class="field-row" style="gap:4px">
-          <input class="new-wl-input" id="new-wl-name" placeholder="Name (e.g. 航運)"
-                 onkeydown="if(event.key==='Enter')createWatchlist()">
-          <button class="icon-btn" onclick="createWatchlist()" title="Create">＋</button>
-        </div>
-      </div>
-
-      <div class="section-title" style="margin-top:10px">Backtest</div>
-
-      <div style="display:flex;gap:8px">
-        <div class="field" style="flex:1">
-          <label>Lookback</label>
-          <div class="field-row">
-            <input type="number" id="bt-lookback" value="365" min="30" max="730" style="width:100%">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">d</span>
-          </div>
-        </div>
-        <div class="field" style="flex:1">
-          <label>Commission</label>
-          <div class="field-row">
-            <input type="number" id="bt-commission" value="0.1425" min="0" max="5" step="0.0001" style="width:100%">
-            <span style="font-size:10px;color:#787b86;white-space:nowrap">%</span>
-          </div>
-        </div>
-      </div>
-
       <button id="btn-screen" onclick="screenStocks()">Screen</button>
       <div id="status"></div>
     </div>

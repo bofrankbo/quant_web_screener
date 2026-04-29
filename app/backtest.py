@@ -213,6 +213,9 @@ def _entry_mask(
     rsi_max: float,
     market_cap_rank: int | None,
 ) -> pl.Expr:
+    if market_cap_rank is not None:
+        return pl.col("in_mc_prev") == True
+
     mask = pl.col("sma").is_not_null() & pl.col("bb_upper").is_not_null()
 
     if price_above_ma:
@@ -233,8 +236,6 @@ def _entry_mask(
         mask = mask & pl.col("rsi").is_not_null() & (pl.col("rsi") >= rsi_min)
     if rsi_max < 100.0:
         mask = mask & pl.col("rsi").is_not_null() & (pl.col("rsi") <= rsi_max)
-    if market_cap_rank is not None:
-        mask = mask & (pl.col("in_mc") == True)
 
     return mask
 
@@ -407,9 +408,17 @@ def run_backtest(
             df = df.join(mv_df, on=["ticker", "date"], how="left")
             df = df.with_columns(pl.col("in_mc").fill_null(False))
         else:
-            df = df.with_columns(pl.lit(True).alias("in_mc"))
+            df = df.with_columns(pl.lit(False).alias("in_mc"))
     else:
         df = df.with_columns(pl.lit(True).alias("in_mc"))
+
+    if market_cap_rank is not None:
+        df = df.sort(["ticker", "date"])
+        df = df.with_columns(
+            pl.col("in_mc").shift(1).over("ticker").fill_null(False).alias("in_mc_prev")
+        )
+    else:
+        df = df.with_columns(pl.lit(False).alias("in_mc_prev"))
 
     print("[backtest] Loading ticker names...")
     names = _load_ticker_names()
