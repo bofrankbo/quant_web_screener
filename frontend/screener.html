@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>K-Line Screener</title>
+<title>Quant Backtest</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -141,13 +141,13 @@ input[type=number]:focus { outline: none; border-color: #2962ff; }
 }
 .check-row input[type=checkbox] { accent-color: #2962ff; cursor: pointer; }
 
-#btn-screen {
+#btn-backtest {
   width: 100%; background: #2962ff; color: #fff;
   border: none; padding: 9px; font-size: 13px; font-weight: 600;
   border-radius: 4px; cursor: pointer; margin-top: 4px;
 }
-#btn-screen:hover { background: #1a4fd4; }
-#btn-screen:disabled { background: #363a45; color: #787b86; cursor: default; }
+#btn-backtest:hover { background: #1a4fd4; }
+#btn-backtest:disabled { background: #363a45; color: #787b86; cursor: default; }
 
 #status { font-size: 11px; color: #787b86; text-align: center; min-height: 16px; }
 
@@ -204,10 +204,11 @@ select:focus { outline: none; border-color: #2962ff; }
   flex: 1; display: flex; overflow: hidden; min-height: 0;
 }
 
-/* ── Middle: screener results ── */
+/* ── Middle: backtest signals ── */
 #main {
   flex: 1; display: flex; flex-direction: column; overflow: hidden;
   border-right: 1px solid #2a2e39;
+  min-width: 0;
 }
 
 #main-header {
@@ -224,6 +225,18 @@ select:focus { outline: none; border-color: #2962ff; }
 #table-wrap { flex: 1; overflow: auto; }
 #table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
 #table-wrap::-webkit-scrollbar-thumb { background: #363a45; border-radius: 3px; }
+
+#bt-positions-section {
+  border-top: 1px solid #2a2e39;
+  flex-shrink: 0;
+  max-height: 260px;
+}
+#bt-positions-body {
+  max-height: 220px;
+  overflow-y: auto;
+}
+#bt-positions-body::-webkit-scrollbar { width: 4px; }
+#bt-positions-body::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
 
 #results-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 #results-table thead th {
@@ -246,9 +259,6 @@ select:focus { outline: none; border-color: #2962ff; }
 .bear { color: #ef5350; }
 
 #empty-msg { padding: 32px; text-align: center; color: #4c525e; font-size: 13px; }
-
-/* ── Right: backtest panel ── */
-#main { display: none; }
 
 #right-panel {
   flex: 1; min-width: 0;
@@ -277,23 +287,11 @@ select:focus { outline: none; border-color: #2962ff; }
 
 #bt-content {
   display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   gap: 1px;
   background: #2a2e39;
-}
-
-.bt-column {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background: #1e222d;
-}
-#bt-middle-column { flex: 1; min-width: 0; }
-#bt-history-column {
-  flex: 1; min-width: 0;
-  border-left: 1px solid #2a2e39;
-  display: flex; flex-direction: column; overflow: hidden;
 }
 #bt-history-section {
   flex: 1; min-height: 0;
@@ -306,6 +304,9 @@ select:focus { outline: none; border-color: #2962ff; }
   max-height: none;
   overflow-y: auto;
 }
+
+#bt-history-body::-webkit-scrollbar { width: 4px; }
+#bt-history-body::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
 
 .bt-section {
   border-bottom: 1px solid #2a2e39;
@@ -582,15 +583,6 @@ select:focus { outline: none; border-color: #2962ff; }
             </label>
           </div>
 
-          <div class="field" style="margin-top:6px">
-            <label>Top K</label>
-            <div class="field-row">
-              <input type="number" id="top_n" value="50" min="10" max="200" style="width:100%"
-                     oninput="document.getElementById('top_n_val').textContent=this.value">
-              <span class="val" id="top_n_val" style="display:none">50</span>
-            </div>
-          </div>
-
           <div class="section-title" style="margin-top:8px">Watchlist</div>
 
           <div class="field" style="margin-top:6px">
@@ -636,7 +628,7 @@ select:focus { outline: none; border-color: #2962ff; }
 
     <!-- Full-width footer spanning both sub-columns -->
     <div id="sidebar-footer">
-      <button id="btn-screen" onclick="screenStocks()">Screen</button>
+      <button id="btn-backtest" onclick="runBacktest()">Run</button>
       <div id="status"></div>
     </div>
   </div>
@@ -647,11 +639,11 @@ select:focus { outline: none; border-color: #2962ff; }
     <!-- Top row: results | backtest -->
     <div id="top-row">
 
-      <!-- Middle: screener results -->
+      <!-- Middle: backtest signals -->
       <div id="main">
         <div id="main-header">
-          <span id="main-title">Entry Signals</span>
-          <span id="main-count">Set filters and click Screen</span>
+          <span id="main-title">Entry Signal</span>
+          <span id="main-count">Set filters and click Run</span>
         </div>
         <div id="table-wrap">
           <div id="empty-msg" style="display:none"></div>
@@ -674,59 +666,46 @@ select:focus { outline: none; border-color: #2962ff; }
             <tbody id="results-body"></tbody>
           </table>
         </div>
+        <details id="bt-positions-section" class="bt-section" open>
+          <summary>
+            <span class="bt-section-title">Open Trades</span>
+            <span class="bt-section-count" id="bt-positions-count">0 rows</span>
+          </summary>
+          <div class="bt-section-body" id="bt-positions-body">
+            <div class="bt-status">Run to load data</div>
+          </div>
+        </details>
       </div>
 
       <!-- Right: backtest -->
       <div id="right-panel">
         <div id="bt-header">
-          <span id="bt-header-title">Backtest</span>
+          <span id="bt-header-title">Backtest Records</span>
         </div>
         <div id="bt-content">
-          <div id="bt-middle-column" class="bt-column">
-            <details id="bt-signals-section" class="bt-section" open>
-              <summary>
-                <span class="bt-section-title">Entry Signal</span>
-                <span class="bt-section-count" id="bt-signals-count">0 rows</span>
-              </summary>
-              <div class="bt-section-body" id="bt-signals-body">
-                <div class="bt-status">Run Screen to load data</div>
-              </div>
-            </details>
-            <details id="bt-positions-section" class="bt-section" open>
-              <summary>
-                <span class="bt-section-title">Open Trades</span>
-                <span class="bt-section-count" id="bt-positions-count">0 rows</span>
-              </summary>
-              <div class="bt-section-body" id="bt-positions-body">
-                <div class="bt-status">Run Screen to load data</div>
-              </div>
-            </details>
-          </div>
-          <div id="bt-history-column" class="bt-column">
-            <div id="bt-stats">
-              <div class="bt-stat">
-                <div class="bt-stat-val" id="bt-val-winrate">—</div>
-                <div class="bt-stat-lbl">Win Rate</div>
-              </div>
-              <div class="bt-stat">
-                <div class="bt-stat-val" id="bt-val-avgreturn">—</div>
-                <div class="bt-stat-lbl">Avg Return</div>
-              </div>
-              <div class="bt-stat">
-                <div class="bt-stat-val" id="bt-val-trades">—</div>
-                <div class="bt-stat-lbl">Trades W/L</div>
-              </div>
+          <div id="bt-stats">
+            <div class="bt-stat">
+              <div class="bt-stat-val" id="bt-val-winrate">—</div>
+              <div class="bt-stat-lbl">Win Rate</div>
             </div>
-            <details id="bt-history-section" class="bt-section" open>
-              <summary>
-                <span class="bt-section-title">Trade History</span>
-                <span class="bt-section-count" id="bt-history-count">0 rows</span>
-              </summary>
-              <div class="bt-section-body" id="bt-history-body">
-                <div class="bt-status">Run Screen to load data</div>
-              </div>
-            </details>
+            <div class="bt-stat">
+              <div class="bt-stat-val" id="bt-val-avgreturn">—</div>
+              <div class="bt-stat-lbl">Avg Return</div>
+            </div>
+            <div class="bt-stat">
+              <div class="bt-stat-val" id="bt-val-trades">—</div>
+              <div class="bt-stat-lbl">Trades W/L</div>
+            </div>
           </div>
+          <details id="bt-history-section" class="bt-section" open>
+            <summary>
+              <span class="bt-section-title">Trade History</span>
+              <span class="bt-section-count" id="bt-history-count">0 rows</span>
+            </summary>
+            <div class="bt-section-body" id="bt-history-body">
+              <div class="bt-status">Run to load data</div>
+            </div>
+          </details>
         </div>
       </div>
 
@@ -799,7 +778,6 @@ function toggleMcInput(en) {
   document.getElementById('market_cap_rank').disabled = !en;
 }
 
-// ── Screener ──────────────────────────────────────────────────────────────────
 function getParams() {
   const useRsi = document.getElementById('use_rsi').checked;
   const p = {
@@ -827,85 +805,12 @@ function getParams() {
     exit_use_concentration: document.getElementById('exit_use_concentration').checked,
     exit_conc_5d_min:  +document.getElementById('exit_conc_5d_min').value,
     exit_conc_min:     +document.getElementById('exit_conc_min').value,
-    top_n:             +document.getElementById('top_n').value,
   };
   if (document.getElementById('use_market_cap').checked)
     p.market_cap_rank = +document.getElementById('market_cap_rank').value;
   const wl = document.getElementById('watchlistSel').value;
   if (wl) p.watchlist = wl;
   return p;
-}
-
-async function screenStocks() {
-  const btn = document.getElementById('btn-screen');
-  const status = document.getElementById('status');
-  btn.disabled = true; btn.textContent = 'Scanning…';
-  status.textContent = '';
-  closeKline();
-
-  try {
-    const params = getParams();
-    const resp = await fetch('/screen?' + new URLSearchParams(params));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    renderTable(data, params.ma_window, params.rsi_period, params.bb_window);
-    const countEl = document.getElementById('main-count');
-    countEl.textContent = data.length ? `${data.length} matched` : 'No matches';
-    countEl.style.color = data.length ? '#26a69a' : '#4c525e';
-    // Auto-run backtest after screening
-    runBacktest();
-  } catch (e) {
-    status.textContent = 'Error: ' + e.message;
-    document.getElementById('main-count').textContent = 'Error';
-  } finally {
-    btn.disabled = false; btn.textContent = 'Screen';
-  }
-}
-
-function renderTable(data, maWindow, rsiPeriod, bbWindow) {
-  const empty = document.getElementById('empty-msg');
-  const table = document.getElementById('results-table');
-  const tbody = document.getElementById('results-body');
-
-  if (!data.length) {
-    empty.textContent = 'No stocks matched the criteria.';
-    empty.style.display = 'block';
-    table.style.display = 'none';
-    return;
-  }
-
-  document.getElementById('th-ma').textContent  = `MA${maWindow}`;
-  document.getElementById('th-bbu').textContent = `BB+${bbWindow}`;
-  document.getElementById('th-bbl').textContent = `BB-${bbWindow}`;
-  document.getElementById('th-rsi').textContent = `RSI${rsiPeriod}`;
-
-  tbody.innerHTML = '';
-  activeRow = null;
-
-  for (const row of data) {
-    const tr = document.createElement('tr');
-    const c5  = row.concentration_5d  != null ? row.concentration_5d.toFixed(3)  : '—';
-    const c20 = row.concentration_20d != null ? row.concentration_20d.toFixed(3) : '—';
-    tr.innerHTML = `
-      <td>${row.ticker}${row.name?`<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${row.name}</span>`:''}</td>
-      <td>${row.date}</td>
-      <td>${row.close.toFixed(2)}</td>
-      <td>${row.ma       !=null?row.ma.toFixed(2)      :'—'}</td>
-      <td>${row.bb_upper !=null?row.bb_upper.toFixed(2):'—'}</td>
-      <td>${row.bb_lower !=null?row.bb_lower.toFixed(2):'—'}</td>
-      <td class="${row.vol_ratio>=2?'bull':''}">${row.vol_ratio.toFixed(2)}</td>
-      <td class="${row.rsi>70?'bear':row.rsi<30?'bull':''}">${row.rsi!=null?row.rsi.toFixed(1):'—'}</td>
-      <td>${c5}</td><td>${c20}</td><td></td>`;
-    const wlBtn = document.createElement('button');
-    wlBtn.className = 'wl-btn'; wlBtn.textContent = '+'; wlBtn.title = 'Add to watchlist';
-    wlBtn.addEventListener('click', e => { e.stopPropagation(); openWlPopup(row.ticker, wlBtn); });
-    tr.lastElementChild.appendChild(wlBtn);
-    tr.addEventListener('click', () => onRowClick(row.ticker, tr));
-    tbody.appendChild(tr);
-  }
-
-  empty.style.display = 'none';
-  table.style.display = 'table';
 }
 
 // ── K-line (bottom panel) ─────────────────────────────────────────────────────
@@ -1083,25 +988,35 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && document.activeElement.closest('#sidebar')) screenStocks();
+  if (e.key === 'Enter' && document.activeElement.closest('#sidebar')) runBacktest();
 });
 
 // ── Backtest ──────────────────────────────────────────────────────────────────
 const btStats  = document.getElementById('bt-stats');
-const btSignalsBody  = document.getElementById('bt-signals-body');
+const btSignalsBody  = document.getElementById('results-body');
 const btPositionsBody = document.getElementById('bt-positions-body');
 const btHistoryBody   = document.getElementById('bt-history-body');
 
 async function runBacktest() {
+  const btn = document.getElementById('btn-backtest');
+  const status = document.getElementById('status');
+  const table = document.getElementById('results-table');
+  const empty = document.getElementById('empty-msg');
   const days = parseInt(document.getElementById('bt-lookback').value) || 365;
   const commissionPct = parseFloat(document.getElementById('bt-commission').value) || 0.1425;
   const commission = commissionPct / 100;
   const p = getParams();
-  btSignalsBody.innerHTML = '<div class="bt-status">Running…</div>';
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  status.textContent = '';
+  closeKline();
+  empty.style.display = 'none';
+  table.style.display = 'table';
+  btSignalsBody.innerHTML = '<tr><td colspan="11" class="bt-msg">Running…</td></tr>';
   btPositionsBody.innerHTML = '<div class="bt-status">Running…</div>';
   btHistoryBody.innerHTML = '<div class="bt-status">Running…</div>';
   btStats.classList.remove('visible');
-  document.getElementById('bt-header-title').textContent = 'Backtest';
+  document.getElementById('bt-header-title').textContent = 'Backtest Records';
 
   const qp = new URLSearchParams({
     lookback_days:    days,
@@ -1132,13 +1047,15 @@ async function runBacktest() {
     commission:       commission,
   });
   if (p.market_cap_rank != null) qp.set('market_cap_rank', p.market_cap_rank);
+  if (p.watchlist) qp.set('watchlist', p.watchlist);
 
   try {
     const resp = await fetch(`/backtest/run?` + qp, { method: 'POST' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     btData = await resp.json();
     if (btData.error) {
-      btSignalsBody.innerHTML = `<div class="bt-status err">${btData.error}</div>`;
+      btSignalsBody.innerHTML = `<tr><td colspan="11" class="bt-msg">${btData.error}</td></tr>`;
+      table.style.display = 'table';
       btPositionsBody.innerHTML = `<div class="bt-status err">${btData.error}</div>`;
       btHistoryBody.innerHTML = `<div class="bt-status err">${btData.error}</div>`;
       return;
@@ -1146,13 +1063,19 @@ async function runBacktest() {
     btData.trades = btData.trades || (btData.debug && btData.debug.trades) || [];
     document.getElementById('bt-header-title').textContent =
       `Backtest ${days}d · ${btData.as_of || ''}`;
+    renderSignalsTable(btData.signals || [], p.ma_window, p.rsi_period, p.bb_window);
     renderBtStats(btData.stats);
     btStats.classList.add('visible');
     renderBtTables();
   } catch (err) {
-    btSignalsBody.innerHTML = `<div class="bt-status err">Error: ${err.message}</div>`;
+    status.textContent = 'Error: ' + err.message;
+    btSignalsBody.innerHTML = `<tr><td colspan="11" class="bt-msg">Error: ${err.message}</td></tr>`;
+    table.style.display = 'table';
     btPositionsBody.innerHTML = `<div class="bt-status err">Error: ${err.message}</div>`;
     btHistoryBody.innerHTML = `<div class="bt-status err">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run';
   }
 }
 
@@ -1173,28 +1096,62 @@ function renderBtStats(s) {
 
 function renderBtTables() {
   if (!btData) return;
-  renderSignalsTable(btData.signals || []);
   renderPositionsTable(btData.open_trades || []);
   renderHistoryTable(btData.trades || []);
 }
 
-function renderSignalsTable(rows) {
-  document.getElementById('bt-signals-count').textContent = `${rows.length} rows`;
-  const head = `<tr><th>Ticker</th><th>Close</th><th>BB Upper</th><th>Conc 5d</th><th>Conc 20d</th><th>Held</th></tr>`;
-  const body = !rows.length
-    ? `<tr><td colspan="6" class="bt-msg">No signals on last date</td></tr>`
-    : rows.map(r => {
-        const badge = r.already_held ? '<span class="bt-held-badge">★</span>' : '';
-        return `<tr>
-          <td><span class="bt-ticker">${esc(r.ticker)}</span>${r.name?`<span class="bt-name">${esc(r.name)}</span>`:''}${badge}</td>
-          <td>${r.close!=null?r.close.toFixed(2):'—'}</td>
-          <td>${r.bb_upper!=null?r.bb_upper.toFixed(2):'—'}</td>
-          <td>${r.conc_5d!=null?r.conc_5d.toFixed(4):'—'}</td>
-          <td>${r.conc_20d!=null?r.conc_20d.toFixed(4):'—'}</td>
-          <td class="${r.already_held?'bt-pos':'bt-muted'}">${r.already_held?'Yes':'No'}</td>
-        </tr>`;
-      }).join('');
-  btSignalsBody.innerHTML = `<table class="bt-table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+function renderSignalsTable(rows, maWindow, rsiPeriod, bbWindow) {
+  document.getElementById('main-count').textContent = rows.length ? `${rows.length} entry signals` : 'No entry signals';
+  document.getElementById('main-count').style.color = rows.length ? '#26a69a' : '#4c525e';
+  document.getElementById('th-ma').textContent  = `MA${maWindow}`;
+  document.getElementById('th-bbu').textContent = `BB+${bbWindow}`;
+  document.getElementById('th-bbl').textContent = `BB-${bbWindow}`;
+  document.getElementById('th-rsi').textContent = `RSI${rsiPeriod}`;
+
+  const empty = document.getElementById('empty-msg');
+  const table = document.getElementById('results-table');
+
+  if (!rows.length) {
+    empty.textContent = 'No entry signals on the current backtest date.';
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    btSignalsBody.innerHTML = '';
+    return;
+  }
+
+  const body = rows.map(r => {
+    const c5  = r.conc_5d  != null ? r.conc_5d.toFixed(3)  : '—';
+    const c20 = r.conc_20d != null ? r.conc_20d.toFixed(3) : '—';
+    const badge = r.already_held ? '<span class="bt-held-badge">★</span>' : '';
+    return `<tr>
+      <td>${r.ticker}${r.name?`<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${esc(r.name)}</span>`:''}${badge}</td>
+      <td>${r.date || '—'}</td>
+      <td>${r.close!=null?r.close.toFixed(2):'—'}</td>
+      <td>${r.ma!=null?r.ma.toFixed(2):'—'}</td>
+      <td>${r.bb_upper!=null?r.bb_upper.toFixed(2):'—'}</td>
+      <td>${r.bb_lower!=null?r.bb_lower.toFixed(2):'—'}</td>
+      <td class="${r.vol_ratio>=2?'bull':''}">${r.vol_ratio!=null?r.vol_ratio.toFixed(2):'—'}</td>
+      <td class="${r.rsi>70?'bear':r.rsi<30?'bull':''}">${r.rsi!=null?r.rsi.toFixed(1):'—'}</td>
+      <td>${c5}</td><td>${c20}</td><td></td></tr>`;
+  }).join('');
+
+  btSignalsBody.innerHTML = body;
+  const rowsEls = btSignalsBody.querySelectorAll('tr');
+  rowsEls.forEach((tr, i) => {
+    const row = rows[i];
+    tr.addEventListener('click', () => onRowClick(row.ticker, tr));
+    const actionCell = tr.lastElementChild;
+    if (actionCell) {
+      const wlBtn = document.createElement('button');
+      wlBtn.className = 'wl-btn';
+      wlBtn.textContent = '+';
+      wlBtn.title = 'Add to watchlist';
+      wlBtn.addEventListener('click', e => { e.stopPropagation(); openWlPopup(row.ticker, wlBtn); });
+      actionCell.appendChild(wlBtn);
+    }
+  });
+  empty.style.display = 'none';
+  table.style.display = 'table';
 }
 
 function renderPositionsTable(rows) {

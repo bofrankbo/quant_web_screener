@@ -7,10 +7,9 @@ from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from app.screener import screen_stocks, get_kline, get_ticker_summary, get_ticker_names
 from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
-from app.backtest import run_backtest
+from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names
 
 WATCHLISTS_PATH = Path(__file__).parent.parent / "data" / "watchlists.json"
 
@@ -51,7 +50,7 @@ async def lifespan(_app: FastAPI):
     scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title="Quant Web Screener", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="Quant Web Backtest", version="0.3.0", lifespan=lifespan)
 
 
 class Candle(BaseModel):
@@ -73,54 +72,6 @@ class PatternMatchRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
-
-@app.get("/screen")
-def screen(
-    ma_window: int = Query(default=10, ge=5, le=120),
-    bb_window: int = Query(default=22, ge=5, le=120),
-    volume_ratio: float = Query(default=1.5, ge=1.0, le=10.0),
-    price_above_ma: bool = Query(default=True),
-    bb_breakout: bool = Query(default=False),
-    rsi_period: int = Query(default=14, ge=5, le=50),
-    rsi_min: float = Query(default=0.0, ge=0.0, le=100.0),
-    rsi_max: float = Query(default=100.0, ge=0.0, le=100.0),
-    use_concentration: bool = Query(default=False),
-    conc_min: float = Query(default=0.0),
-    conc_5d_min: float = Query(default=0.0),
-    market_cap_rank: int | None = Query(default=None, ge=1, le=2000),
-    top_n: int = Query(default=50, ge=1, le=200),
-    watchlist: str | None = Query(default=None),
-):
-    tickers = None
-    if watchlist:
-        wl = _load_watchlists()
-        entry = wl.get(watchlist)
-        tickers = _tickers(entry) if entry is not None else []
-    df = screen_stocks(
-        ma_window=ma_window,
-        bb_window=bb_window,
-        volume_ratio=volume_ratio,
-        price_above_ma=price_above_ma,
-        bb_breakout=bb_breakout,
-        rsi_period=rsi_period,
-        rsi_min=rsi_min,
-        rsi_max=rsi_max,
-        use_concentration=use_concentration,
-        conc_min=conc_min,
-        conc_5d_min=conc_5d_min,
-        market_cap_rank=market_cap_rank,
-        top_n=top_n,
-        tickers=tickers,
-    )
-    if not df.is_empty():
-        names_df = get_ticker_names(df["ticker"].to_list())
-        if not names_df.is_empty():
-            df = df.join(names_df, on="ticker", how="left")
-        else:
-            df = df.with_columns(pl.lit(None).cast(pl.Utf8).alias("name"))
-        df = df.with_columns(pl.col("date").cast(pl.Utf8))
-    return JSONResponse(content=df.to_dicts())
 
 
 @app.get("/kline/{ticker}")
@@ -164,6 +115,7 @@ def backtest_run(
     use_concentration: bool = Query(default=False),
     conc_5d_min: float = Query(default=0.0),
     conc_20d_min: float = Query(default=0.0),
+    watchlist: str | None = Query(default=None),
     market_cap_rank: int | None = Query(default=None, ge=1, le=2000),
     exit_price_below_ma: bool = Query(default=True),
     exit_ma_window: int = Query(default=10, ge=5, le=120),
@@ -181,6 +133,11 @@ def backtest_run(
     commission: float = Query(default=0.001425, ge=0.0, le=0.1),
     debug: bool = Query(default=False),
 ):
+    tickers = None
+    if watchlist:
+        wl = _load_watchlists()
+        entry = wl.get(watchlist)
+        tickers = _tickers(entry) if entry is not None else []
     result = run_backtest(
         lookback_days=lookback_days,
         ma_window=ma_window,
@@ -194,6 +151,7 @@ def backtest_run(
         use_concentration=use_concentration,
         conc_5d_min=conc_5d_min,
         conc_20d_min=conc_20d_min,
+        tickers=tickers,
         market_cap_rank=market_cap_rank,
         exit_price_below_ma=exit_price_below_ma,
         exit_ma_window=exit_ma_window,
@@ -391,6 +349,11 @@ def root():
 @app.get("/draw")
 def draw():
     return RedirectResponse(url="/static/kline_draw.html")
+
+
+@app.get("/backtest")
+def backtest_page():
+    return RedirectResponse(url="/static/screener.html")
 
 
 @app.get("/watchlist-manager")

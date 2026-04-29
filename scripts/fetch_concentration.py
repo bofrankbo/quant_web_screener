@@ -1,6 +1,12 @@
 """
 Fetch broker concentration data → Cloudflare R2
 
+Daily mode:
+  - fetch all listed + OTC common stocks
+  - fetch only the target date
+  - compute the day's top-15 net buyers / net sellers
+  - append one daily row per ticker to concentration/{ticker}.parquet
+
 Concentration formula (top-15 brokers):
   buy_volume  = sum of top-15 net-buyers' net shares
   sell_volume = sum of top-15 net-sellers' net shares
@@ -15,16 +21,16 @@ Usage:
   python -m scripts.fetch_concentration [--date YYYY-MM-DD] # daily FinMind update (default: today)
   python -m scripts.fetch_concentration --tickers 2330 2454 # limit to specific tickers
 """
+import asyncio
 import argparse
 import io
 import os
-import time
 from datetime import date
 from pathlib import Path
 
 import boto3
+import aiohttp
 import polars as pl
-import requests
 from botocore.config import Config
 from dotenv import load_dotenv
 
@@ -43,6 +49,12 @@ R2_ENDPOINT          = os.environ["R2_ENDPOINT"]
 FINMIND_TOKEN        = os.environ.get("FINMIND_TOKEN") or os.environ["FINMIND_API_KEY"]
 
 FINMIND_REPORT_URL = "https://api.finmindtrade.com/api/v4/taiwan_stock_trading_daily_report"
+FINMIND_DATA_URL = "https://api.finmindtrade.com/api/v4/data"
+
+NOT_STOCK_CATEGORIES = {
+    "受益證券", "上櫃指數股票型基金(ETF)", "上櫃ETF",
+    "所有證券", "ETN", "存託憑證", "ETF", "大盤", "index", "Food",
+}
 
 CONC_COLS = ["date", "total_volume", "buy_volume", "sell_volume", "amount",
              "concentration_5d", "concentration_20d"]
@@ -73,6 +85,39 @@ def _upload_parquet(key: str, df: pl.DataFrame) -> None:
     df.write_parquet(buf)
     buf.seek(0)
     s3.put_object(Bucket=R2_BUCKET, Key=key, Body=buf.getvalue())
+
+
+async def _finmind_get_async(session: aiohttp.ClientSession, dataset: str,
+                             start_date: str, end_date: str,
+                             stock_id: str | None = None) -> tuple[list[dict], str]:
+    params = {
+        "dataset": dataset,
+        "start_date": start_date,
+        "end_date": end_date,
+        "token": FINMIND_TOKEN,
+    }
+    if stock_id:
+        params["data_id"] = stock_id
+    async with session.get(FINMIND_DATA_URL, params=params, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
+    msg = data.get("msg", "")
+    if data.get("status") != 200:
+        raise RuntimeError(f"FinMind status={data.get('status')} msg={msg}")
+    return data["data"], msg
+
+
+async def _get_all_tickers(session: aiohttp.ClientSession) -> list[str]:
+    today = str(date.today())
+    records, _ = await _finmind_get_async(session, "TaiwanStockInfo", today, today)
+    if not records:
+        raise RuntimeError("TaiwanStockInfo returned empty data")
+    df = pl.DataFrame(records)
+    df = df.filter(pl.col("type").is_in(["twse", "tpex"]))
+    df = df.filter(~pl.col("industry_category").is_in(list(NOT_STOCK_CATEGORIES)))
+    df = df.with_columns(pl.col("stock_id").cast(pl.Utf8))
+    df = df.filter(pl.col("stock_id").str.len_chars() <= 4)
+    return sorted(df["stock_id"].unique().to_list())
 
 
 # --- Concentration calculation ---
@@ -120,23 +165,23 @@ def _compute_one_day(records: list[dict]) -> dict | None:
 
     return {
         "date": target_date,
-        "total_volume": float(total_vol),
-        "buy_volume": float(buy_vol),
-        "sell_volume": float(sell_vol),
-        "amount": float(buy_vol + sell_vol),
+        "total_volume": int(total_vol),
+        "buy_volume": int(buy_vol),
+        "sell_volume": int(sell_vol),
+        "amount": int(buy_vol + sell_vol),
     }
 
 
-# --- FinMind fetch ---
-def _fetch_trader_report(ticker: str, target_date: str) -> list[dict]:
+async def _fetch_trader_report_async(session: aiohttp.ClientSession, ticker: str,
+                                     target_date: str) -> list[dict]:
     params = {
         "data_id": ticker,
         "date": target_date,
         "token": FINMIND_TOKEN,
     }
-    resp = requests.get(FINMIND_REPORT_URL, params=params, timeout=60)
-    resp.raise_for_status()
-    data = resp.json()
+    async with session.get(FINMIND_REPORT_URL, params=params, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+        resp.raise_for_status()
+        data = await resp.json()
     if data.get("status") != 200:
         raise RuntimeError(f"FinMind error [{ticker}]: {data.get('msg')}")
     return data["data"]
@@ -172,60 +217,68 @@ def backfill_from_local(tickers: list[str] | None = None) -> None:
             print(f"[{i:4d}/{len(csv_files)}] {ticker} ✗  {e}")
 
 
-# --- Daily update: FinMind → R2 ---
-def daily_update(target_date: str, tickers: list[str] | None, delay: float) -> None:
-    if tickers is None:
-        # Use whatever tickers already exist in R2
-        paginator = s3.get_paginator("list_objects_v2")
-        pages = paginator.paginate(Bucket=R2_BUCKET, Prefix="concentration/")
-        tickers = [
-            obj["Key"].removeprefix("concentration/").removesuffix(".parquet")
-            for page in pages for obj in page.get("Contents", [])
-            if obj["Key"].endswith(".parquet")
-        ]
-        tickers = sorted(tickers)
-
-    print(f"[daily] {target_date} — {len(tickers)} tickers")
-
-    updated = skipped = errors = 0
-    for i, ticker in enumerate(tickers, 1):
-        key = f"concentration/{ticker}.parquet"
+async def _process_ticker(session: aiohttp.ClientSession, ticker: str, target_date: str,
+                          sem: asyncio.Semaphore) -> tuple[str, str]:
+    key = f"concentration/{ticker}.parquet"
+    async with sem:
         try:
-            # Skip if date already ingested
-            existing = _download_parquet(key)
-            if existing is not None and target_date in existing["date"].cast(pl.Utf8).to_list():
-                skipped += 1
-                continue
+            existing_task = asyncio.to_thread(_download_parquet, key)
+            report_task = _fetch_trader_report_async(session, ticker, target_date)
+            existing, records = await asyncio.gather(existing_task, report_task)
 
-            records = _fetch_trader_report(ticker, target_date)
+            if existing is not None and target_date in existing["date"].cast(pl.Utf8).to_list():
+                return "skipped", ticker
+
             row = _compute_one_day(records)
             if row is None:
-                skipped += 1
-                continue
+                return "skipped", ticker
 
             new_row = pl.DataFrame([row]).with_columns(pl.col("date").cast(pl.Date))
 
             if existing is not None:
-                combined = pl.concat([existing.drop(["concentration_5d", "concentration_20d"]),
-                                      new_row.drop(["concentration_5d", "concentration_20d"],
-                                                   strict=False)])
+                combined = pl.concat([
+                    existing.drop(["concentration_5d", "concentration_20d"]),
+                    new_row.drop(["concentration_5d", "concentration_20d"], strict=False),
+                ])
                 combined = combined.unique(subset=["date"]).sort("date")
             else:
                 combined = new_row
 
             combined = _add_rolling(combined)
-            _upload_parquet(key, combined)
-            updated += 1
-            time.sleep(delay)
-
+            await asyncio.to_thread(_upload_parquet, key, combined)
+            return "updated", ticker
         except Exception as e:
-            errors += 1
-            print(f"  [{i:4d}] {ticker} ✗  {e}")
+            return f"error: {e}", ticker
 
-        if i % 100 == 0:
-            print(f"  [{i}/{len(tickers)}] updated={updated} skipped={skipped} errors={errors}")
 
-    print(f"Done — updated: {updated}, skipped: {skipped}, errors: {errors}")
+async def daily_update_async(target_date: str, tickers: list[str] | None, concurrency: int) -> None:
+    timeout = aiohttp.ClientTimeout(total=120)
+    connector = aiohttp.TCPConnector(limit=concurrency, ttl_dns_cache=300)
+    sem = asyncio.Semaphore(concurrency)
+
+    async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+        if tickers is None:
+            tickers = await _get_all_tickers(session)
+
+        print(f"[daily] {target_date} — {len(tickers)} tickers (async x{concurrency})")
+
+        tasks = [asyncio.create_task(_process_ticker(session, ticker, target_date, sem)) for ticker in tickers]
+
+        updated = skipped = errors = 0
+        for i, task in enumerate(asyncio.as_completed(tasks), 1):
+            status, ticker = await task
+            if status == "updated":
+                updated += 1
+            elif status == "skipped":
+                skipped += 1
+            else:
+                errors += 1
+                print(f"  [{i:4d}] {ticker} ✗  {status}")
+
+            if i % 100 == 0:
+                print(f"  [{i}/{len(tickers)}] updated={updated} skipped={skipped} errors={errors}")
+
+        print(f"Done — updated: {updated}, skipped: {skipped}, errors: {errors}")
 
 
 # --- Entry point ---
@@ -235,14 +288,14 @@ def main():
                         help="Upload all local CSVs from concentration/self_calculate/ to R2")
     parser.add_argument("--date", default=str(date.today()), help="YYYY-MM-DD (default: today)")
     parser.add_argument("--tickers", nargs="+", help="Limit to specific tickers")
-    parser.add_argument("--delay", type=float, default=0.2,
-                        help="Seconds between FinMind calls (daily mode)")
+    parser.add_argument("--concurrency", type=int, default=12,
+                        help="Concurrent FinMind requests in daily mode")
     args = parser.parse_args()
 
     if args.backfill:
         backfill_from_local(args.tickers)
     else:
-        daily_update(args.date, args.tickers, args.delay)
+        asyncio.run(daily_update_async(args.date, args.tickers, args.concurrency))
 
 
 if __name__ == "__main__":
