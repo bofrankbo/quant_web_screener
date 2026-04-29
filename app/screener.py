@@ -4,6 +4,7 @@ Filters: MA, Bollinger Band, Volume Ratio, RSI, Concentration.
 """
 import duckdb
 import polars as pl
+from datetime import date
 from app.config import MARKET_VALUE_PATH, DB_PATH, TICKER_INFO_PATH, PARQUET_CACHE_PATH
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.r2 import download_parquet
@@ -135,9 +136,11 @@ def screen_stocks(
     # Polars: compute indicators
     df = _compute_indicators(df, ma_window, bb_window, rsi_period)
 
-    # Keep only latest row per ticker
+    # Keep T-1 row per ticker: exclude today so signal is always based on previous close
+    today = pl.lit(date.today())
     latest = (
-        df.sort(["ticker", "date"])
+        df.filter(pl.col("date").cast(pl.Date) < today)
+        .sort(["ticker", "date"])
         .group_by("ticker")
         .agg(pl.all().last())
     )

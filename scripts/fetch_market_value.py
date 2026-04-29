@@ -54,7 +54,7 @@ def _fetch_date(api: DataLoader, d: str) -> pl.DataFrame:
         return pl.DataFrame()
     pdf = pl.from_pandas(df)
     # Only real stocks: 4-digit numeric IDs
-    pdf = pdf.filter(pl.col("stock_id").str.matches(r"^\d{4}$"))
+    pdf = pdf.filter(pl.col("stock_id").str.contains(r"^\d{4}$"))
     return pdf.select(["date", "stock_id", "market_value"])
 
 
