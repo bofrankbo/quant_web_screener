@@ -75,6 +75,7 @@ h1 {
   transition: border-color 0.15s, background 0.15s;
 }
 .card:hover { border-color: #2962ff; background: #222739; }
+.card--soon { opacity: 0.4; cursor: default; pointer-events: none; }
 .card-icon { font-size: 32px; }
 .card-title { font-size: 14px; font-weight: 600; color: #d1d4dc; }
 .card-desc { font-size: 11px; color: #787b86; text-align: center; line-height: 1.5; }
@@ -87,6 +88,11 @@ h1 {
   </div>
   <h1>Quant Backtest</h1>
   <div class="cards">
+    <a class="card" href="/market-overview">
+      <div class="card-icon">🌏</div>
+      <div class="card-title">Market Overview</div>
+      <div class="card-desc">大盤概覽與個股排行<br>漲跌幅 / 成交量</div>
+    </a>
     <a class="card" href="/backtest">
       <div class="card-icon">📊</div>
       <div class="card-title">Backtest</div>
@@ -102,6 +108,11 @@ h1 {
       <div class="card-title">Pattern Draw</div>
       <div class="card-desc">手繪 K 線型態<br>DTW 全市場比對</div>
     </a>
+    <div class="card card--soon">
+      <div class="card-icon">💼</div>
+      <div class="card-title">Portfolio</div>
+      <div class="card-desc">持倉紀錄與損益追蹤<br>Coming soon</div>
+    </div>
   </div>
 </div>
 <script>

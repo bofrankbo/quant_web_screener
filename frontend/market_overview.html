@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>市場總覽</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -75,6 +76,7 @@
   }
 
   .nav-links a:hover { text-decoration: underline; }
+  .nav-soon { color: #555; cursor: default; pointer-events: none; font-size: 12px; }
 
   .table-wrap {
     overflow-x: auto;
@@ -143,16 +145,13 @@
   td:first-child { text-align: left; }
   td:nth-child(2) { text-align: left; color: #8b949e; overflow: hidden; text-overflow: ellipsis; }
 
-  td.ticker-cell a {
+  td.ticker-cell {
     color: #58a6ff;
-    text-decoration: none;
     font-weight: 600;
   }
 
-  td.ticker-cell a:hover { text-decoration: underline; }
-
-  .up   { color: #3fb950; }
-  .down { color: #f85149; }
+  .up   { color: #f85149; }
+  .down { color: #3fb950; }
   .flat { color: #8b949e; }
 
   .conc-bar {
@@ -212,6 +211,54 @@
     border-bottom: 1px solid #f85149;
     font-size: 12px;
   }
+
+  tbody tr { cursor: pointer; }
+
+  #chart-panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 600px;
+    height: 100vh;
+    background: #0d1117;
+    border-left: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.2s ease;
+    z-index: 300;
+  }
+  #chart-panel.visible { transform: translateX(0); }
+
+  #chart-panel-header {
+    height: 44px;
+    min-height: 44px;
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  #chart-ticker-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f0f6fc;
+    flex: 1;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  #chart-close-btn {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 6px;
+    line-height: 1;
+    border-radius: 4px;
+  }
+  #chart-close-btn:hover { color: #f0f6fc; background: #21262d; }
+  #lwc-container { flex: 1; min-height: 0; }
 </style>
 </head>
 <body>
@@ -232,6 +279,7 @@
     <a href="/">首頁</a>
     <a href="/backtest">選股</a>
     <a href="/watchlist-manager">自選股</a>
+    <a class="nav-soon" title="Coming soon">Portfolio</a>
   </div>
 </header>
 
@@ -269,6 +317,14 @@
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+</div>
+
+<div id="chart-panel">
+  <div id="chart-panel-header">
+    <span id="chart-ticker-label">—</span>
+    <button id="chart-close-btn" onclick="closeChart()">✕</button>
+  </div>
+  <div id="lwc-container"></div>
 </div>
 
 <script>
@@ -372,8 +428,8 @@ function renderTable() {
 
     const vol = r.volume != null ? fmtInt(r.volume / 1000) : '—';
 
-    chunks.push(`<tr>
-      <td class="ticker-cell"><a href="/static/index.html?ticker=${r.ticker}" target="_blank">${r.ticker}</a></td>
+    chunks.push(`<tr data-ticker="${r.ticker}">
+      <td class="ticker-cell">${r.ticker}</td>
       <td title="${r.name || ''}">${r.name || ''}</td>
       <td>${r.date || '—'}</td>
       <td>${fmt(r.close)}</td>
@@ -388,6 +444,9 @@ function renderTable() {
     </tr>`);
   }
   tbody.innerHTML = chunks.join('');
+  tbody.querySelectorAll('tr[data-ticker]').forEach(tr => {
+    tr.addEventListener('click', () => openChart(tr.dataset.ticker));
+  });
 }
 
 // ── Sort headers ───────────────────────────────────────────────────────────
@@ -411,6 +470,79 @@ let searchTimer;
 document.getElementById('search').addEventListener('input', () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(applyFilter, 80);
+});
+
+// ── Chart ──────────────────────────────────────────────────────────────────
+let _chart = null;
+
+function openChart(ticker) {
+  document.getElementById('chart-ticker-label').textContent = ticker;
+  document.getElementById('chart-panel').classList.add('visible');
+  fetchKline(ticker);
+}
+
+function closeChart() {
+  document.getElementById('chart-panel').classList.remove('visible');
+  if (_chart) { _chart.remove(); _chart = null; }
+}
+
+async function fetchKline(ticker) {
+  try {
+    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    renderChart(await resp.json());
+  } catch (e) { console.error('kline fetch:', e); }
+}
+
+function renderChart(rows) {
+  const container = document.getElementById('lwc-container');
+  if (_chart) { _chart.remove(); _chart = null; }
+
+  _chart = LightweightCharts.createChart(container, {
+    layout: { background: { color: '#0d1117' }, textColor: '#e6edf3' },
+    grid: { vertLines: { color: '#161b22' }, horzLines: { color: '#161b22' } },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    rightPriceScale: { borderColor: '#30363d' },
+    timeScale: { borderColor: '#30363d', timeVisible: false },
+    width: container.clientWidth,
+    height: container.clientHeight,
+  });
+
+  const candles = _chart.addCandlestickSeries({
+    upColor: '#f85149', downColor: '#3fb950',
+    borderUpColor: '#f85149', borderDownColor: '#3fb950',
+    wickUpColor: '#f85149', wickDownColor: '#3fb950',
+  });
+  candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
+
+  const ma = _chart.addLineSeries({ color: '#d29922', lineWidth: 1, priceLineVisible: false });
+  ma.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+
+  const vol = _chart.addHistogramSeries({
+    priceFormat: { type: 'volume' }, priceScaleId: 'vol',
+    scaleMargins: { top: 0.82, bottom: 0 },
+  });
+  vol.setData(rows.map(r => ({
+    time: r.date, value: r.volume,
+    color: r.close >= r.open ? 'rgba(248,81,73,0.45)' : 'rgba(63,185,80,0.45)',
+  })));
+
+  const lastDate = new Date(rows[rows.length - 1].date);
+  const fromDate = new Date(lastDate);
+  fromDate.setMonth(fromDate.getMonth() - 3);
+  _chart.timeScale().setVisibleRange({
+    from: fromDate.toISOString().slice(0, 10),
+    to: lastDate.toISOString().slice(0, 10),
+  });
+
+  const ro = new ResizeObserver(() => {
+    if (_chart) _chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+  });
+  ro.observe(container);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeChart();
 });
 
 // ── Init ───────────────────────────────────────────────────────────────────

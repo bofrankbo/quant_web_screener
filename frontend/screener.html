@@ -33,6 +33,7 @@ body {
   padding: 4px 10px; border: 1px solid #2962ff; border-radius: 4px;
 }
 .topbar-link:hover { background: rgba(41,98,255,0.12); }
+.topbar-link--soon { color: #555; border-color: #555; cursor: default; pointer-events: none; }
 
 /* ── Body ── */
 #body { display: flex; flex: 1; overflow: hidden; }
@@ -255,8 +256,8 @@ select:focus { outline: none; border-color: #2962ff; }
   padding: 7px 10px; text-align: right; white-space: nowrap; color: #d1d4dc;
 }
 #results-table td:first-child { text-align: left; font-weight: 600; color: #fff; }
-.bull { color: #26a69a; }
-.bear { color: #ef5350; }
+.bull { color: #ef5350; }
+.bear { color: #26a69a; }
 
 #empty-msg { padding: 32px; text-align: center; color: #4c525e; font-size: 13px; }
 
@@ -360,15 +361,15 @@ select:focus { outline: none; border-color: #2962ff; }
 
 .bt-ticker { font-weight: 700; font-family: 'SF Mono','Consolas',monospace; color: #d1d4dc; }
 .bt-name { font-size: 10px; color: #787b86; margin-left: 5px; font-weight: 400; }
-.bt-pos { color: #26a69a; }
-.bt-neg { color: #ef5350; }
+.bt-pos { color: #ef5350; }
+.bt-neg { color: #26a69a; }
 .bt-muted { color: #4c525e; }
 .bt-held-badge { font-size: 9px; color: #ffa726; margin-left: 4px; }
 .bt-msg { text-align: center !important; color: #4c525e; padding: 24px 12px !important; }
 .bt-status { text-align: center; color: #787b86; font-size: 12px; padding: 28px 16px; }
 .bt-status.err { color: #ef5350; }
-.bt-action-buy { color: #26a69a; font-weight: 700; }
-.bt-action-sell { color: #ef5350; font-weight: 700; }
+.bt-action-buy { color: #ef5350; font-weight: 700; }
+.bt-action-sell { color: #26a69a; font-weight: 700; }
 
 /* ── K-line panel (bottom, spans col 2+3) ── */
 #kline-panel {
@@ -403,6 +404,7 @@ select:focus { outline: none; border-color: #2962ff; }
   <h1>K-LINE SCREENER</h1>
   <div id="topbar-spacer"></div>
   <a class="topbar-link" href="/static/watchlist.html">Watchlists</a>
+  <a class="topbar-link topbar-link--soon" title="Coming soon">Portfolio</a>
   <a class="topbar-link" href="/draw" target="_blank">Pattern Draw →</a>
 </div>
 
@@ -864,9 +866,9 @@ function renderChart(rows) {
   });
 
   const candles = currentChart.addCandlestickSeries({
-    upColor: '#26a69a', downColor: '#ef5350',
-    borderUpColor: '#26a69a', borderDownColor: '#ef5350',
-    wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+    upColor: '#ef5350', downColor: '#26a69a',
+    borderUpColor: '#ef5350', borderDownColor: '#26a69a',
+    wickUpColor: '#ef5350', wickDownColor: '#26a69a',
   });
   candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
 
@@ -885,7 +887,7 @@ function renderChart(rows) {
   });
   vol.setData(rows.map(r => ({
     time: r.date, value: r.volume,
-    color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
+    color: r.close >= r.open ? 'rgba(239,83,80,0.45)' : 'rgba(38,166,154,0.45)',
   })));
 
   currentChart.timeScale().fitContent();

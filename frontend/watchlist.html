@@ -114,33 +114,6 @@ body {
 }
 #btn-create-wl:hover { background: #1a4fd4; }
 
-#transfer-tools {
-  padding: 10px;
-  border-bottom: 1px solid #2a2e39;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-#transfer-tools.visible { display: flex; }
-.transfer-row {
-  display: flex;
-  gap: 6px;
-}
-.transfer-btn {
-  background: #2a2e39;
-  color: #d1d4dc;
-  border: 1px solid #363a45;
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-}
-.transfer-btn:hover { border-color: #2962ff; color: #2962ff; }
-.transfer-note {
-  font-size: 11px;
-  color: #787b86;
-  line-height: 1.4;
-}
 
 #wl-list {
   flex: 1;
@@ -418,6 +391,7 @@ body {
 #stock-table thead th:first-child,
 #stock-table thead th:nth-child(2) { text-align: left; }
 
+#stock-table tbody tr { cursor: pointer; }
 #stock-table tbody tr:hover td { background: #1c2030; }
 
 #stock-table td {
@@ -439,8 +413,8 @@ body {
 }
 .ticker-link:hover { text-decoration: underline; }
 
-.pct-pos  { color: #26a69a; }
-.pct-neg  { color: #ef5350; }
+.pct-pos  { color: #ef5350; }
+.pct-neg  { color: #26a69a; }
 .pct-zero { color: #787b86; }
 
 .custom-cell {
@@ -608,16 +582,6 @@ tr.row-inactive td:not(.toggle-col) {
 <div id="body">
   <!-- Left: watchlist list -->
   <div id="left">
-    <div id="transfer-tools">
-      <div class="transfer-row">
-        <button class="transfer-btn" onclick="exportWatchlists()">Export JSON</button>
-        <button class="transfer-btn" onclick="pickImportFile()">Import JSON</button>
-        <input id="import-file" type="file" accept="application/json" style="display:none" onchange="importWatchlistsFile()">
-      </div>
-      <div class="transfer-note">
-        用來在 localhost 和 Railway 之間手動搬移 watchlist。匯入會覆蓋目前登入者的清單。
-      </div>
-    </div>
     <div id="new-wl-form">
       <input id="new-wl-input" type="text" placeholder="New watchlist name…"
              onkeydown="if(event.key==='Enter')createWatchlist()">
@@ -1066,6 +1030,10 @@ function renderTable(rows) {
     tr.querySelector('.del-row-btn').addEventListener('click', () => {
       removeTicker(currentWl, row.ticker);
     });
+    tr.addEventListener('click', e => {
+      if (e.target.closest('button, input, a')) return;
+      openChart(row.ticker);
+    });
     tbody.appendChild(tr);
   }
 }
@@ -1342,9 +1310,9 @@ function renderChart(rows) {
   });
 
   const candles = _chart.addCandlestickSeries({
-    upColor: '#26a69a', downColor: '#ef5350',
-    borderUpColor: '#26a69a', borderDownColor: '#ef5350',
-    wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+    upColor: '#ef5350', downColor: '#26a69a',
+    borderUpColor: '#ef5350', borderDownColor: '#26a69a',
+    wickUpColor: '#ef5350', wickDownColor: '#26a69a',
   });
   candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
 
@@ -1367,7 +1335,7 @@ function renderChart(rows) {
   });
   volSeries.setData(rows.map(r => ({
     time: r.date, value: r.volume,
-    color: r.close >= r.open ? 'rgba(38,166,154,0.45)' : 'rgba(239,83,80,0.45)',
+    color: r.close >= r.open ? 'rgba(239,83,80,0.45)' : 'rgba(38,166,154,0.45)',
   })));
 
   // Default view: last 3 months, but full history is loaded and scrollable
@@ -1417,7 +1385,6 @@ async function loadAuthStatus() {
     const user = resp.ok ? (await resp.json()).user : null;
     const userLabel = document.getElementById('auth-user');
     const authLink = document.getElementById('auth-link');
-    const transferTools = document.getElementById('transfer-tools');
     if (user) {
       userLabel.textContent = user.name || user.email || 'Signed in';
       authLink.textContent = 'Logout';
@@ -1427,57 +1394,15 @@ async function loadAuthStatus() {
         await fetch('/auth/logout', { method: 'POST' });
         window.location.reload();
       };
-      transferTools.classList.add('visible');
     } else {
       userLabel.textContent = 'Not signed in';
       authLink.textContent = 'Sign in with Google';
       authLink.href = '/auth/google/login';
       authLink.onclick = null;
-      transferTools.classList.remove('visible');
     }
   } catch (e) {
     console.error('auth status failed:', e);
   }
-}
-
-async function exportWatchlists() {
-  const resp = await fetch('/watchlists/export');
-  if (!resp.ok) {
-    alert('Export failed');
-    return;
-  }
-  const blob = await resp.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'watchlists-export.json';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function pickImportFile() {
-  document.getElementById('import-file').click();
-}
-
-async function importWatchlistsFile() {
-  const input = document.getElementById('import-file');
-  const file = input.files && input.files[0];
-  if (!file) return;
-  const form = new FormData();
-  form.append('file', file);
-  const resp = await fetch('/watchlists/import?replace=true', {
-    method: 'POST',
-    body: form,
-  });
-  input.value = '';
-  if (!resp.ok) {
-    const data = await resp.json().catch(() => ({}));
-    alert(data.detail || 'Import failed');
-    return;
-  }
-  await loadAll();
 }
 
 // Init

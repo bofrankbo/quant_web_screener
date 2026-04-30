@@ -3,8 +3,8 @@ import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 import polars as pl
-from fastapi import FastAPI, Query, Request, UploadFile, File
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
@@ -119,43 +119,6 @@ def _build_watchlist_summary(tickers: list[str], custom_label: str, custom_data:
     order = {t: i for i, t in enumerate(tickers)}
     rows.sort(key=lambda r: order.get(r["ticker"], 9999))
     return {"custom_label": custom_label, "rows": rows}
-
-
-def _export_watchlists_payload(user_id: int) -> dict:
-    watchlists = get_watchlists_for_user(user_id)
-    payload: dict[str, dict] = {}
-    for wl in watchlists:
-        items = get_watchlist_items_for_user(user_id, wl["name"])
-        payload[wl["name"]] = {
-            "tickers": [item["ticker"] for item in items],
-            "custom_label": wl.get("custom_label", "備註"),
-            "custom": {item["ticker"]: item.get("note", "") for item in items if item.get("note")},
-            "active": {item["ticker"]: False for item in items if not bool(item.get("active", 1))},
-        }
-    return payload
-
-
-def _import_watchlists_payload(user_id: int, payload: dict, replace: bool = True) -> int:
-    if replace:
-        clear_watchlists_for_user(user_id)
-    count = 0
-    for name, entry in payload.items():
-        if not isinstance(entry, dict):
-            entry = {"tickers": entry}
-        tickers = entry.get("tickers", []) or []
-        custom_label = entry.get("custom_label", "備註")
-        custom_data = entry.get("custom", {}) or {}
-        active_data = entry.get("active", {}) or {}
-        create_watchlist_for_user(user_id, name)
-        set_watchlist_custom_label(user_id, name, custom_label)
-        for ticker in tickers:
-            add_ticker_to_watchlist(user_id, name, ticker)
-            if ticker in custom_data:
-                set_watchlist_note(user_id, name, ticker, custom_data[ticker])
-            if ticker in active_data:
-                set_watchlist_item_active(user_id, name, ticker, bool(active_data[ticker]))
-        count += 1
-    return count
 
 
 def _import_legacy_watchlists_to_user(user_id: int) -> None:
@@ -275,40 +238,6 @@ def auth_me(request: Request):
 def auth_logout(request: Request):
     request.session.clear()
     return JSONResponse(content={"ok": True})
-
-
-@app.get("/watchlists/export")
-def export_watchlists(request: Request):
-    user = _current_user(request)
-    if not user:
-        return JSONResponse(status_code=401, content={"detail": "not authenticated"})
-    payload = _export_watchlists_payload(user["id"])
-    body = json.dumps(payload, ensure_ascii=False, indent=2)
-    return Response(
-        content=body,
-        media_type="application/json",
-        headers={"Content-Disposition": 'attachment; filename="watchlists-export.json"'},
-    )
-
-
-@app.post("/watchlists/import")
-async def import_watchlists(
-    request: Request,
-    file: UploadFile = File(...),
-    replace: bool = Query(default=True),
-):
-    user = _current_user(request)
-    if not user:
-        return JSONResponse(status_code=401, content={"detail": "not authenticated"})
-    raw = await file.read()
-    try:
-        payload = json.loads(raw.decode("utf-8"))
-    except Exception:
-        return JSONResponse(status_code=400, content={"detail": "Invalid JSON file"})
-    if not isinstance(payload, dict):
-        return JSONResponse(status_code=400, content={"detail": "JSON root must be an object"})
-    imported = _import_watchlists_payload(user["id"], payload, replace=replace)
-    return JSONResponse(content={"ok": True, "imported": imported})
 
 
 @app.get("/kline/{ticker}")
