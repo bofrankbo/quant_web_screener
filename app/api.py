@@ -1,6 +1,8 @@
 import json
 import threading
+import time
 from contextlib import asynccontextmanager
+from datetime import date, timedelta
 from pathlib import Path
 import polars as pl
 from fastapi import FastAPI, Query, Request
@@ -32,6 +34,18 @@ from app.db import (
     set_watchlist_custom_label,
     set_watchlist_item_active,
     set_watchlist_note,
+    # portfolio
+    get_portfolios_for_user,
+    get_portfolio_by_name,
+    create_portfolio_for_user,
+    delete_portfolio_for_user,
+    get_portfolio_positions,
+    upsert_portfolio_position,
+    delete_portfolio_position,
+    add_portfolio_trade,
+    get_portfolio_trades,
+    upsert_monthly_pnl,
+    get_monthly_pnl,
 )
 from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
@@ -543,6 +557,288 @@ def set_ticker_active(request: Request, name: str, ticker: str, req: ActiveReque
     return JSONResponse(content={"ok": True})
 
 
+# ── Portfolio ─────────────────────────────────────────────────────────────────
+
+class PositionIn(BaseModel):
+    ticker: str
+    name: str = ""
+    shares: float = 0
+    lots: float = 0
+    avg_cost: float = 0
+    currency: str = "TWD"
+    market: str = "TW"
+    price_override: float | None = None
+    entry_date: str = ""
+    entry_reason: str = ""
+    margin_lots: float = 0
+    futures_lots: float = 0
+    note: str = ""
+
+
+class TradeIn(BaseModel):
+    ticker: str
+    name: str = ""
+    action: str  # 'buy' | 'sell'
+    shares: float
+    price: float
+    currency: str = "TWD"
+    commission: float = 0
+    trade_date: str
+    entry_reason: str = ""
+    exit_reason: str = ""
+    realized_pnl: float = 0
+    note: str = ""
+
+
+class MonthlyPnlIn(BaseModel):
+    unrealized_tw: float = 0
+    realized_tw: float = 0
+    dividend_tw: float = 0
+    unrealized_us_usd: float = 0
+    realized_us_usd: float = 0
+    usd_rate: float = 31.0
+    unrealized_futures: float = 0
+    realized_futures: float = 0
+    algo_pnl: float = 0
+    fee_rebate: float = 0
+    total_pnl: float = 0
+    nav: float = 0
+    note: str = ""
+
+
+def _get_last_close(ticker: str) -> float | None:
+    """Return the most recent close price from local parquet cache."""
+    from app.backtest import CACHE_DIR
+    path = CACHE_DIR / "tickers" / f"{ticker}.parquet"
+    if not path.exists():
+        return None
+    try:
+        df = pl.read_parquet(path)
+        if df.is_empty() or "close" not in df.columns:
+            return None
+        return float(df.sort("date").tail(1)["close"][0])
+    except Exception:
+        return None
+
+
+@app.get("/api/portfolios")
+def list_portfolios(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    return JSONResponse(content=get_portfolios_for_user(user["id"]))
+
+
+@app.post("/api/portfolios/{name}")
+def create_portfolio(request: Request, name: str):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = create_portfolio_for_user(user["id"], name)
+    return JSONResponse(content=portfolio)
+
+
+@app.delete("/api/portfolios/{name}")
+def delete_portfolio(request: Request, name: str):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    delete_portfolio_for_user(user["id"], name)
+    return JSONResponse(content={"ok": True})
+
+
+@app.get("/api/portfolios/{name}/positions")
+def get_positions(request: Request, name: str, usd_rate: float = Query(default=31.0)):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = get_portfolio_by_name(user["id"], name)
+    if portfolio is None:
+        return JSONResponse(status_code=404, content={"detail": "Portfolio not found"})
+
+    positions = get_portfolio_positions(portfolio["id"])
+    total_value_twd = 0.0
+
+    enriched = []
+    for pos in positions:
+        p = dict(pos)
+        if p["market"] == "TW":
+            live = _get_last_close(p["ticker"])
+            p["current_price"] = live if live is not None else p["avg_cost"]
+            p["market_value_twd"] = p["current_price"] * p["shares"]
+        else:
+            price_usd = p["price_override"] if p["price_override"] is not None else p["avg_cost"]
+            p["current_price"] = price_usd
+            p["market_value_twd"] = price_usd * p["shares"] * usd_rate
+        cost_twd = p["avg_cost"] * p["shares"] * (usd_rate if p["currency"] == "USD" else 1)
+        p["unrealized_pnl"] = p["market_value_twd"] - cost_twd
+        p["unrealized_pct"] = (p["unrealized_pnl"] / cost_twd * 100) if cost_twd else 0
+        total_value_twd += p["market_value_twd"]
+        enriched.append(p)
+
+    for p in enriched:
+        p["position_weight"] = (p["market_value_twd"] / total_value_twd * 100) if total_value_twd else 0
+
+    return JSONResponse(content={"positions": enriched, "total_value_twd": total_value_twd})
+
+
+@app.post("/api/portfolios/{name}/positions")
+def add_position(request: Request, name: str, body: PositionIn):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = get_portfolio_by_name(user["id"], name)
+    if portfolio is None:
+        return JSONResponse(status_code=404, content={"detail": "Portfolio not found"})
+    upsert_portfolio_position(portfolio["id"], **body.model_dump())
+    return JSONResponse(content={"ok": True})
+
+
+@app.delete("/api/portfolios/{name}/positions/{ticker}")
+def remove_position(request: Request, name: str, ticker: str):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = get_portfolio_by_name(user["id"], name)
+    if portfolio is None:
+        return JSONResponse(status_code=404, content={"detail": "Portfolio not found"})
+    delete_portfolio_position(portfolio["id"], ticker)
+    return JSONResponse(content={"ok": True})
+
+
+@app.get("/api/portfolios/{name}/trades")
+def list_trades(request: Request, name: str):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = get_portfolio_by_name(user["id"], name)
+    if portfolio is None:
+        return JSONResponse(status_code=404, content={"detail": "Portfolio not found"})
+    return JSONResponse(content=get_portfolio_trades(user["id"], portfolio["id"]))
+
+
+@app.post("/api/portfolios/{name}/trades")
+def log_trade(request: Request, name: str, body: TradeIn):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    portfolio = get_portfolio_by_name(user["id"], name)
+    if portfolio is None:
+        return JSONResponse(status_code=404, content={"detail": "Portfolio not found"})
+    trade_id = add_portfolio_trade(user["id"], portfolio["id"], **body.model_dump())
+    return JSONResponse(content={"id": trade_id})
+
+
+@app.get("/api/portfolio/monthly_pnl")
+def list_monthly_pnl(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    return JSONResponse(content=get_monthly_pnl(user["id"]))
+
+
+@app.put("/api/portfolio/monthly_pnl/{year_month}")
+def update_monthly_pnl(request: Request, year_month: str, body: MonthlyPnlIn):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    upsert_monthly_pnl(user["id"], year_month, **body.model_dump())
+    return JSONResponse(content={"ok": True})
+
+
+# ── Taiwan Weighted Total Return Index (annual) ───────────────────────────────
+import re as _re
+import requests as _requests
+
+_TWSE_INDEX_CACHE: dict = {}  # {year: {"idx": float, "idx_rate": float}}
+_TWSE_CACHE_TS: float = 0.0
+
+
+def _fetch_twse_index_close(query_date: date) -> float | None:
+    """Return 發行量加權股價報酬指數 close for the given date, or None if no data."""
+    url = "https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX"
+    headers = {"User-Agent": "Mozilla/5.0"}
+    resp = _requests.get(url, params={"response": "json", "date": query_date.strftime("%Y%m%d"), "type": "ALL"}, headers=headers, timeout=10)
+    if resp.status_code != 200:
+        return None
+    try:
+        data = resp.json()
+    except Exception:
+        return None
+    for table in data.get("tables", []):
+        if not table or not table.get("data"):
+            continue
+        for row in table["data"]:
+            if row and "發行量加權股價報酬指數" in str(row[0]):
+                try:
+                    return float(str(row[1]).replace(",", ""))
+                except (ValueError, IndexError):
+                    pass
+    return None
+
+
+def _last_trading_day_close(year: int, month: int = 12) -> float | None:
+    """Walk backwards from month-end to find the last trading day and return index close."""
+    if month == 12:
+        d = date(year, 12, 31)
+    else:
+        # First day of next month minus 1
+        d = date(year, month + 1, 1) - timedelta(days=1)
+    for _ in range(10):
+        val = _fetch_twse_index_close(d)
+        if val is not None:
+            return val
+        d -= timedelta(days=1)
+        time.sleep(0.1)
+    return None
+
+
+def _build_annual_index_data() -> list[dict]:
+    """Fetch year-end closes from TWSE and compute annual returns."""
+    today = date.today()
+    current_year = today.year
+    start_year = 2021  # need prev-year close to compute 2022 return
+
+    closes: dict[int, float] = {}
+    for y in range(start_year, current_year + 1):
+        if y == current_year:
+            # use latest available: previous month-end (or earlier if partial year)
+            month = today.month - 1 if today.month > 1 else 12
+            ref_year = y if today.month > 1 else y - 1
+            val = _last_trading_day_close(ref_year, month)
+        else:
+            val = _last_trading_day_close(y)
+        if val is not None:
+            closes[y] = val
+        time.sleep(0.2)
+
+    result = []
+    for y in range(2022, current_year + 1):
+        if y not in closes or (y - 1) not in closes:
+            continue
+        tw_year = y - 1911
+        idx_rate = (closes[y] - closes[y - 1]) / closes[y - 1]
+        result.append({
+            "year": f"{y}({tw_year})",
+            "idx": round(closes[y], 0),
+            "idx_rate": round(idx_rate, 4),
+        })
+    return result
+
+
+@app.get("/api/index_annual")
+def index_annual():
+    global _TWSE_INDEX_CACHE, _TWSE_CACHE_TS
+    # Cache for 6 hours
+    if _TWSE_INDEX_CACHE and (time.time() - _TWSE_CACHE_TS) < 21600:
+        return JSONResponse(content=_TWSE_INDEX_CACHE)
+    data = _build_annual_index_data()
+    if data:
+        _TWSE_INDEX_CACHE = data
+        _TWSE_CACHE_TS = time.time()
+    return JSONResponse(content=data)
+
+
 # ── Static files (must be after all route definitions) ────────────────────────
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
@@ -571,6 +867,11 @@ def watchlist_manager():
 @app.get("/market-overview")
 def market_overview_page():
     return RedirectResponse(url="/static/market_overview.html")
+
+
+@app.get("/portfolio")
+def portfolio_page():
+    return RedirectResponse(url="/static/portfolio.html")
 
 
 @app.get("/api/market-overview")

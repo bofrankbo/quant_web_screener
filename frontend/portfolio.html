@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+header h1 { font-size: 15px; font-weight: 600; color: #f0f6fc; }
+
+.nav-links { display: flex; gap: 12px; margin-left: auto; align-items: center; }
+.nav-links a { color: #58a6ff; text-decoration: none; font-size: 12px; }
+.nav-links a:hover { text-decoration: underline; }
+.nav-links a.active { color: #f0f6fc; font-weight: 600; }
+.nav-soon { color: #555; cursor: default; font-size: 12px; }
+
+#user-info { color: #8b949e; font-size: 12px; white-space: nowrap; }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 0;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 9px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #8b949e;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  transition: color 0.15s;
+}
+
+.tab-btn:hover { color: #e6edf3; }
+.tab-btn.active { color: #58a6ff; border-bottom-color: #58a6ff; }
+
+/* ── Main layout ── */
+#main-area {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+.tab-panel.active { display: flex; }
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+}
+
+.toolbar select, .toolbar input[type="text"], .toolbar input[type="number"] {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  color: #e6edf3;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  outline: none;
+}
+
+.toolbar select:focus, .toolbar input:focus { border-color: #58a6ff; }
+
+.btn {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: 1px solid #30363d;
+  background: #21262d;
+  color: #e6edf3;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn:hover { background: #2d333b; }
+.btn.btn-primary { background: #1f6feb; border-color: #1f6feb; }
+.btn.btn-primary:hover { background: #388bfd; }
+.btn.btn-danger { background: #3d1f1f; border-color: #6e3535; color: #f85149; }
+.btn.btn-danger:hover { background: #5a2323; }
+.btn.btn-sm { padding: 3px 8px; font-size: 11px; }
+
+.toolbar-sep { width: 1px; height: 20px; background: #30363d; }
+.toolbar-label { color: #8b949e; font-size: 12px; }
+
+/* ── Tables ── */
+.table-scroll { flex: 1; overflow: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  background: #161b22;
+  color: #8b949e;
+  font-weight: 500;
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid #21262d;
+  white-space: nowrap;
+  font-size: 12px;
+  z-index: 2;
+}
+
+thead th:first-child { text-align: left; }
+thead th.left { text-align: left; }
+
+tbody tr { border-bottom: 1px solid #161b22; transition: background 0.1s; cursor: default; }
+tbody tr:hover { background: #1c2128; }
+tbody tr.clickable:hover { background: #1c2128; cursor: pointer; }
+
+td {
+  padding: 6px 10px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+td.left { text-align: left; }
+td.ticker { color: #58a6ff; font-weight: 600; text-align: left; }
+td.name { color: #8b949e; text-align: left; }
+td.up { color: #f85149; }
+td.down { color: #3fb950; }
+td.flat { color: #8b949e; }
+
+tfoot td {
+  padding: 7px 10px;
+  text-align: right;
+  background: #161b22;
+  color: #f0f6fc;
+  font-weight: 600;
+  border-top: 1px solid #30363d;
+  white-space: nowrap;
+}
+
+tfoot td.left { text-align: left; }
+
+/* ── Inline-editable cells ── */
+td.editable { cursor: text; }
+td.editable:hover { background: #1c2128; outline: 1px solid #30363d; }
+td.editable input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  text-align: inherit;
+  outline: none;
+}
+
+/* ── Kline panel ── */
+#kline-panel {
+  height: 280px;
+  border-top: 1px solid #30363d;
+  background: #0d1117;
+  display: none;
+  flex-shrink: 0;
+  flex-direction: column;
+}
+
+#kline-panel.open { display: flex; }
+
+#kline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+
+#kline-title { font-size: 13px; font-weight: 600; color: #f0f6fc; }
+#kline-close { margin-left: auto; background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px; padding: 0 4px; }
+#kline-close:hover { color: #e6edf3; }
+#chart-container { flex: 1; }
+
+/* ── Section headers (進出場 tab) ── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  border-top: 1px solid #21262d;
+  cursor: pointer;
+  font-size: 12px;
+  color: #8b949e;
+  font-weight: 500;
+  user-select: none;
+}
+
+.section-header:hover { color: #e6edf3; }
+.section-header .caret { font-size: 10px; }
+.section-body { display: block; }
+.section-body.collapsed { display: none; }
+
+/* ── Monthly P&L matrix ── */
+#pnl-matrix-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+#pnl-matrix {
+  border-collapse: collapse;
+  min-width: max-content;
+}
+
+#pnl-matrix th, #pnl-matrix td {
+  padding: 6px 12px;
+  border: 1px solid #21262d;
+  white-space: nowrap;
+  text-align: right;
+  font-size: 12px;
+}
+
+#pnl-matrix th {
+  background: #161b22;
+  color: #8b949e;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+#pnl-matrix th:first-child, #pnl-matrix td:first-child {
+  text-align: left;
+  background: #161b22;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  min-width: 160px;
+  color: #8b949e;
+}
+
+#pnl-matrix th:first-child { z-index: 4; }
+
+#pnl-matrix td.editable { cursor: text; min-width: 90px; }
+#pnl-matrix td.editable:hover { background: #1c2128; }
+#pnl-matrix td.row-label { color: #8b949e; }
+#pnl-matrix td.total-row { color: #f0f6fc; font-weight: 600; background: #1a1f27; }
+#pnl-matrix td.total-row:first-child { background: #1a1f27; }
+
+/* ── Annual comparison table ── */
+#annual-section { padding: 16px; }
+#annual-section h3 { color: #8b949e; font-size: 12px; font-weight: 500; margin-bottom: 10px; }
+#annual-table { width: auto; }
+#annual-table th, #annual-table td { padding: 6px 16px; border: 1px solid #21262d; }
+#annual-table th { background: #161b22; color: #8b949e; font-weight: 500; font-size: 12px; }
+
+/* ── Modal ── */
+#modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-overlay.open { display: flex; }
+
+#modal {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 340px;
+  max-width: 480px;
+  width: 100%;
+}
+
+#modal h2 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: #f0f6fc; }
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.form-row label { font-size: 11px; color: #8b949e; }
+
+.form-row input, .form-row select, .form-row textarea {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 5px;
+  color: #e6edf3;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 8px;
+  outline: none;
+}
+
+.form-row input:focus, .form-row select:focus { border-color: #58a6ff; }
+
+.form-row.row2 { flex-direction: row; gap: 10px; }
+.form-row.row2 > * { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.form-row.row2 label { font-size: 11px; color: #8b949e; }
+
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+/* ── Empty state ── */
+.empty-state { padding: 40px; text-align: center; color: #484f58; }
+
+/* ── Toast ── */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #1f6feb;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+#toast.show { opacity: 1; }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Portfolio</h1>
+  <div class="nav-links">
+    <a href="/backtest">Screener</a>
+    <a href="/market-overview">Market</a>
+    <a href="/watchlist-manager">Watchlists</a>
+    <a href="/portfolio" class="active">Portfolio</a>
+  </div>
+  <span id="user-info"></span>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="allocation">配置</button>
+  <button class="tab-btn" data-tab="entryexit">進出場</button>
+  <button class="tab-btn" data-tab="pnl">損益紀錄</button>
+</div>
+
+<div id="main-area">
+
+  <!-- ── Tab 1: 配置 ── -->
+  <div id="tab-allocation" class="tab-panel active">
+    <div class="toolbar">
+      <label class="toolbar-label">Portfolio:</label>
+      <select id="portfolio-select"></select>
+      <button class="btn btn-sm btn-primary" id="btn-new-portfolio">+ 新增</button>
+      <button class="btn btn-sm btn-danger" id="btn-del-portfolio">刪除</button>
+      <div class="toolbar-sep"></div>
+      <label class="toolbar-label">USD/TWD:</label>
+      <input type="number" id="usd-rate" value="31.5" step="0.001" style="width:80px">
+      <div class="toolbar-sep"></div>
+      <button class="btn btn-sm btn-primary" id="btn-add-position">+ 新增持股</button>
+    </div>
+    <div class="table-scroll" id="allocation-scroll">
+      <table id="allocation-table">
+        <thead>
+          <tr>
+            <th class="left">代號</th>
+            <th class="left">名稱</th>
+            <th>市場</th>
+            <th>張數/股</th>
+            <th>均成本</th>
+            <th>現價</th>
+            <th>市值(TWD)</th>
+            <th>未實現損益</th>
+            <th>損益%</th>
+            <th>佔淨值%</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="allocation-body"></tbody>
+        <tfoot id="allocation-foot"></tfoot>
+      </table>
+      <div id="allocation-empty" class="empty-state" style="display:none">尚無持股 — 點擊「+ 新增持股」加入</div>
+    </div>
+    <div id="kline-panel">
+      <div id="kline-header">
+        <span id="kline-title"></span>
+        <label style="color:#8b949e;font-size:12px;margin-left:16px">回看</label>
+        <input type="range" id="kline-days" min="30" max="500" value="120" style="width:100px">
+        <span id="kline-days-label" style="color:#8b949e;font-size:12px">120d</span>
+        <button id="kline-close">✕</button>
+      </div>
+      <div id="chart-container"></div>
+    </div>
+  </div>
+
+  <!-- ── Tab 2: 進出場 ── -->
+  <div id="tab-entryexit" class="tab-panel">
+    <div class="toolbar">
+      <label class="toolbar-label">Portfolio:</label>
+      <select id="ee-portfolio-select"></select>
+    </div>
+    <div class="table-scroll">
+
+      <div class="section-header" data-section="active">
+        <span class="caret">▼</span> 持有中 <span id="active-count" style="color:#484f58;font-size:11px"></span>
+      </div>
+      <div class="section-body" id="section-active">
+        <table>
+          <thead>
+            <tr>
+              <th class="left">代號</th>
+              <th class="left">名稱</th>
+              <th>現價</th>
+              <th>進場價</th>
+              <th>差異%</th>
+              <th>3日強度</th>
+              <th>進場原因</th>
+              <th>進場日</th>
+            </tr>
+          </thead>
+          <tbody id="active-body"></tbody>
+        </table>
+        <div id="active-empty" class="empty-state" style="display:none">無持有部位</div>
+      </div>
+
+      <div class="section-header" data-section="closed">
+        <span class="caret">▼</span> 已出場 <span id="closed-count" style="color:#484f58;font-size:11px"></span>
+      </div>
+      <div class="section-body" id="section-closed">
+        <table>
+          <thead>
+            <tr>
+              <th class="left">代號</th>
+              <th class="left">名稱</th>
+              <th>進場價</th>
+              <th>出場價</th>
+              <th>實際損益</th>
+              <th>損益%</th>
+              <th>進場原因</th>
+              <th>出場原因</th>
+              <th>交易日</th>
+            </tr>
+          </thead>
+          <tbody id="closed-body"></tbody>
+        </table>
+        <div id="closed-empty" class="empty-state" style="display:none">無出場紀錄</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Tab 3: 損益紀錄 ── -->
+  <div id="tab-pnl" class="tab-panel">
+    <div class="toolbar">
+      <button class="btn btn-sm btn-primary" id="btn-add-month">+ 新增月份</button>
+      <span class="toolbar-label" style="margin-left:8px;color:#484f58">點擊儲存格可直接編輯</span>
+    </div>
+    <div id="pnl-matrix-wrap">
+      <table id="pnl-matrix">
+        <thead id="pnl-matrix-head"></thead>
+        <tbody id="pnl-matrix-body"></tbody>
+      </table>
+      <div id="pnl-empty" class="empty-state" style="display:none">尚無損益紀錄 — 點擊「+ 新增月份」</div>
+    </div>
+    <div id="annual-section">
+      <h3>年度報酬對比</h3>
+      <table id="annual-table">
+        <thead>
+          <tr>
+            <th>年度</th>
+            <th>加權還原指數</th>
+            <th>指數報酬率</th>
+          </tr>
+        </thead>
+        <tbody id="annual-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Modal ── -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">新增持股</h2>
+    <div class="form-row row2">
+      <div><label>代號</label><input id="f-ticker" placeholder="2330"></div>
+      <div><label>名稱</label><input id="f-name" placeholder="台積電"></div>
+    </div>
+    <div class="form-row row2">
+      <div>
+        <label>市場</label>
+        <select id="f-market">
+          <option value="TW">TW (台股)</option>
+          <option value="US">US (美股)</option>
+        </select>
+      </div>
+      <div>
+        <label>幣別</label>
+        <select id="f-currency">
+          <option value="TWD">TWD</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row row2">
+      <div><label>張數 (TW) / 股數 (US)</label><input type="number" id="f-lots" placeholder="10" step="0.001"></div>
+      <div><label>均成本 (per share)</label><input type="number" id="f-avg-cost" placeholder="500" step="0.001"></div>
+    </div>
+    <div class="form-row row2">
+      <div><label>進場日</label><input type="date" id="f-entry-date"></div>
+      <div><label>進場原因</label><input id="f-entry-reason" placeholder="線型"></div>
+    </div>
+    <div class="form-row row2">
+      <div><label>融資張數</label><input type="number" id="f-margin-lots" value="0" step="0.001"></div>
+      <div><label>備註</label><input id="f-note"></div>
+    </div>
+    <!-- Trade sub-fields (buy/sell) -->
+    <div id="trade-fields" style="display:none">
+      <div class="form-row row2">
+        <div><label>交易股數</label><input type="number" id="f-trade-shares" placeholder="1000" step="0.001"></div>
+        <div><label>成交價</label><input type="number" id="f-trade-price" placeholder="500" step="0.001"></div>
+      </div>
+      <div class="form-row row2">
+        <div><label>交易日</label><input type="date" id="f-trade-date"></div>
+        <div><label>手續費</label><input type="number" id="f-commission" value="0" step="0.01"></div>
+      </div>
+      <div class="form-row">
+        <label>出場原因 (賣出時填)</label>
+        <input id="f-exit-reason">
+      </div>
+    </div>
+    <div id="month-fields" style="display:none">
+      <div class="form-row">
+        <label>年月 (YYYYMM)</label>
+        <input id="f-year-month" placeholder="202604" maxlength="6">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="modal-cancel">取消</button>
+      <button class="btn btn-primary" id="modal-ok">確認</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let portfolios = [];
+let currentPortfolio = null;
+let positionsData = [];
+let tradesData = [];
+let pnlData = [];
+let usdRate = parseFloat(localStorage.getItem('usdRate') || '31.5');
+let lwChart = null, candleSeries = null, maSeries = null, bbUpSeries = null, bbLowSeries = null, volSeries = null;
+let modalMode = null; // 'add-position' | 'buy' | 'sell' | 'new-portfolio' | 'add-month'
+let modalTicker = null;
+
+
+// ── Utility ────────────────────────────────────────────────────────────────
+function fmt(n, dec = 0) {
+  if (n == null || isNaN(n)) return '—';
+  return n.toLocaleString('zh-TW', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function fmtPct(n, dec = 2) {
+  if (n == null || isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(dec) + '%';
+}
+
+function colorClass(v) {
+  if (v > 0) return 'up';
+  if (v < 0) return 'down';
+  return 'flat';
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function apiFetch(url, opts = {}) {
+  const r = await fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return r.json();
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+async function loadUser() {
+  try {
+    const u = await apiFetch('/auth/me');
+    document.getElementById('user-info').textContent = u.name || u.email || '';
+  } catch {}
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-' + btn.dataset.tab);
+    if (panel) panel.classList.add('active');
+    if (btn.dataset.tab === 'pnl') renderPnl();
+    if (btn.dataset.tab === 'entryexit') renderEntryExit();
+  });
+});
+
+// ── Portfolio selector ─────────────────────────────────────────────────────
+async function loadPortfolios() {
+  try {
+    portfolios = await apiFetch('/api/portfolios');
+  } catch (e) {
+    portfolios = [];
+    console.error(e);
+  }
+  ['portfolio-select', 'ee-portfolio-select'].forEach(id => {
+    const sel = document.getElementById(id);
+    const prev = sel.value;
+    sel.innerHTML = '';
+    portfolios.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.name;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    });
+    if (prev && portfolios.find(p => p.name === prev)) sel.value = prev;
+  });
+  currentPortfolio = document.getElementById('portfolio-select').value || null;
+  if (currentPortfolio) await loadPositions();
+}
+
+document.getElementById('portfolio-select').addEventListener('change', async e => {
+  currentPortfolio = e.target.value;
+  document.getElementById('ee-portfolio-select').value = currentPortfolio;
+  await loadPositions();
+});
+
+document.getElementById('ee-portfolio-select').addEventListener('change', async e => {
+  currentPortfolio = e.target.value;
+  document.getElementById('portfolio-select').value = currentPortfolio;
+  await loadPositions();
+  renderEntryExit();
+});
+
+document.getElementById('btn-new-portfolio').addEventListener('click', () => openModal('new-portfolio'));
+
+document.getElementById('btn-del-portfolio').addEventListener('click', async () => {
+  if (!currentPortfolio) return;
+  if (!confirm(`刪除 Portfolio「${currentPortfolio}」及其所有持股？`)) return;
+  try {
+    await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}`, { method: 'DELETE' });
+    showToast('已刪除');
+    await loadPortfolios();
+  } catch (e) { alert(e.message); }
+});
+
+// ── USD rate ───────────────────────────────────────────────────────────────
+const usdRateInput = document.getElementById('usd-rate');
+usdRateInput.value = usdRate;
+usdRateInput.addEventListener('change', () => {
+  usdRate = parseFloat(usdRateInput.value) || 31.5;
+  localStorage.setItem('usdRate', usdRate);
+  loadPositions();
+});
+
+// ── Positions ──────────────────────────────────────────────────────────────
+async function loadPositions() {
+  if (!currentPortfolio) return;
+  try {
+    const data = await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}/positions?usd_rate=${usdRate}`);
+    positionsData = data.positions || [];
+    renderAllocation(data.total_value_twd || 0);
+  } catch (e) {
+    positionsData = [];
+    renderAllocation(0);
+    console.error(e);
+  }
+}
+
+function renderAllocation(totalTwd) {
+  const tbody = document.getElementById('allocation-body');
+  const tfoot = document.getElementById('allocation-foot');
+  const empty = document.getElementById('allocation-empty');
+
+  if (positionsData.length === 0) {
+    tbody.innerHTML = '';
+    tfoot.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  let totalUnrealized = 0;
+  tbody.innerHTML = positionsData.map(p => {
+    totalUnrealized += p.unrealized_pnl || 0;
+    const display = p.market === 'TW' ? `${p.lots || (p.shares / 1000).toFixed(0)}張` : `${p.shares}股`;
+    const costDisplay = p.market === 'US' ? `$${fmt(p.avg_cost, 2)}` : fmt(p.avg_cost, 0);
+    const priceDisplay = p.market === 'US' ? `$${fmt(p.current_price, 2)}` : fmt(p.current_price, 0);
+    const cl = colorClass(p.unrealized_pnl);
+    return `<tr class="clickable" data-ticker="${p.ticker}" data-market="${p.market}">
+      <td class="ticker">${p.ticker}</td>
+      <td class="name">${p.name || ''}</td>
+      <td>${p.market}</td>
+      <td>${display}</td>
+      <td>${costDisplay}</td>
+      <td>${priceDisplay}</td>
+      <td>${fmt(p.market_value_twd, 0)}</td>
+      <td class="${cl}">${fmt(p.unrealized_pnl, 0)}</td>
+      <td class="${cl}">${fmtPct(p.unrealized_pct)}</td>
+      <td>${fmt(p.position_weight, 2)}%</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="event.stopPropagation();openTrade('buy','${p.ticker}','${(p.name||'').replace(/'/g,"\\'")}')">買</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();openTrade('sell','${p.ticker}','${(p.name||'').replace(/'/g,"\\'")}')">賣</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removePosition('${p.ticker}')">×</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const cl = colorClass(totalUnrealized);
+  tfoot.innerHTML = `<tr>
+    <td class="left" colspan="6">合計</td>
+    <td>${fmt(totalTwd, 0)}</td>
+    <td class="${cl}">${fmt(totalUnrealized, 0)}</td>
+    <td colspan="3"></td>
+  </tr>`;
+
+  tbody.querySelectorAll('tr[data-ticker]').forEach(row => {
+    row.addEventListener('click', () => {
+      const ticker = row.dataset.ticker;
+      const market = row.dataset.market;
+      if (market === 'TW') openKline(ticker);
+    });
+  });
+}
+
+async function removePosition(ticker) {
+  if (!confirm(`移除 ${ticker}？`)) return;
+  try {
+    await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}/positions/${ticker}`, { method: 'DELETE' });
+    showToast('已移除');
+    await loadPositions();
+  } catch (e) { alert(e.message); }
+}
+
+// ── K-line chart ───────────────────────────────────────────────────────────
+async function openKline(ticker) {
+  const panel = document.getElementById('kline-panel');
+  document.getElementById('kline-title').textContent = ticker;
+  panel.classList.add('open');
+  await fetchAndRenderChart(ticker, parseInt(document.getElementById('kline-days').value));
+}
+
+document.getElementById('kline-close').addEventListener('click', () => {
+  document.getElementById('kline-panel').classList.remove('open');
+});
+
+document.getElementById('kline-days').addEventListener('input', e => {
+  const d = parseInt(e.target.value);
+  document.getElementById('kline-days-label').textContent = d + 'd';
+  const title = document.getElementById('kline-title').textContent;
+  if (title) fetchAndRenderChart(title, d);
+});
+
+async function fetchAndRenderChart(ticker, days = 120) {
+  const container = document.getElementById('chart-container');
+  try {
+    const rows = await apiFetch(`/kline/${ticker}?ma_window=20&bb_window=22`);
+    const sliced = rows.slice(-days);
+
+    if (!lwChart) {
+      lwChart = LightweightCharts.createChart(container, {
+        layout: { background: { color: '#0d1117' }, textColor: '#8b949e' },
+        grid: { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        rightPriceScale: { borderColor: '#30363d' },
+        timeScale: { borderColor: '#30363d', timeVisible: true },
+      });
+      candleSeries = lwChart.addCandlestickSeries({ upColor: '#f85149', downColor: '#3fb950', borderVisible: false, wickUpColor: '#f85149', wickDownColor: '#3fb950' });
+      maSeries = lwChart.addLineSeries({ color: '#f0c27a', lineWidth: 1 });
+      bbUpSeries = lwChart.addLineSeries({ color: '#58a6ff', lineWidth: 1, lineStyle: 2 });
+      bbLowSeries = lwChart.addLineSeries({ color: '#58a6ff', lineWidth: 1, lineStyle: 2 });
+      new ResizeObserver(() => lwChart.applyOptions({ width: container.clientWidth })).observe(container);
+    }
+
+    candleSeries.setData(sliced.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
+    maSeries.setData(sliced.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+    bbUpSeries.setData(sliced.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+    bbLowSeries.setData(sliced.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+    lwChart.timeScale().fitContent();
+  } catch (e) { console.error(e); }
+}
+
+// ── Entry/Exit tab ─────────────────────────────────────────────────────────
+async function loadTrades() {
+  if (!currentPortfolio) return;
+  try {
+    tradesData = await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}/trades`);
+  } catch { tradesData = []; }
+}
+
+async function renderEntryExit() {
+  await loadTrades();
+
+  // Active positions from positionsData
+  const activeBody = document.getElementById('active-body');
+  if (positionsData.length === 0) {
+    activeBody.innerHTML = '';
+    document.getElementById('active-empty').style.display = '';
+    document.getElementById('active-count').textContent = '';
+  } else {
+    document.getElementById('active-empty').style.display = 'none';
+    document.getElementById('active-count').textContent = `(${positionsData.length})`;
+    activeBody.innerHTML = positionsData.map(p => {
+      const diff = p.avg_cost > 0 ? ((p.current_price - p.avg_cost) / p.avg_cost * 100) : 0;
+      const cl = colorClass(diff);
+      return `<tr>
+        <td class="ticker">${p.ticker}</td>
+        <td class="name">${p.name || ''}</td>
+        <td>${p.market === 'US' ? '$' : ''}${fmt(p.current_price, p.market === 'US' ? 2 : 0)}</td>
+        <td>${p.market === 'US' ? '$' : ''}${fmt(p.avg_cost, p.market === 'US' ? 2 : 0)}</td>
+        <td class="${cl}">${fmtPct(diff)}</td>
+        <td>—</td>
+        <td>${p.entry_reason || ''}</td>
+        <td>${p.entry_date || ''}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Closed trades (sells)
+  const sells = tradesData.filter(t => t.action === 'sell');
+  const closedBody = document.getElementById('closed-body');
+  if (sells.length === 0) {
+    closedBody.innerHTML = '';
+    document.getElementById('closed-empty').style.display = '';
+    document.getElementById('closed-count').textContent = '';
+  } else {
+    document.getElementById('closed-empty').style.display = 'none';
+    document.getElementById('closed-count').textContent = `(${sells.length})`;
+    closedBody.innerHTML = sells.map(t => {
+      const cl = colorClass(t.realized_pnl);
+      const totalCost = t.price * t.shares;
+      const pct = t.realized_pnl && totalCost ? (t.realized_pnl / totalCost * 100) : 0;
+      return `<tr>
+        <td class="ticker">${t.ticker}</td>
+        <td class="name">${t.name || ''}</td>
+        <td>—</td>
+        <td>${fmt(t.price, 2)}</td>
+        <td class="${cl}">${fmt(t.realized_pnl, 0)}</td>
+        <td class="${cl}">${fmtPct(pct)}</td>
+        <td>${t.entry_reason || ''}</td>
+        <td>${t.exit_reason || ''}</td>
+        <td>${t.trade_date || ''}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// Section collapse
+document.querySelectorAll('.section-header').forEach(hdr => {
+  hdr.addEventListener('click', () => {
+    const body = document.getElementById('section-' + hdr.dataset.section);
+    const caret = hdr.querySelector('.caret');
+    if (body.classList.toggle('collapsed')) { caret.textContent = '▶'; } else { caret.textContent = '▼'; }
+  });
+});
+
+// ── P&L matrix ─────────────────────────────────────────────────────────────
+const PNL_ROWS = [
+  { key: 'unrealized_tw',    label: '台股 未實現' },
+  { key: 'realized_tw',      label: '台股 已實現' },
+  { key: 'dividend_tw',      label: '台股 股利' },
+  { key: 'fee_rebate',       label: '手續費折讓' },
+  { key: null,               label: '本月損益(台股)', computed: true },
+  { key: 'unrealized_us_usd',label: '美股 未實現(USD)' },
+  { key: 'realized_us_usd',  label: '美股 已實現(USD)' },
+  { key: 'usd_rate',         label: '匯率' },
+  { key: null,               label: '美股折合台幣', computed: true },
+  { key: 'unrealized_futures',label: '期貨 未實現' },
+  { key: 'realized_futures', label: '期貨 已實現' },
+  { key: 'algo_pnl',         label: '程式單損益' },
+  { key: 'total_pnl',        label: '本月總獲利', total: true },
+  { key: 'nav',              label: '投資部位可用資金', total: true },
+];
+
+async function loadPnl() {
+  try {
+    pnlData = await apiFetch('/api/portfolio/monthly_pnl');
+  } catch { pnlData = []; }
+}
+
+function renderPnl() {
+  const head = document.getElementById('pnl-matrix-head');
+  const body = document.getElementById('pnl-matrix-body');
+  const empty = document.getElementById('pnl-empty');
+
+  if (pnlData.length === 0) {
+    head.innerHTML = '';
+    body.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Header row
+  head.innerHTML = `<tr><th></th>${pnlData.map(m => `<th>${m.year_month.slice(0,4)}/${m.year_month.slice(4)}</th>`).join('')}</tr>`;
+
+  // Body rows
+  body.innerHTML = PNL_ROWS.map(row => {
+    const isTotal = row.total;
+    const tdClass = isTotal ? 'total-row' : 'row-label';
+    if (row.computed) {
+      // Computed rows
+      const values = pnlData.map(m => {
+        if (row.label === '本月損益(台股)') {
+          return (m.unrealized_tw || 0) + (m.realized_tw || 0) + (m.dividend_tw || 0) + (m.fee_rebate || 0);
+        }
+        if (row.label === '美股折合台幣') {
+          return ((m.unrealized_us_usd || 0) + (m.realized_us_usd || 0)) * (m.usd_rate || 31);
+        }
+        return 0;
+      });
+      return `<tr><td class="${tdClass}">${row.label}</td>${values.map(v => `<td class="${colorClass(v)}">${fmt(v, 0)}</td>`).join('')}</tr>`;
+    }
+    const cells = pnlData.map(m => {
+      const v = m[row.key] ?? 0;
+      const cl = (isTotal || row.key === 'nav' || row.key === 'usd_rate') ? '' : colorClass(v);
+      return `<td class="editable ${tdClass} ${cl}" data-ym="${m.year_month}" data-key="${row.key}" data-val="${v}"><span>${fmt(v, row.key === 'usd_rate' ? 3 : 0)}</span></td>`;
+    });
+    return `<tr><td class="${tdClass}">${row.label}</td>${cells.join('')}</tr>`;
+  }).join('');
+
+  // Inline edit
+  body.querySelectorAll('td.editable').forEach(td => {
+    td.addEventListener('click', () => {
+      if (td.querySelector('input')) return;
+      const span = td.querySelector('span');
+      const raw = parseFloat(td.dataset.val) || 0;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = raw;
+      input.step = 'any';
+      span.replaceWith(input);
+      input.focus();
+      input.select();
+
+      async function save() {
+        const val = parseFloat(input.value) || 0;
+        td.dataset.val = val;
+        const newSpan = document.createElement('span');
+        newSpan.textContent = fmt(val, td.dataset.key === 'usd_rate' ? 3 : 0);
+        input.replaceWith(newSpan);
+        td.className = `editable ${pnlRowClass(td.dataset.key, val)}`;
+
+        const body = {};
+        body[td.dataset.key] = val;
+        try {
+          await apiFetch(`/api/portfolio/monthly_pnl/${td.dataset.ym}`, { method: 'PUT', body: JSON.stringify(body) });
+          // Update pnlData cache
+          const rec = pnlData.find(m => m.year_month === td.dataset.ym);
+          if (rec) rec[td.dataset.key] = val;
+          // Re-render computed cells
+          renderPnl();
+        } catch (e) { console.error(e); }
+      }
+
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') input.blur(); if (e.key === 'Escape') { input.value = td.dataset.val; input.blur(); } });
+    });
+  });
+
+  // Annual section
+  loadAnnual();
+}
+
+function pnlRowClass(key, val) {
+  if (key === 'nav' || key === 'usd_rate') return 'row-label';
+  return 'row-label ' + colorClass(val);
+}
+
+// ── Annual returns ─────────────────────────────────────────────────────────
+let _annualData = [];
+
+function renderAnnual(data) {
+  _annualData = data;
+  const tbody = document.getElementById('annual-body');
+  tbody.innerHTML = data.map((r, i) => `<tr>
+    <td>${r.year}</td>
+    <td>${fmt(r.idx, 0)}</td>
+    <td class="${colorClass(r.idx_rate)}">${fmtPct(r.idx_rate * 100)}</td>
+  </tr>`).join('');
+}
+
+async function loadAnnual() {
+  const tbody = document.getElementById('annual-body');
+  tbody.innerHTML = '<tr><td colspan="3" style="color:#555;text-align:center">載入中…</td></tr>';
+  try {
+    const resp = await fetch('/api/index_annual');
+    if (!resp.ok) throw new Error(resp.status);
+    const data = await resp.json();
+    renderAnnual(data);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3" style="color:#555;text-align:center">資料載入失敗</td></tr>';
+  }
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function openModal(mode, ticker = null, name = '') {
+  modalMode = mode;
+  modalTicker = ticker;
+  const overlay = document.getElementById('modal-overlay');
+  const title = document.getElementById('modal-title');
+  const tradeFields = document.getElementById('trade-fields');
+  const monthFields = document.getElementById('month-fields');
+  const mainFields = document.querySelectorAll('#modal .form-row:not(#trade-fields .form-row):not(#month-fields .form-row)');
+
+  tradeFields.style.display = 'none';
+  monthFields.style.display = 'none';
+
+  if (mode === 'add-position') {
+    title.textContent = '新增/更新持股';
+    document.getElementById('f-ticker').value = '';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-lots').value = '';
+    document.getElementById('f-avg-cost').value = '';
+    document.getElementById('f-entry-date').value = '';
+    document.getElementById('f-entry-reason').value = '';
+    document.getElementById('f-margin-lots').value = '0';
+    document.getElementById('f-note').value = '';
+    document.getElementById('f-market').value = 'TW';
+    document.getElementById('f-currency').value = 'TWD';
+  } else if (mode === 'buy' || mode === 'sell') {
+    title.textContent = mode === 'buy' ? `買入 ${ticker}` : `賣出 ${ticker}`;
+    tradeFields.style.display = '';
+    document.getElementById('f-trade-shares').value = '';
+    document.getElementById('f-trade-price').value = '';
+    document.getElementById('f-trade-date').value = new Date().toISOString().slice(0, 10);
+    document.getElementById('f-commission').value = '0';
+    document.getElementById('f-exit-reason').value = '';
+    // Hide main position fields
+    mainFields.forEach(r => r.style.display = 'none');
+  } else if (mode === 'new-portfolio') {
+    title.textContent = '新增 Portfolio';
+    document.getElementById('f-name').value = '';
+    mainFields.forEach(r => r.style.display = 'none');
+  } else if (mode === 'add-month') {
+    title.textContent = '新增月份';
+    monthFields.style.display = '';
+    mainFields.forEach(r => r.style.display = 'none');
+    document.getElementById('f-year-month').value = '';
+  }
+
+  // Restore main fields for position mode
+  if (mode === 'add-position') mainFields.forEach(r => r.style.display = '');
+
+  overlay.classList.add('open');
+}
+
+function openTrade(action, ticker, name) {
+  openModal(action, ticker, name);
+  modalTicker = ticker;
+}
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  document.getElementById('modal-overlay').classList.remove('open');
+  // Restore hidden rows
+  document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+});
+
+document.getElementById('modal-ok').addEventListener('click', async () => {
+  try {
+    if (modalMode === 'add-position') {
+      if (!currentPortfolio) { alert('請先選擇或建立 Portfolio'); return; }
+      const ticker = document.getElementById('f-ticker').value.trim();
+      if (!ticker) { alert('請輸入代號'); return; }
+      const market = document.getElementById('f-market').value;
+      const lotsVal = parseFloat(document.getElementById('f-lots').value) || 0;
+      const shares = market === 'TW' ? lotsVal * 1000 : lotsVal;
+      const body = {
+        ticker,
+        name: document.getElementById('f-name').value.trim(),
+        shares,
+        lots: lotsVal,
+        avg_cost: parseFloat(document.getElementById('f-avg-cost').value) || 0,
+        currency: document.getElementById('f-currency').value,
+        market,
+        entry_date: document.getElementById('f-entry-date').value,
+        entry_reason: document.getElementById('f-entry-reason').value.trim(),
+        margin_lots: parseFloat(document.getElementById('f-margin-lots').value) || 0,
+        note: document.getElementById('f-note').value.trim(),
+      };
+      await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}/positions`, { method: 'POST', body: JSON.stringify(body) });
+      showToast('已儲存');
+      await loadPositions();
+
+    } else if (modalMode === 'buy' || modalMode === 'sell') {
+      if (!currentPortfolio || !modalTicker) return;
+      const pos = positionsData.find(p => p.ticker === modalTicker);
+      const body = {
+        ticker: modalTicker,
+        name: pos ? pos.name : '',
+        action: modalMode,
+        shares: parseFloat(document.getElementById('f-trade-shares').value) || 0,
+        price: parseFloat(document.getElementById('f-trade-price').value) || 0,
+        currency: pos ? pos.currency : 'TWD',
+        commission: parseFloat(document.getElementById('f-commission').value) || 0,
+        trade_date: document.getElementById('f-trade-date').value,
+        exit_reason: document.getElementById('f-exit-reason').value.trim(),
+      };
+      await apiFetch(`/api/portfolios/${encodeURIComponent(currentPortfolio)}/trades`, { method: 'POST', body: JSON.stringify(body) });
+      showToast('已記錄');
+
+    } else if (modalMode === 'new-portfolio') {
+      const name = document.getElementById('f-name').value.trim();
+      if (!name) { alert('請輸入名稱'); return; }
+      await apiFetch(`/api/portfolios/${encodeURIComponent(name)}`, { method: 'POST' });
+      showToast('已建立');
+      await loadPortfolios();
+
+    } else if (modalMode === 'add-month') {
+      const ym = document.getElementById('f-year-month').value.trim();
+      if (!/^\d{6}$/.test(ym)) { alert('格式 YYYYMM'); return; }
+      await apiFetch(`/api/portfolio/monthly_pnl/${ym}`, { method: 'PUT', body: JSON.stringify({}) });
+      showToast('已新增');
+      await loadPnl();
+      renderPnl();
+    }
+
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+  } catch (e) { alert(e.message); }
+});
+
+document.getElementById('btn-add-position').addEventListener('click', () => openModal('add-position'));
+document.getElementById('btn-add-month').addEventListener('click', () => openModal('add-month'));
+
+// Close modal on overlay click
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+    document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+  }
+});
+
+// Auto-set currency when market changes
+document.getElementById('f-market').addEventListener('change', e => {
+  document.getElementById('f-currency').value = e.target.value === 'US' ? 'USD' : 'TWD';
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  await loadUser();
+  await loadPortfolios();
+  await loadPnl();
+}
+
+init();
+</script>
+</body>
+</html>
