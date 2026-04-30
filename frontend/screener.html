@@ -6,6 +6,7 @@
 <title>Quant Backtest</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="/static/kline_shared.js"></script>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -444,23 +445,20 @@ select:focus { outline: none; border-color: #2962ff; }
 </head>
 <body>
 
-<div id="topbar">
-  <h1>K-LINE SCREENER</h1>
-  <div id="topbar-spacer"></div>
-  <div class="profile-group">
-    <span class="profile-label">Profile</span>
-    <select id="profile-select" onchange="onProfileSelect()">
-      <option value="__last__">Last Session</option>
-    </select>
-    <input id="profile-name-input" type="text" placeholder="Name…"
-           onkeydown="onProfileNameKey(event)" maxlength="32">
-    <button class="profile-btn" onclick="onProfileSave()">Save</button>
-    <button class="profile-btn danger" id="profile-del-btn" onclick="onProfileDelete()" style="display:none">Del</button>
-  </div>
-  <span id="profile-stat"></span>
-  <a class="topbar-link" href="/static/watchlist.html">Watchlists</a>
-  <a class="topbar-link" href="/portfolio">Portfolio</a>
-  <a class="topbar-link" href="/draw" target="_blank">Pattern Draw →</a>
+<div id="app-topbar" data-topbar-page="screener" data-topbar-title="Screener">
+  <template data-topbar-slot>
+    <div class="profile-group">
+      <span class="profile-label">Profile</span>
+      <select id="profile-select" onchange="onProfileSelect()">
+        <option value="__last__">Last Session</option>
+      </select>
+      <input id="profile-name-input" type="text" placeholder="Name…"
+             onkeydown="onProfileNameKey(event)" maxlength="32">
+      <button class="profile-btn" onclick="onProfileSave()">Save</button>
+      <button class="profile-btn danger" id="profile-del-btn" onclick="onProfileDelete()" style="display:none">Del</button>
+    </div>
+    <span id="profile-stat"></span>
+  </template>
 </div>
 
 <div id="body">
@@ -1437,8 +1435,11 @@ function esc(s) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadWatchlists();
-initProfiles();
+window.addEventListener('load', () => {
+  loadWatchlists();
+  initProfiles();
+});
 </script>
+<script src="/static/shared_topbar.js"></script>
 </body>
 </html>

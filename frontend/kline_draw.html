@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>K線型態分析器</title>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -10,9 +11,17 @@ body {
   color: #d1d4dc;
   font-family: -apple-system, 'Segoe UI', sans-serif;
   display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   user-select: none;
+}
+
+#page-shell {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* ── Sidebar ── */
@@ -84,9 +93,9 @@ body {
 /* ── Results panel ── */
 #results-panel {
   position: fixed;
-  top: 0; right: 0;
+  top: var(--app-topbar-height, 54px); right: 0;
   width: 380px;
-  height: 100vh;
+  height: calc(100vh - var(--app-topbar-height, 54px));
   background: #1e222d;
   border-left: 1px solid #2a2e39;
   display: flex;
@@ -292,56 +301,60 @@ canvas { position: absolute; top: 0; left: 0; cursor: crosshair; display: block;
 
 </style>
 </head>
-<body>
+<body data-topbar-page="draw" data-topbar-title="Pattern Draw">
 
-<!-- Left sidebar: pattern recognition + search controls -->
-<div id="sidebar">
-  <div id="sidebar-header">型態識別結果</div>
-  <div id="pattern-list">
-    <div class="no-patterns">在畫布拖曳繪製K線<br>系統即時識別型態</div>
+<div id="app-topbar"></div>
+
+<div id="page-shell">
+  <!-- Left sidebar: pattern recognition + search controls -->
+  <div id="sidebar">
+    <div id="sidebar-header">型態識別結果</div>
+    <div id="pattern-list">
+      <div class="no-patterns">在畫布拖曳繪製K線<br>系統即時識別型態</div>
+    </div>
+
+    <!-- Search panel -->
+    <div id="search-panel">
+      <label>Window Range (bars)</label>
+      <div class="search-row">
+        <input type="number" id="win-min" value="5" min="3" max="120">
+        <span>–</span>
+        <input type="number" id="win-max" value="30" min="3" max="120">
+        <span>bars</span>
+      </div>
+      <div class="search-row" style="margin-bottom:8px;">
+        <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="chk-volume" style="cursor:pointer;">
+          <span style="font-size:12px;color:#9598a1;">Match Volume Shape</span>
+        </label>
+      </div>
+      <button id="btn-search" disabled>Draw candles first</button>
+    </div>
   </div>
 
-  <!-- Search panel -->
-  <div id="search-panel">
-    <label>Window Range (bars)</label>
-    <div class="search-row">
-      <input type="number" id="win-min" value="5" min="3" max="120">
-      <span>–</span>
-      <input type="number" id="win-max" value="30" min="3" max="120">
-      <span>bars</span>
+  <!-- Main chart area -->
+  <div id="main">
+    <div id="toolbar">
+      <span id="toolbar-title">K線型態分析器</span>
+      <div class="sep"></div>
+      <button id="btn-undo">↩ 撤銷</button>
+      <button id="btn-clear" class="danger">⌫ 清除</button>
+      <div class="sep"></div>
+      <button id="btn-auto-wick" class="active" title="自動上下影線長度">自動影線</button>
+      <button id="btn-toggle-vol">顯示量能</button>
+      <div class="spacer"></div>
+      <span id="candle-count"></span>
     </div>
-    <div class="search-row" style="margin-bottom:8px;">
-      <label style="margin:0;display:flex;align-items:center;gap:6px;cursor:pointer;">
-        <input type="checkbox" id="chk-volume" style="cursor:pointer;">
-        <span style="font-size:12px;color:#9598a1;">Match Volume Shape</span>
-      </label>
-    </div>
-    <button id="btn-search" disabled>Draw candles first</button>
-  </div>
-</div>
 
-<!-- Main chart area -->
-<div id="main">
-  <div id="toolbar">
-    <span id="toolbar-title">K線型態分析器</span>
-    <div class="sep"></div>
-    <button id="btn-undo">↩ 撤銷</button>
-    <button id="btn-clear" class="danger">⌫ 清除</button>
-    <div class="sep"></div>
-    <button id="btn-auto-wick" class="active" title="自動上下影線長度">自動影線</button>
-    <button id="btn-toggle-vol">顯示量能</button>
-    <div class="spacer"></div>
-    <span id="candle-count"></span>
-  </div>
-
-  <div id="canvas-wrap">
-    <div id="canvas-container">
-      <canvas id="chart"></canvas>
-      <div id="hint">拖曳繪K線 &nbsp;·&nbsp; 右鍵刪除 &nbsp;·&nbsp; 拖曳影線端點調整長度</div>
-      <div id="price-tag"></div>
-    </div>
-    <div id="vol-container">
-      <canvas id="vol-canvas"></canvas>
+    <div id="canvas-wrap">
+      <div id="canvas-container">
+        <canvas id="chart"></canvas>
+        <div id="hint">拖曳繪K線 &nbsp;·&nbsp; 右鍵刪除 &nbsp;·&nbsp; 拖曳影線端點調整長度</div>
+        <div id="price-tag"></div>
+      </div>
+      <div id="vol-container">
+        <canvas id="vol-canvas"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -1078,5 +1091,6 @@ window.addEventListener('mouseup', () => {
 });
 resizeAll();
 </script>
+<script src="/static/shared_topbar.js"></script>
 </body>
 </html>

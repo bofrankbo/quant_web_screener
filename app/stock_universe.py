@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+import pickle
 from functools import lru_cache
+from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import polars as pl
 import requests
 from dotenv import load_dotenv
@@ -141,9 +142,23 @@ def get_listing_date(ticker: str) -> str | None:
     raw_price_files = sorted((TRADING_DATA_PATH / "cache").glob(f"price_{ticker}_*.pkl"))
     if raw_price_files:
         try:
-            pdf = pd.read_pickle(raw_price_files[0])
-            if hasattr(pdf, "columns") and "date" in pdf.columns and not pdf.empty:
-                return str(pd.to_datetime(pdf["date"]).min().date())
+            with raw_price_files[0].open("rb") as f:
+                obj = pickle.load(f)
+            if hasattr(obj, "columns") and "date" in obj.columns:
+                dates = list(obj["date"])
+                if dates:
+                    parsed = []
+                    for d in dates:
+                        if d is None:
+                            continue
+                        if hasattr(d, "to_pydatetime"):
+                            parsed.append(d.to_pydatetime().date())
+                        elif isinstance(d, datetime):
+                            parsed.append(d.date())
+                        else:
+                            parsed.append(datetime.fromisoformat(str(d)).date())
+                    if parsed:
+                        return str(min(parsed))
         except Exception:
             pass
 

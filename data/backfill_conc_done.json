@@ -160,61 +160,76 @@
     "updated_at": "2026-04-30"
   },
   "1231": {
-    "status": "processing",
+    "status": "done",
     "start_date": "2021-07-01",
-    "next_date": "2025-09-19",
-    "through": "2025-09-18",
-    "rows": 1041,
-    "updated_at": "2026-04-30",
-    "note": "already exists in concentration"
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1232": {
-    "days": 1041,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1233": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1234": {
-    "days": 1040,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1170,
+    "updated_at": "2026-04-30"
   },
   "1235": {
-    "days": 1030,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1169,
+    "updated_at": "2026-04-30"
   },
   "1236": {
-    "days": 1025,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1164,
+    "updated_at": "2026-04-30"
   },
   "1240": {
-    "days": 1029,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1168,
+    "updated_at": "2026-04-30"
   },
   "1256": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1259": {
-    "days": 1022,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1161,
+    "updated_at": "2026-04-30"
   },
   "1264": {
     "days": 1021,
@@ -1215,5 +1230,22 @@
     "through": "2026-04-29",
     "rows": 0,
     "updated_at": "2026-04-30"
+  },
+  "1258": {
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 455,
+    "updated_at": "2026-04-30"
+  },
+  "1262": {
+    "status": "processing",
+    "start_date": "2021-07-01",
+    "next_date": "2024-04-18",
+    "through": "2024-04-17",
+    "rows": 0,
+    "updated_at": "2026-04-30",
+    "note": "no trader data"
   }
 }

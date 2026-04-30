@@ -6,6 +6,7 @@
 <title>Watchlist Manager</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="/static/kline_shared.js"></script>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -613,17 +614,9 @@ tr.row-inactive td:not(.toggle-col) {
 }
 </style>
 </head>
-<body>
+<body data-topbar-page="watchlist" data-topbar-title="Watchlist">
 
-<div id="topbar">
-  <h1>WATCHLIST MANAGER</h1>
-  <a class="nav-link" href="/">← Home</a>
-  <a class="nav-link" href="/backtest">Backtest</a>
-  <div class="auth-box">
-    <span class="auth-user" id="auth-user">Not signed in</span>
-    <a class="auth-button" id="auth-link" href="/auth/google/login">Sign in with Google</a>
-  </div>
-</div>
+<div id="app-topbar"></div>
 
 <div id="body">
   <!-- Left: watchlist list -->
@@ -1565,36 +1558,9 @@ function escAttr(s) {
   return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
-async function loadAuthStatus() {
-  try {
-    const resp = await fetch('/auth/me');
-    const user = resp.ok ? (await resp.json()).user : null;
-    const userLabel = document.getElementById('auth-user');
-    const authLink = document.getElementById('auth-link');
-    if (user) {
-      userLabel.textContent = user.name || user.email || 'Signed in';
-      authLink.textContent = 'Logout';
-      authLink.href = '#';
-      authLink.onclick = async (e) => {
-        e.preventDefault();
-        await fetch('/auth/logout', { method: 'POST' });
-        window.location.reload();
-      };
-    } else {
-      userLabel.textContent = 'Not signed in';
-      authLink.textContent = 'Sign in with Google';
-      authLink.href = '/auth/google/login';
-      authLink.onclick = null;
-    }
-  } catch (e) {
-    console.error('auth status failed:', e);
-  }
-}
-
-// Init
-loadAuthStatus();
 void loadStockUniverse();
 loadAll();
 </script>
+<script src="/static/shared_topbar.js"></script>
 </body>
 </html>

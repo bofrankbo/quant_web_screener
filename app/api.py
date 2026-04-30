@@ -895,3 +895,77 @@ def portfolio_page():
 def api_market_overview():
     rows = get_market_overview()
     return JSONResponse(content=rows)
+
+
+def _to_float(value):
+    try:
+        if value is None:
+            return None
+        num = float(value)
+        return num if num == num else None
+    except Exception:
+        return None
+
+
+def _pick_home_row(row: dict) -> dict:
+    return {
+        "ticker": row.get("ticker"),
+        "name": row.get("name") or "",
+        "close": row.get("close"),
+        "day_chg": row.get("day_chg"),
+        "day_pct": row.get("day_pct"),
+        "volume": row.get("volume"),
+    }
+
+
+@app.get("/api/home-summary")
+def api_home_summary():
+    rows = get_market_overview()
+    if not rows:
+        return JSONResponse(content={
+            "latest_date": None,
+            "total_rows": 0,
+            "top_gainers": [],
+            "top_losers": [],
+            "top_volume": [],
+        })
+
+    dated_rows = [r for r in rows if r.get("date")]
+    latest_date = max((str(r["date"]) for r in dated_rows), default=None)
+
+    ranked = [
+        {**row, "_day_pct": _to_float(row.get("day_pct")), "_volume": _to_float(row.get("volume"))}
+        for row in rows
+    ]
+
+    gainers = [
+        _pick_home_row(row)
+        for row in sorted(
+            [r for r in ranked if r["_day_pct"] is not None],
+            key=lambda r: r["_day_pct"],
+            reverse=True,
+        )[:5]
+    ]
+    losers = [
+        _pick_home_row(row)
+        for row in sorted(
+            [r for r in ranked if r["_day_pct"] is not None],
+            key=lambda r: r["_day_pct"],
+        )[:5]
+    ]
+    volumes = [
+        _pick_home_row(row)
+        for row in sorted(
+            [r for r in ranked if r["_volume"] is not None],
+            key=lambda r: r["_volume"],
+            reverse=True,
+        )[:5]
+    ]
+
+    return JSONResponse(content={
+        "latest_date": latest_date,
+        "total_rows": len(rows),
+        "top_gainers": gainers,
+        "top_losers": losers,
+        "top_volume": volumes,
+    })

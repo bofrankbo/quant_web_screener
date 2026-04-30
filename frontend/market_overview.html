@@ -6,14 +6,19 @@
 <title>市場總覽</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="/static/kline_shared.js"></script>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     background: #0d1117;
     color: #e6edf3;
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 13px;
+    overflow: hidden;
   }
 
   header {
@@ -24,7 +29,7 @@
     background: #161b22;
     border-bottom: 1px solid #30363d;
     position: sticky;
-    top: 0;
+    top: var(--app-topbar-height, 54px);
     z-index: 100;
   }
 
@@ -80,8 +85,8 @@
   .nav-soon { color: #555; cursor: default; pointer-events: none; font-size: 12px; }
 
   .table-wrap {
+    flex: 1;
     overflow-x: auto;
-    height: calc(100vh - 53px);
     overflow-y: auto;
   }
 
@@ -263,7 +268,8 @@
   #lwc-container { flex: 1; min-height: 0; }
 </style>
 </head>
-<body>
+<body data-topbar-page="market" data-topbar-title="市場總覽">
+<div id="app-topbar"></div>
 
 <div id="loading">
   <div class="spinner"></div>
@@ -277,12 +283,6 @@
   <input id="search" type="text" placeholder="代號 / 股名搜尋…" autocomplete="off">
   <div id="stats"></div>
   <div id="last-updated"></div>
-  <div class="nav-links">
-    <a href="/">首頁</a>
-    <a href="/backtest">選股</a>
-    <a href="/watchlist-manager">自選股</a>
-    <a href="/portfolio">Portfolio</a>
-  </div>
 </header>
 
 <div class="table-wrap">
@@ -508,5 +508,6 @@ document.addEventListener('keydown', e => {
 // ── Init ───────────────────────────────────────────────────────────────────
 loadData();
 </script>
+<script src="/static/shared_topbar.js"></script>
 </body>
 </html>

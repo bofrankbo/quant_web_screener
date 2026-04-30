@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Portfolio</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -367,18 +368,9 @@ td.editable input {
 
 </style>
 </head>
-<body>
+<body data-topbar-page="portfolio" data-topbar-title="Portfolio">
 
-<header>
-  <h1>Portfolio</h1>
-  <div class="nav-links">
-    <a href="/backtest">Screener</a>
-    <a href="/market-overview">Market</a>
-    <a href="/watchlist-manager">Watchlists</a>
-    <a href="/portfolio" class="active">Portfolio</a>
-  </div>
-  <span id="user-info"></span>
-</header>
+<div id="app-topbar"></div>
 
 <div class="tabs">
   <button class="tab-btn active" data-tab="allocation">配置</button>
@@ -1201,5 +1193,6 @@ async function init() {
 
 init();
 </script>
+<script src="/static/shared_topbar.js"></script>
 </body>
 </html>

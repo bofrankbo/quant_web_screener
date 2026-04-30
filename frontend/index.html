@@ -2,143 +2,561 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>Quant Backtest</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quant Phronesis | Taiwan Stock Market Dashboard</title>
+<link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-0: #0d1117;
+  --bg-1: #101523;
+  --panel: rgba(22, 27, 34, 0.9);
+  --border: rgba(48, 54, 61, 0.95);
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --blue: #58a6ff;
+  --blue-deep: #1f6feb;
+  --red: #f85149;
+  --green: #3fb950;
+  --shadow: 0 18px 50px rgba(1, 4, 9, 0.42);
+}
+
 body {
-  background:
-    radial-gradient(circle at top, rgba(41,98,255,0.18), transparent 35%),
-    linear-gradient(180deg, #10131b 0%, #131722 100%);
-  color: #d1d4dc;
-  font-family: -apple-system, 'Segoe UI', sans-serif;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.container {
+  background:
+    radial-gradient(circle at 10% 15%, rgba(88,166,255,0.12), transparent 28%),
+    radial-gradient(circle at 92% 12%, rgba(248,81,73,0.10), transparent 22%),
+    linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 60%);
+  color: var(--text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 40px;
-  width: min(100%, 760px);
+  overflow-x: hidden;
 }
-h1 {
-  font-size: 20px;
-  font-weight: 700;
-  color: #787b86;
-  letter-spacing: 2px;
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.55), transparent 85%);
+  opacity: 0.32;
+}
+
+.page {
+  position: relative;
+  width: min(1280px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 28px 0 40px;
+  display: grid;
+  gap: 18px;
+  flex: 1;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  gap: 18px;
+}
+
+.hero-card,
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.hero-card {
+  padding: 28px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -30% auto;
+  width: 300px;
+  height: 300px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(88,166,255,0.16), transparent 68%);
+  pointer-events: none;
+}
+
+.brand-mark {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(88,166,255,0.18);
+  background: rgba(13,17,23,0.42);
+  color: #c9d1d9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(88,166,255,0.22);
+  background: rgba(88,166,255,0.08);
+  color: #9ecbff;
+  font-size: 11px;
+  letter-spacing: 1.1px;
   text-transform: uppercase;
+  margin-bottom: 18px;
 }
-.topbar {
-  width: 100%;
+
+.eyebrow::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(63,185,80,0.12);
+}
+
+.hero h1 {
+  font-size: clamp(34px, 4.8vw, 62px);
+  line-height: 0.98;
+  letter-spacing: -1.8px;
+  max-width: 8ch;
+}
+
+.hero p {
+  margin-top: 16px;
+  max-width: 58ch;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.hero-actions {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-}
-.login-link {
-  font-size: 12px;
-  color: #d1d4dc;
-  text-decoration: none;
-  background: #2962ff;
-  border: 1px solid #2962ff;
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-.login-link:hover { background: #1a4fd4; border-color: #1a4fd4; }
-.user-chip {
-  font-size: 12px;
-  color: #d1d4dc;
-  border: 1px solid #2a2e39;
-  background: rgba(30,34,45,0.9);
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-.cards {
-  display: flex;
-  gap: 20px;
   flex-wrap: wrap;
-  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
 }
-.card {
-  width: 200px;
-  background: #1e222d;
-  border: 1px solid #2a2e39;
-  border-radius: 8px;
-  padding: 28px 20px;
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
   text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(13,17,23,0.5);
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.hero-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(88,166,255,0.7);
+}
+
+.hero-btn.primary {
+  background: linear-gradient(180deg, #58a6ff 0%, #1f6feb 100%);
+  border-color: #58a6ff;
+  color: #06101d;
+  box-shadow: 0 14px 30px rgba(31,111,235,0.22);
+}
+
+.hero-btn.primary:hover { background: linear-gradient(180deg, #6cb3ff 0%, #2b79ff 100%); }
+
+.hero-side {
+  display: grid;
+  gap: 18px;
+}
+
+.stat-card {
+  padding: 18px;
+  min-height: 134px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  transition: border-color 0.15s, background 0.15s;
+  justify-content: space-between;
 }
-.card:hover { border-color: #2962ff; background: #222739; }
-.card--soon { opacity: 0.4; cursor: default; pointer-events: none; }
-.card-icon { font-size: 32px; }
-.card-title { font-size: 14px; font-weight: 600; color: #d1d4dc; }
-.card-desc { font-size: 11px; color: #787b86; text-align: center; line-height: 1.5; }
-</style>
-</head>
-<body>
-<div class="container">
-  <div class="topbar">
-    <a class="login-link" id="auth-link" href="/auth/google/login">Sign in with Google</a>
-  </div>
-  <h1>Quant Backtest</h1>
-  <div class="cards">
-    <a class="card" href="/market-overview">
-      <div class="card-icon">🌏</div>
-      <div class="card-title">Market Overview</div>
-      <div class="card-desc">大盤概覽與個股排行<br>漲跌幅 / 成交量</div>
-    </a>
-    <a class="card" href="/backtest">
-      <div class="card-icon">📊</div>
-      <div class="card-title">Backtest</div>
-      <div class="card-desc">條件篩選與回測<br>同一套入口與標的池</div>
-    </a>
-    <a class="card" href="/static/watchlist.html">
-      <div class="card-icon">📋</div>
-      <div class="card-title">Watchlist</div>
-      <div class="card-desc">建立自訂選股清單<br>航運 / 電子 / 半導體</div>
-    </a>
-    <a class="card" href="/static/kline_draw.html">
-      <div class="card-icon">✏️</div>
-      <div class="card-title">Pattern Draw</div>
-      <div class="card-desc">手繪 K 線型態<br>DTW 全市場比對</div>
-    </a>
-    <a class="card" href="/portfolio">
-      <div class="card-icon">💼</div>
-      <div class="card-title">Portfolio</div>
-      <div class="card-desc">持倉紀錄與損益追蹤<br>績效分析</div>
-    </a>
-  </div>
-</div>
-<script>
-async function loadAuthStatus() {
-  try {
-    const resp = await fetch('/auth/me');
-    const link = document.getElementById('auth-link');
-    if (resp.ok) {
-      const data = await resp.json();
-      const user = data.user || {};
-      const label = user.name || user.email || 'Signed in';
-      link.className = 'user-chip';
-      link.textContent = label;
-      link.href = '#';
-      link.onclick = async (e) => {
-        e.preventDefault();
-        await fetch('/auth/logout', { method: 'POST' });
-        window.location.reload();
-      };
-    }
-  } catch (e) {
-    console.error('auth status failed:', e);
+
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.stat-desc {
+  color: #9da7b3;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.panel {
+  padding: 18px;
+}
+
+.panel.latest {
+  grid-column: span 4;
+}
+
+.panel.movers {
+  grid-column: span 4;
+}
+
+.panel.volume {
+  grid-column: span 4;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.panel-head h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.1px;
+  color: #9da7b3;
+}
+
+.panel-head span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.latest-date {
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.latest-meta {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: #c9d1d9;
+}
+
+.meta-row span:last-child {
+  color: var(--muted);
+}
+
+.dual-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.list-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.list-title.up { color: var(--red); }
+.list-title.down { color: var(--green); }
+
+.rank-list,
+.volume-list {
+  display: grid;
+  gap: 8px;
+}
+
+.rank-item,
+.volume-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(13,17,23,0.42);
+  border: 1px solid rgba(48,54,61,0.7);
+}
+
+.rank-left {
+  min-width: 0;
+}
+
+.ticker {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f0f6fc;
+}
+
+.name {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.pct {
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pct.up { color: var(--red); }
+.pct.down { color: var(--green); }
+.vol-num {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f0f6fc;
+  white-space: nowrap;
+}
+
+.panel-footer {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.notice {
+  color: #9da7b3;
+  font-size: 12px;
+  line-height: 1.7;
+  padding: 12px 2px 0;
+}
+
+@media (max-width: 1100px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .panel.latest,
+  .panel.movers,
+  .panel.volume {
+    grid-column: span 12;
   }
 }
 
-loadAuthStatus();
+@media (max-width: 760px) {
+  .page {
+    width: min(100%, calc(100% - 24px));
+    padding: 18px 0 32px;
+  }
+
+  .hero-card {
+    min-height: auto;
+    padding: 22px;
+  }
+
+  .dual-list {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body data-topbar-page="home" data-topbar-title="Quant Phronesis" data-topbar-auth="hide">
+<div id="app-topbar"></div>
+
+<main class="page">
+  <section class="hero">
+    <div class="hero-card">
+      <div>
+        <pre class="brand-mark">____                       _     ____  _                               _
+  / __ \                     | |   |  _ \| |                             (_)
+ | |  | |_   _  __ _ _ __  __| |_  | |_) | |__  _ __ ___  _ __   ___  _ ___ ___
+ | |  | | | | |/ _` | '_ \/ _` | | |  __/| '_ \| '__/ _ \| '_ \ / _ \| / __/ __|
+ | |__| | |_| | (_| | | | | (_| |_ | |   | | | | | | (_) | | | |  __/| \__ \__ \
+  \___\_\\__,_|\__,_|_| |_|\__,_(_)|_|   |_| |_|_|  \___/|_| |_|\___||_|___/___/
+
+  >> Practical Wisdom in Trading </pre>
+      </div>
+      <div class="hero-actions">
+        <a class="hero-btn primary" href="/market-overview">開市場總覽</a>
+        <a class="hero-btn" href="/backtest">進 Screener</a>
+        <a class="hero-btn" href="/watchlist-manager">看 Watchlist</a>
+      </div>
+    </div>
+
+    <div class="hero-side">
+      <div class="panel stat-card">
+        <div class="stat-label">Core Stack</div>
+        <div class="stat-value">FastAPI + Parquet</div>
+        <div class="stat-desc">Python 後端、R2 同步快取、SQLite 狀態、前端採用原生 HTML/JS。</div>
+      </div>
+      <div class="panel stat-card">
+        <div class="stat-label">Key Algorithm</div>
+        <div class="stat-value">DTW</div>
+        <div class="stat-desc">可延伸到型態比對、畫圖比對與回測流程，維持記憶體效率與結構清楚。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="summary-grid" id="home-summary">
+    <article class="panel latest">
+      <div class="panel-head">
+        <h2>最新快取日期</h2>
+        <span>loading…</span>
+      </div>
+      <div class="latest-date" id="latest-date">—</div>
+      <div class="latest-meta">
+        <div class="meta-row"><span>市場標的</span><span id="market-count">—</span></div>
+        <div class="meta-row"><span>資料來源</span><span>market overview cache</span></div>
+      </div>
+    </article>
+
+    <article class="panel movers">
+      <div class="panel-head">
+        <h2>Top 上漲 / 下跌</h2>
+        <span>day pct</span>
+      </div>
+      <div class="dual-list">
+        <div>
+          <div class="list-title up">Top 上漲</div>
+          <div class="rank-list" id="gainers-list"></div>
+        </div>
+        <div>
+          <div class="list-title down">Top 下跌</div>
+          <div class="rank-list" id="losers-list"></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel volume">
+      <div class="panel-head">
+        <h2>Top 成交量</h2>
+        <span>volume</span>
+      </div>
+      <div class="volume-list" id="volume-list"></div>
+    </article>
+  </section>
+
+  <div class="notice">
+    這個首頁是 Quant Phronesis 的市場入口，保留輕量、清楚、可擴充的結構，方便之後接上更多台股摘要與分析模組。
+  </div>
+</main>
+
+<script src="/static/shared_topbar.js"></script>
+<script>
+function fmtPct(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  const n = Number(value);
+  return `${n > 0 ? '+' : ''}${n.toFixed(2)}%`;
+}
+
+function fmtVol(value) {
+  if (value == null || Number.isNaN(Number(value))) return '—';
+  return Number(value).toLocaleString('en-US');
+}
+
+function esc(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderRows(el, rows, kind) {
+  if (!el) return;
+  if (!rows || !rows.length) {
+    el.innerHTML = '<div class="rank-item"><div class="rank-left"><div class="ticker">—</div><div class="name">No data</div></div><div class="pct">—</div></div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(row => {
+    const name = row.name || '';
+    if (kind === 'volume') {
+      return `<div class="volume-item">
+        <div class="rank-left">
+          <div class="ticker">${esc(row.ticker || '—')}</div>
+          <div class="name">${esc(name)}</div>
+        </div>
+        <div class="vol-num">${fmtVol(row.volume)}</div>
+      </div>`;
+    }
+    const pct = Number(row.day_pct ?? NaN);
+    const cls = Number.isFinite(pct) ? (pct >= 0 ? 'up' : 'down') : '';
+    return `<div class="rank-item">
+      <div class="rank-left">
+        <div class="ticker">${esc(row.ticker || '—')}</div>
+        <div class="name">${esc(name)}</div>
+      </div>
+      <div class="pct ${cls}">${fmtPct(row.day_pct)}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadSummary() {
+  const latestEl = document.getElementById('latest-date');
+  const countEl = document.getElementById('market-count');
+  const panelHead = document.querySelector('.panel.latest .panel-head span');
+  try {
+    const resp = await fetch('/api/home-summary');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    latestEl.textContent = data.latest_date || '—';
+    countEl.textContent = data.total_rows != null ? `${Number(data.total_rows).toLocaleString('en-US')} 檔` : '—';
+    panelHead.textContent = data.latest_date ? 'updated' : 'no data';
+    renderRows(document.getElementById('gainers-list'), data.top_gainers, 'mover');
+    renderRows(document.getElementById('losers-list'), data.top_losers, 'mover');
+    renderRows(document.getElementById('volume-list'), data.top_volume, 'volume');
+  } catch (err) {
+    latestEl.textContent = '—';
+    countEl.textContent = '—';
+    panelHead.textContent = 'error';
+    document.getElementById('gainers-list').innerHTML = '<div class="rank-item"><div class="rank-left"><div class="ticker">Error</div><div class="name">Failed to load summary</div></div><div class="pct">—</div></div>';
+    document.getElementById('losers-list').innerHTML = '<div class="rank-item"><div class="rank-left"><div class="ticker">Error</div><div class="name">Failed to load summary</div></div><div class="pct">—</div></div>';
+    document.getElementById('volume-list').innerHTML = '<div class="volume-item"><div class="rank-left"><div class="ticker">Error</div><div class="name">Failed to load summary</div></div><div class="vol-num">—</div></div>';
+    console.error('loadSummary failed:', err);
+  }
+}
+
+loadSummary();
 </script>
 </body>
 </html>
