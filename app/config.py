@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
 DATA_DIR = Path(os.getenv("APP_DATA_PATH", Path(__file__).parent.parent / "data"))
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "dev-only-session-secret-change-me")

@@ -222,13 +222,12 @@ async def _process_ticker(session: aiohttp.ClientSession, ticker: str, target_da
     key = f"concentration/{ticker}.parquet"
     async with sem:
         try:
-            existing_task = asyncio.to_thread(_download_parquet, key)
-            report_task = _fetch_trader_report_async(session, ticker, target_date)
-            existing, records = await asyncio.gather(existing_task, report_task)
+            existing = await asyncio.to_thread(_download_parquet, key)
 
             if existing is not None and target_date in existing["date"].cast(pl.Utf8).to_list():
                 return "skipped", ticker
 
+            records = await _fetch_trader_report_async(session, ticker, target_date)
             row = _compute_one_day(records)
             if row is None:
                 return "skipped", ticker

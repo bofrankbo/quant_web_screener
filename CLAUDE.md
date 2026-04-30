@@ -28,12 +28,19 @@ python -m scripts.sync_cache --all           # R2 → local data/cache/
 ### Daily update
 
 ```bash
-bash scripts/daily_update.sh              # today
+bash scripts/daily_update.sh              # today (all steps)
 bash scripts/daily_update.sh 2026-04-25   # specific date
 ```
 
-Runs `fetch_prices`, `fetch_concentration`, `fetch_market_value` in parallel, then `sync_cache`.
-Also works on Railway Shell.
+Runs steps 1–3 in parallel, then step 4. Also works on Railway Shell.
+
+Individual steps (for maintenance / re-runs):
+```bash
+python -m scripts.fetch_prices --date 2026-04-30          # OHLCV → R2 tickers/
+python -m scripts.fetch_concentration --date 2026-04-30   # broker conc → R2 concentration/
+python -m scripts.fetch_market_value --date 2026-04-30    # market cap → R2 market_value/
+python -m scripts.sync_cache --all                        # R2 → local cache/
+```
 
 ## Architecture
 
