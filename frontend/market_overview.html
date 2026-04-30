@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>市場總覽</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="/static/kline_shared.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -216,27 +217,28 @@
 
   #chart-panel {
     position: fixed;
-    top: 0; right: 0;
-    width: 600px;
-    height: 100vh;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 420px;
     background: #0d1117;
-    border-left: 1px solid #30363d;
+    border-top: 1px solid #30363d;
     display: flex;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform 0.2s ease;
+    transform: translateY(100%);
+    transition: transform 0.22s ease;
     z-index: 300;
   }
-  #chart-panel.visible { transform: translateX(0); }
+  #chart-panel.visible { transform: translateY(0); }
 
   #chart-panel-header {
-    height: 44px;
-    min-height: 44px;
+    height: 40px;
+    min-height: 40px;
     background: #161b22;
     border-bottom: 1px solid #30363d;
     display: flex;
     align-items: center;
-    padding: 0 14px;
+    padding: 0 12px;
     gap: 10px;
     flex-shrink: 0;
   }
@@ -473,8 +475,6 @@ document.getElementById('search').addEventListener('input', () => {
 });
 
 // ── Chart ──────────────────────────────────────────────────────────────────
-let _chart = null;
-
 function openChart(ticker) {
   document.getElementById('chart-ticker-label').textContent = ticker;
   document.getElementById('chart-panel').classList.add('visible');
@@ -483,7 +483,7 @@ function openChart(ticker) {
 
 function closeChart() {
   document.getElementById('chart-panel').classList.remove('visible');
-  if (_chart) { _chart.remove(); _chart = null; }
+  KlineChart.destroy(document.getElementById('lwc-container'));
 }
 
 async function fetchKline(ticker) {
@@ -496,49 +496,9 @@ async function fetchKline(ticker) {
 
 function renderChart(rows) {
   const container = document.getElementById('lwc-container');
-  if (_chart) { _chart.remove(); _chart = null; }
-
-  _chart = LightweightCharts.createChart(container, {
-    layout: { background: { color: '#0d1117' }, textColor: '#e6edf3' },
-    grid: { vertLines: { color: '#161b22' }, horzLines: { color: '#161b22' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: '#30363d' },
-    timeScale: { borderColor: '#30363d', timeVisible: false },
-    width: container.clientWidth,
-    height: container.clientHeight,
+  KlineChart.render(container, rows, {
+    volumeTopMargin: 0.91,
   });
-
-  const candles = _chart.addCandlestickSeries({
-    upColor: '#f85149', downColor: '#3fb950',
-    borderUpColor: '#f85149', borderDownColor: '#3fb950',
-    wickUpColor: '#f85149', wickDownColor: '#3fb950',
-  });
-  candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
-
-  const ma = _chart.addLineSeries({ color: '#d29922', lineWidth: 1, priceLineVisible: false });
-  ma.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
-
-  const vol = _chart.addHistogramSeries({
-    priceFormat: { type: 'volume' }, priceScaleId: 'vol',
-    scaleMargins: { top: 0.82, bottom: 0 },
-  });
-  vol.setData(rows.map(r => ({
-    time: r.date, value: r.volume,
-    color: r.close >= r.open ? 'rgba(248,81,73,0.45)' : 'rgba(63,185,80,0.45)',
-  })));
-
-  const lastDate = new Date(rows[rows.length - 1].date);
-  const fromDate = new Date(lastDate);
-  fromDate.setMonth(fromDate.getMonth() - 3);
-  _chart.timeScale().setVisibleRange({
-    from: fromDate.toISOString().slice(0, 10),
-    to: lastDate.toISOString().slice(0, 10),
-  });
-
-  const ro = new ResizeObserver(() => {
-    if (_chart) _chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-  });
-  ro.observe(container);
 }
 
 document.addEventListener('keydown', e => {

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Watchlist Manager</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="/static/kline_shared.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -319,8 +320,13 @@ body {
   white-space: nowrap;
   flex-shrink: 0;
 }
-#add-input {
+#add-input-wrap {
   flex: 1;
+  position: relative;
+  min-width: 0;
+}
+#add-input {
+  width: 100%;
   background: #131722;
   border: 1px solid #363a45;
   color: #d1d4dc;
@@ -333,6 +339,45 @@ body {
 }
 #add-input:focus { outline: none; border-color: #2962ff; }
 #add-input::placeholder { color: #4c525e; font-family: -apple-system, 'Segoe UI', sans-serif; letter-spacing: 0; }
+#add-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #131722;
+  border: 1px solid #363a45;
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  z-index: 80;
+  display: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+#add-suggestions.visible { display: block; }
+.add-suggestion {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #1c2030;
+}
+.add-suggestion:last-child { border-bottom: none; }
+.add-suggestion:hover,
+.add-suggestion.active { background: #1c2030; }
+.add-suggestion-ticker {
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-weight: 700;
+  color: #d1d4dc;
+  flex-shrink: 0;
+}
+.add-suggestion-name {
+  color: #787b86;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 #btn-add {
   background: #2962ff;
   color: #fff;
@@ -511,24 +556,25 @@ tr.row-inactive td:not(.toggle-col) {
 /* ── Chart Panel ── */
 #chart-panel {
   position: fixed;
-  top: 0; right: 0;
-  width: 560px;
-  height: 100vh;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 420px;
   background: #131722;
-  border-left: 1px solid #2a2e39;
+  border-top: 1px solid #30363d;
   display: flex;
   flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.2s ease;
+  transform: translateY(100%);
+  transition: transform 0.22s ease;
   z-index: 200;
 }
-#chart-panel.visible { transform: translateX(0); }
+#chart-panel.visible { transform: translateY(0); }
 
 #chart-panel-header {
-  height: 44px;
-  min-height: 44px;
-  background: #1e222d;
-  border-bottom: 1px solid #2a2e39;
+  height: 40px;
+  min-height: 40px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
   display: flex;
   align-items: center;
   padding: 0 12px;
@@ -537,7 +583,7 @@ tr.row-inactive td:not(.toggle-col) {
 #chart-ticker-label {
   font-size: 15px;
   font-weight: 700;
-  color: #d1d4dc;
+  color: #f0f6fc;
   flex: 1;
 }
 #chart-bb-toggle {
@@ -553,14 +599,14 @@ tr.row-inactive td:not(.toggle-col) {
 #chart-close-btn {
   background: none;
   border: none;
-  color: #787b86;
+  color: #8b949e;
   font-size: 18px;
   cursor: pointer;
   padding: 4px 6px;
   line-height: 1;
   border-radius: 4px;
 }
-#chart-close-btn:hover { color: #d1d4dc; background: #2a2e39; }
+#chart-close-btn:hover { color: #f0f6fc; background: #21262d; }
 #lwc-container {
   flex: 1;
   min-height: 0;
@@ -625,8 +671,11 @@ tr.row-inactive td:not(.toggle-col) {
       <!-- Add tickers -->
       <div id="add-section">
         <div id="add-section-label">Add</div>
-        <input id="add-input" type="text" placeholder="2603, 2609, 2615…"
-               onkeydown="if(event.key==='Enter')addTickers()">
+        <div id="add-input-wrap">
+          <input id="add-input" type="text" placeholder="搜尋代號 / 名稱，或輸入 2603, 2609…"
+                 autocomplete="off">
+          <div id="add-suggestions" aria-label="股票建議清單"></div>
+        </div>
         <button id="btn-add" onclick="addTickers()">Add</button>
       </div>
 
@@ -674,6 +723,9 @@ let currentRows = [];     // cached summary rows for sorting (data rows only, no
 let allGroupedRows = [];  // full row list including group-header pseudo-rows (for "全部" view)
 let sortCol = null;
 let sortDir = 1;          // 1 = asc, -1 = desc
+let stockUniverse = [];
+let stockUniverseLoaded = false;
+let addSuggestionIndex = -1;
 
 // ── Load / refresh ────────────────────────────────────────────────────────────
 
@@ -741,6 +793,163 @@ function avgPct(rows, key) {
   return vals.reduce((s, v) => s + v, 0) / vals.length;
 }
 
+function sortRows(rows) {
+  if (!sortCol) return rows.slice();
+  const col = sortCol;
+  const dir = sortDir;
+  return [...rows].sort((a, b) => {
+    let av = a[col], bv = b[col];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return av.localeCompare(bv, 'zh-TW') * dir;
+    return (av - bv) * dir;
+  });
+}
+
+function sortGroupedRows(rows) {
+  if (!sortCol) return rows.slice();
+  const out = [];
+  let groupHeader = null;
+  let groupRows = [];
+
+  const flushGroup = () => {
+    if (!groupHeader) return;
+    out.push(groupHeader);
+    out.push(...sortRows(groupRows));
+  };
+
+  for (const row of rows) {
+    if (row._isGroup) {
+      flushGroup();
+      groupHeader = row;
+      groupRows = [];
+      continue;
+    }
+    groupRows.push(row);
+  }
+  flushGroup();
+  return out;
+}
+
+function renderCurrentView() {
+  if (currentWl === '__all__') {
+    renderAllTable(allGroupedRows.slice());
+    const activeCount = currentRows.filter(r => r.active !== false).length;
+    document.getElementById('wl-ticker-count').textContent =
+      activeCount < currentRows.length
+        ? `${activeCount}/${currentRows.length} tickers`
+        : `${currentRows.length} ticker${currentRows.length !== 1 ? 's' : ''}`;
+    return;
+  }
+
+  const total = currentRows.length;
+  renderTable(currentRows);
+  document.getElementById('wl-ticker-count').textContent =
+    `${total} ticker${total !== 1 ? 's' : ''}`;
+}
+
+async function loadStockUniverse() {
+  if (stockUniverseLoaded) return;
+  try {
+    const resp = await fetch('/api/stock-universe');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    stockUniverse = await resp.json();
+    stockUniverseLoaded = true;
+  } catch (e) {
+    console.error('loadStockUniverse failed:', e);
+  }
+}
+
+function getAddQuery(raw) {
+  const text = raw.trim();
+  if (!text) return '';
+  if (/[\s,，、\n]/.test(text)) return '';
+  return text.toLowerCase();
+}
+
+function scoreAddSuggestion(item, q) {
+  const ticker = (item.ticker || '').toString().toLowerCase();
+  const name = (item.name || '').toString().toLowerCase();
+  if (ticker === q) return 0;
+  if (ticker.startsWith(q)) return 1;
+  if (name.startsWith(q)) return 2;
+  if (ticker.includes(q)) return 3;
+  if (name.includes(q)) return 4;
+  return 99;
+}
+
+function getAddSuggestions(q) {
+  if (!q || !stockUniverse.length) return [];
+  return stockUniverse
+    .filter(item => scoreAddSuggestion(item, q) < 99)
+    .sort((a, b) => {
+      const sa = scoreAddSuggestion(a, q);
+      const sb = scoreAddSuggestion(b, q);
+      if (sa !== sb) return sa - sb;
+      return (+a.ticker || 0) - (+b.ticker || 0);
+    })
+    .slice(0, 8);
+}
+
+function hideAddSuggestions() {
+  const box = document.getElementById('add-suggestions');
+  box.classList.remove('visible');
+  box.innerHTML = '';
+  addSuggestionIndex = -1;
+}
+
+function renderAddSuggestions() {
+  const box = document.getElementById('add-suggestions');
+  const input = document.getElementById('add-input');
+  const q = getAddQuery(input.value);
+  const suggestions = getAddSuggestions(q);
+
+  if (!q || !suggestions.length) {
+    hideAddSuggestions();
+    return;
+  }
+
+  if (addSuggestionIndex < 0 || addSuggestionIndex >= suggestions.length) {
+    addSuggestionIndex = 0;
+  }
+
+  box.innerHTML = suggestions.map((item, idx) => `
+    <div class="add-suggestion${idx === addSuggestionIndex ? ' active' : ''}"
+         data-idx="${idx}">
+      <span class="add-suggestion-ticker">${escHtml(item.ticker)}</span>
+      <span class="add-suggestion-name">${escHtml(item.name || '')}</span>
+    </div>
+  `).join('');
+  box.classList.add('visible');
+
+  box.querySelectorAll('.add-suggestion').forEach((el, idx) => {
+    el.addEventListener('mouseenter', () => {
+      addSuggestionIndex = idx;
+      renderAddSuggestions();
+    });
+    el.addEventListener('click', () => {
+      void commitSuggestedTicker(suggestions[idx]);
+    });
+  });
+}
+
+async function commitSuggestedTicker(item) {
+  const input = document.getElementById('add-input');
+  input.value = item.ticker;
+  hideAddSuggestions();
+  await addTickers();
+}
+
+function moveAddSuggestion(delta) {
+  const input = document.getElementById('add-input');
+  const q = getAddQuery(input.value);
+  const suggestions = getAddSuggestions(q);
+  if (!suggestions.length) return;
+  addSuggestionIndex = (addSuggestionIndex + delta + suggestions.length) % suggestions.length;
+  renderAddSuggestions();
+}
+
 function renderOverview(results) {
   const tbody = document.getElementById('overview-tbody');
   tbody.innerHTML = '';
@@ -785,11 +994,7 @@ async function loadSummary(name) {
     currentRows = data.rows || [];
     sortCol = null; sortDir = 1;
     clearSortIndicators();
-    renderTable(currentRows);
-
-    const n = currentRows.length;
-    document.getElementById('wl-ticker-count').textContent =
-      `${n} ticker${n !== 1 ? 's' : ''}`;
+    renderCurrentView();
   } catch (e) {
     console.error('loadSummary failed:', e);
   } finally {
@@ -903,12 +1108,7 @@ async function loadAllSummary() {
     currentRows = allGroupedRows.filter(r => !r._isGroup);
     sortCol = null; sortDir = 1;
     clearSortIndicators();
-    renderAllTable(allGroupedRows);
-    const activeCount = currentRows.filter(r => r.active !== false).length;
-    document.getElementById('wl-ticker-count').textContent =
-      activeCount < currentRows.length
-        ? `${activeCount}/${currentRows.length} tickers`
-        : `${currentRows.length} ticker${currentRows.length !== 1 ? 's' : ''}`;
+    renderCurrentView();
   } catch (e) {
     console.error('loadAllSummary failed:', e);
   } finally {
@@ -1055,16 +1255,11 @@ function sortBy(col) {
     headers[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
   }
 
-  const sorted = [...currentRows].sort((a, b) => {
-    const av = a[col], bv = b[col];
-    if (av == null && bv == null) return 0;
-    if (av == null) return 1;
-    if (bv == null) return -1;
-    if (typeof av === 'string') return av.localeCompare(bv) * sortDir;
-    return (av - bv) * sortDir;
-  });
-
-  renderTable(sorted);
+  if (currentWl === '__all__') {
+    renderAllTable(sortGroupedRows(allGroupedRows.slice()));
+  } else {
+    renderTable(sortRows(currentRows));
+  }
 }
 
 function clearSortIndicators() {
@@ -1106,6 +1301,7 @@ async function addTickers() {
   const raw = input.value.trim();
   if (!raw) return;
 
+  hideAddSuggestions();
   const tickers = raw.split(/[\s,，、\n]+/).map(t => t.trim()).filter(Boolean);
   if (!tickers.length) return;
 
@@ -1263,12 +1459,52 @@ function handleRenameKey(e) {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const addInput = document.getElementById('add-input');
+addInput.addEventListener('input', () => {
+  addSuggestionIndex = -1;
+  renderAddSuggestions();
+});
+addInput.addEventListener('focus', () => {
+  renderAddSuggestions();
+});
+addInput.addEventListener('blur', () => {
+  setTimeout(hideAddSuggestions, 120);
+});
+addInput.addEventListener('keydown', async e => {
+  const q = getAddQuery(addInput.value);
+  const suggestions = getAddSuggestions(q);
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    moveAddSuggestion(1);
+    return;
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    moveAddSuggestion(-1);
+    return;
+  }
+  if (e.key === 'Escape') {
+    hideAddSuggestions();
+    return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (suggestions.length) {
+      const idx = addSuggestionIndex >= 0 ? addSuggestionIndex : 0;
+      await commitSuggestedTicker(suggestions[idx]);
+    } else {
+      await addTickers();
+    }
+  }
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#add-section')) hideAddSuggestions();
+});
+
 // ── Chart panel ──────────────────────────────────────────────────────────────
 
-let _chart = null;
-let _bbSeries = [];
-let _chartTicker = null;
 let _chartData = null;
+let _chartTicker = null;
 
 function openChart(ticker) {
   _chartTicker = ticker;
@@ -1279,7 +1515,7 @@ function openChart(ticker) {
 
 function closeChart() {
   document.getElementById('chart-panel').classList.remove('visible');
-  if (_chart) { _chart.remove(); _chart = null; }
+  KlineChart.destroy(document.getElementById('lwc-container'));
   _chartTicker = null;
   _chartData = null;
 }
@@ -1297,60 +1533,10 @@ async function fetchKline(ticker) {
 
 function renderChart(rows) {
   const container = document.getElementById('lwc-container');
-  if (_chart) { _chart.remove(); _chart = null; }
-
-  _chart = LightweightCharts.createChart(container, {
-    layout: { background: { color: '#131722' }, textColor: '#d1d4dc' },
-    grid: { vertLines: { color: '#1c2030' }, horzLines: { color: '#1c2030' } },
-    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-    rightPriceScale: { borderColor: '#2a2e39' },
-    timeScale: { borderColor: '#2a2e39', timeVisible: false },
-    width: container.clientWidth,
-    height: container.clientHeight,
+  KlineChart.render(container, rows, {
+    showBb: document.getElementById('chart-bb-cb').checked,
+    volumeTopMargin: 0.91,
   });
-
-  const candles = _chart.addCandlestickSeries({
-    upColor: '#ef5350', downColor: '#26a69a',
-    borderUpColor: '#ef5350', borderDownColor: '#26a69a',
-    wickUpColor: '#ef5350', wickDownColor: '#26a69a',
-  });
-  candles.setData(rows.map(r => ({ time: r.date, open: r.open, high: r.high, low: r.low, close: r.close })));
-
-  const maSeries = _chart.addLineSeries({ color: '#ffa726', lineWidth: 1, priceLineVisible: false });
-  maSeries.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
-
-  const showBB = document.getElementById('chart-bb-cb').checked;
-  _bbSeries = [];
-  if (showBB) {
-    const bbU = _chart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
-    bbU.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
-    const bbL = _chart.addLineSeries({ color: '#ab47bc', lineWidth: 1, lineStyle: 2, priceLineVisible: false });
-    bbL.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
-    _bbSeries = [bbU, bbL];
-  }
-
-  const volSeries = _chart.addHistogramSeries({
-    priceFormat: { type: 'volume' }, priceScaleId: 'vol',
-    scaleMargins: { top: 0.82, bottom: 0 },
-  });
-  volSeries.setData(rows.map(r => ({
-    time: r.date, value: r.volume,
-    color: r.close >= r.open ? 'rgba(239,83,80,0.45)' : 'rgba(38,166,154,0.45)',
-  })));
-
-  // Default view: last 3 months, but full history is loaded and scrollable
-  const lastDate = new Date(rows[rows.length - 1].date);
-  const fromDate = new Date(lastDate);
-  fromDate.setMonth(fromDate.getMonth() - 3);
-  _chart.timeScale().setVisibleRange({
-    from: fromDate.toISOString().slice(0, 10),
-    to: lastDate.toISOString().slice(0, 10),
-  });
-
-  const ro = new ResizeObserver(() => {
-    if (_chart) _chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-  });
-  ro.observe(container);
 }
 
 document.getElementById('chart-bb-cb').addEventListener('change', () => {
@@ -1407,6 +1593,7 @@ async function loadAuthStatus() {
 
 // Init
 loadAuthStatus();
+void loadStockUniverse();
 loadAll();
 </script>
 </body>

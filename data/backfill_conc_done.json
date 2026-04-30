@@ -32,106 +32,141 @@
     "updated_at": "2026-04-30"
   },
   "1108": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1109": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1110": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1201": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1203": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1210": {
-    "days": 1168,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1213": {
-    "days": 1005,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1143,
+    "updated_at": "2026-04-30"
   },
   "1215": {
-    "days": 1102,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1216": {
-    "days": 1171,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1217": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1218": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1219": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1220": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1225": {
-    "days": 979,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1118,
+    "updated_at": "2026-04-30"
   },
   "1227": {
-    "days": 1041,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1229": {
-    "days": 1171,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1171,
+    "updated_at": "2026-04-30"
   },
   "1231": {
-    "days": 1041,
-    "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "status": "processing",
+    "start_date": "2021-07-01",
+    "next_date": "2025-09-19",
+    "through": "2025-09-18",
+    "rows": 1041,
+    "updated_at": "2026-04-30",
+    "note": "already exists in concentration"
   },
   "1232": {
     "days": 1041,
@@ -1166,12 +1201,19 @@
     "note": "already complete in R2"
   },
   "1107": {
-    "status": "processing",
+    "status": "done",
     "start_date": "2021-07-01",
-    "next_date": "2026-04-09",
-    "through": "2026-04-08",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
     "rows": 0,
-    "updated_at": "2026-04-30",
-    "note": "no trader data"
+    "updated_at": "2026-04-30"
+  },
+  "1230": {
+    "status": "done",
+    "start_date": "2024-12-03",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 0,
+    "updated_at": "2026-04-30"
   }
 }

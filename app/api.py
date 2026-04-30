@@ -50,6 +50,7 @@ from app.db import (
 from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
 from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names, get_market_overview
+from app.stock_universe import load_stock_info
 
 
 def _load_watchlists() -> dict:
@@ -196,6 +197,22 @@ class PatternMatchRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/stock-universe")
+def stock_universe():
+    df = load_stock_info()
+    if df.is_empty():
+        return JSONResponse(content=[])
+    rows = (
+        df.select([
+            pl.col("stock_id").alias("ticker"),
+            pl.col("stock_name").alias("name"),
+        ])
+        .sort(pl.col("ticker").cast(pl.Int32))
+        .to_dicts()
+    )
+    return JSONResponse(content=rows)
 
 
 @app.get("/auth/google/login")
