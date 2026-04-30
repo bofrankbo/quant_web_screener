@@ -1,0 +1,1177 @@
+{
+  "1101": {
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 1169,
+    "updated_at": "2026-04-30"
+  },
+  "1102": {
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 1170,
+    "updated_at": "2026-04-30"
+  },
+  "1103": {
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 1171,
+    "updated_at": "2026-04-30"
+  },
+  "1104": {
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 1170,
+    "updated_at": "2026-04-30"
+  },
+  "1108": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1109": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1110": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1201": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1203": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1210": {
+    "days": 1168,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1213": {
+    "days": 1005,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1215": {
+    "days": 1102,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1216": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1217": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1218": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1219": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1220": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1225": {
+    "days": 979,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1227": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1229": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1231": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1232": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1233": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1234": {
+    "days": 1040,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1235": {
+    "days": 1030,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1236": {
+    "days": 1025,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1240": {
+    "days": 1029,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1256": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1259": {
+    "days": 1022,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1264": {
+    "days": 1021,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1268": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1301": {
+    "days": 1169,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1303": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1304": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1305": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1307": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1308": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1309": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1310": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1312": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1313": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1314": {
+    "days": 1040,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1315": {
+    "days": 1024,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1316": {
+    "days": 1024,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1319": {
+    "days": 1168,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1321": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1323": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1324": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1325": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1326": {
+    "days": 1170,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1336": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1337": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1338": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1339": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1340": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1341": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1342": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1402": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1409": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1410": {
+    "days": 1029,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1413": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1414": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1416": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1417": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1418": {
+    "days": 1030,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1419": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1423": {
+    "days": 1025,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1432": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1434": {
+    "days": 1041,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1436": {
+    "days": 1040,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1437": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1438": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1439": {
+    "days": 1030,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1440": {
+    "days": 1040,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1441": {
+    "days": 1026,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1442": {
+    "days": 656,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1443": {
+    "days": 1030,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1444": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1445": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1446": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1447": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1449": {
+    "days": 838,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1451": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1452": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1453": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1454": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1455": {
+    "days": 1029,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1456": {
+    "days": 969,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1457": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1459": {
+    "days": 600,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1463": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1464": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1465": {
+    "days": 1031,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1466": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1467": {
+    "days": 542,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1468": {
+    "days": 1032,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1470": {
+    "days": 115,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1471": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1472": {
+    "days": 587,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1473": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1474": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1475": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1476": {
+    "days": 1170,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1477": {
+    "days": 1170,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1503": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1504": {
+    "days": 1170,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1506": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1512": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1513": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1514": {
+    "days": 202,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1515": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1516": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1517": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1519": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1521": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1522": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1524": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1525": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1526": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1527": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1528": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1529": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1530": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1531": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1532": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1533": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1535": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1536": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1537": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1538": {
+    "days": 118,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1539": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1540": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1541": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1558": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1560": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1565": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1568": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1569": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1570": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1580": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1582": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1583": {
+    "days": 116,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1584": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1586": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1587": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1590": {
+    "days": 1171,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1591": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1593": {
+    "days": 118,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1595": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1597": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1598": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1599": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1603": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1604": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1605": {
+    "days": 1169,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1608": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1609": {
+    "days": 241,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1611": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1612": {
+    "days": 120,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1614": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1615": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1616": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1617": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1618": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1626": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1702": {
+    "days": 134,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1707": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1708": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1709": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1710": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1711": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1712": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1713": {
+    "days": 117,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1714": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1717": {
+    "days": 848,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1718": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1720": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1721": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1722": {
+    "days": 1167,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1723": {
+    "days": 176,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1725": {
+    "days": 117,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1726": {
+    "days": 142,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1727": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1730": {
+    "days": 117,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1731": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1732": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1733": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1734": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1735": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1736": {
+    "days": 1121,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1737": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1742": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1752": {
+    "days": 119,
+    "through": "2026-04-29",
+    "fetched_at": "2026-04-30",
+    "note": "already complete in R2"
+  },
+  "1107": {
+    "status": "processing",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-09",
+    "through": "2026-04-08",
+    "rows": 0,
+    "updated_at": "2026-04-30",
+    "note": "no trader data"
+  }
+}

@@ -21,6 +21,8 @@ import requests
 from botocore.config import Config
 from dotenv import load_dotenv
 
+from app.stock_universe import get_stock_tickers
+
 load_dotenv()
 
 # --- R2 client ---
@@ -41,11 +43,6 @@ s3 = boto3.client(
 )
 
 FINMIND_API = "https://api.finmindtrade.com/api/v4/data"
-
-NOT_STOCK_CATEGORIES = {
-    "受益證券", "上櫃指數股票型基金(ETF)", "上櫃ETF",
-    "所有證券", "ETN", "存託憑證", "ETF", "大盤", "index", "Food",
-}
 
 
 # --- FinMind helpers ---
@@ -69,17 +66,7 @@ def _finmind_get(dataset: str, start_date: str, end_date: str,
 
 
 def _get_all_tickers() -> list[str]:
-    today = str(date.today())
-    records, _ = _finmind_get("TaiwanStockInfo", today, today)
-    if not records:
-        raise RuntimeError("TaiwanStockInfo returned empty data")
-    df = pl.DataFrame(records)
-    df = df.filter(pl.col("type").is_in(["twse", "tpex"]))
-    df = df.filter(~pl.col("industry_category").is_in(list(NOT_STOCK_CATEGORIES)))
-    df = df.with_columns(
-        pl.col("stock_id").cast(pl.Utf8)
-    ).filter(pl.col("stock_id").str.len_chars() <= 4)
-    return sorted(df["stock_id"].unique().to_list())
+    return list(get_stock_tickers())
 
 
 # --- R2 helpers ---

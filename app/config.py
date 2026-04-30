@@ -21,6 +21,7 @@ DUCKDB_PATH = DATA_DIR / "screener.duckdb"
 DB_PATH = DUCKDB_PATH
 SQLITE_PATH = DATA_DIR / "app.sqlite"
 WATCHLISTS_PATH = DATA_DIR / "watchlists.json"
+STOCK_UNIVERSE_PATH = DATA_DIR / "stock_universe.csv"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 DUCKDB_PATH.parent.mkdir(exist_ok=True)
