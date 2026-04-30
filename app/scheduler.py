@@ -20,6 +20,8 @@ def daily_update() -> None:
     result = run_daily_update(str(date.today()))
     if not result.get("success", False):
         logger.error("Daily update finished with errors")
+    from app.backtest import invalidate_market_overview_cache
+    invalidate_market_overview_cache()
     logger.info("=== Daily update done ===")
 
 
@@ -33,6 +35,8 @@ def startup_sync() -> None:
         logger.info(output.rstrip())
     if not ok:
         logger.error("scripts.sync_cache exited with a non-zero code")
+    from app.backtest import invalidate_market_overview_cache
+    invalidate_market_overview_cache()
     logger.info("[startup] Cache ready.")
 
 

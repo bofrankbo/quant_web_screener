@@ -55,7 +55,8 @@ body {
   border-right: 1px solid #2a2e39;
 }
 #sidebar-conditions-scroll {
-  flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; padding: 10px;
+  flex: 1; overflow: hidden; min-height: 0; padding: 10px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 #sidebar-conditions-scroll::-webkit-scrollbar { width: 4px; }
 #sidebar-conditions-scroll::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
@@ -80,12 +81,17 @@ body {
   padding-top: 4px; border-top: 1px solid #2a2e39;
 }
 .section-title:first-child { border-top: none; }
-.filter-group + .filter-group { margin-top: 14px; }
+.filter-group + .filter-group { margin-top: 0; }
 .condition-card {
   border: 1px solid #2a2e39;
   border-radius: 10px;
   padding: 10px;
   background: #171b26;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 0;
+  overflow: hidden;
 }
 .condition-card.entry {
   border-color: rgba(239, 83, 80, 0.35);
@@ -124,9 +130,20 @@ body {
 .condition-card.entry input[type=number]:focus { border-color: #ef5350; }
 .condition-card.exit input[type=number]:focus { border-color: #26a69a; }
 
-.field { display: flex; flex-direction: column; gap: 3px; }
+.condition-card-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+}
+.condition-card-scroll::-webkit-scrollbar { width: 4px; }
+.condition-card-scroll::-webkit-scrollbar-thumb { background: #363a45; border-radius: 2px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.condition-card .field + .field { margin-top: 12px; }
 .field label { font-size: 11px; color: #787b86; }
-.field-row { display: flex; align-items: center; gap: 6px; }
+.field-row { display: flex; align-items: center; gap: 8px; }
 .val { font-size: 12px; color: #d1d4dc; min-width: 28px; text-align: right; }
 
 input[type=range] { flex: 1; accent-color: #2962ff; cursor: pointer; }
@@ -371,6 +388,32 @@ select:focus { outline: none; border-color: #2962ff; }
 .bt-action-buy { color: #ef5350; font-weight: 700; }
 .bt-action-sell { color: #26a69a; font-weight: 700; }
 
+/* ── Profile ── */
+.profile-group { display: flex; align-items: center; gap: 5px; }
+.profile-label { font-size: 11px; color: #4c525e; white-space: nowrap; }
+#profile-select {
+  background: #131722; border: 1px solid #363a45; color: #d1d4dc;
+  padding: 3px 6px; border-radius: 4px; font-size: 12px; cursor: pointer; max-width: 130px;
+}
+#profile-select:focus { outline: none; border-color: #2962ff; }
+#profile-name-input {
+  background: #131722; border: 1px solid #2962ff; color: #d1d4dc;
+  padding: 3px 6px; border-radius: 4px; font-size: 12px; width: 100px; display: none;
+}
+#profile-name-input.visible { display: block; }
+.profile-btn {
+  font-size: 11px; color: #787b86; background: none;
+  border: 1px solid #363a45; border-radius: 3px; padding: 3px 7px;
+  cursor: pointer; white-space: nowrap; line-height: 1.3;
+}
+.profile-btn:hover { color: #d1d4dc; border-color: #787b86; }
+.profile-btn.danger:hover { color: #ef5350; border-color: #ef5350; }
+#profile-stat {
+  font-size: 10px; color: #4c525e; white-space: nowrap;
+  border-left: 1px solid #2a2e39; padding-left: 10px; margin-right: 4px;
+}
+#profile-stat.has-data { color: #787b86; }
+
 /* ── K-line panel (bottom, spans col 2+3) ── */
 #kline-panel {
   height: 350px; min-height: 350px;
@@ -403,6 +446,17 @@ select:focus { outline: none; border-color: #2962ff; }
 <div id="topbar">
   <h1>K-LINE SCREENER</h1>
   <div id="topbar-spacer"></div>
+  <div class="profile-group">
+    <span class="profile-label">Profile</span>
+    <select id="profile-select" onchange="onProfileSelect()">
+      <option value="__last__">Last Session</option>
+    </select>
+    <input id="profile-name-input" type="text" placeholder="Name…"
+           onkeydown="onProfileNameKey(event)" maxlength="32">
+    <button class="profile-btn" onclick="onProfileSave()">Save</button>
+    <button class="profile-btn danger" id="profile-del-btn" onclick="onProfileDelete()" style="display:none">Del</button>
+  </div>
+  <span id="profile-stat"></span>
   <a class="topbar-link" href="/static/watchlist.html">Watchlists</a>
   <a class="topbar-link topbar-link--soon" title="Coming soon">Portfolio</a>
   <a class="topbar-link" href="/draw" target="_blank">Pattern Draw →</a>
@@ -419,151 +473,156 @@ select:focus { outline: none; border-color: #2962ff; }
         <div id="sidebar-conditions-scroll">
           <section class="filter-group condition-card entry">
             <div class="section-title">Entry Conditions</div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="price_above_ma" checked> MA
-                <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
-              </label>
-              <div class="field-row">
-                <input type="range" id="ma_window" min="5" max="120" value="10" oninput="syncN('ma_window')">
-                <input type="number" id="ma_window_n" value="10" min="5" max="120"
-                       oninput="syncR('ma_window')" style="width:46px">
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="bb_breakout"> Bollinger
-                <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
-              </label>
-              <div class="field-row">
-                <input type="range" id="bb_window" min="5" max="120" value="22" oninput="syncN('bb_window')">
-                <input type="number" id="bb_window_n" value="22" min="5" max="120"
-                       oninput="syncR('bb_window')" style="width:46px">
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
-              </label>
-              <div class="field-row">
-                <input type="range" id="rsi_period" min="5" max="50" value="14"
-                       oninput="syncN('rsi_period')" disabled>
-                <input type="number" id="rsi_period_n" value="14" min="5" max="50"
-                       oninput="syncR('rsi_period')" style="width:46px" disabled>
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-              <div class="field-row" style="margin-top:3px">
-                <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
-                <input type="number" id="rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
-                <span style="font-size:11px;color:#787b86">–</span>
-                <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
-              </div>
-            </div>
-
-            <div class="field">
-              <label>Min Vol Ratio (× MA vol)</label>
-              <div class="field-row">
-                <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
-                       oninput="syncVolLabel()">
-                <span class="val" id="vol_ratio_val">1.5</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row">
-                <input type="checkbox" id="use_concentration" onchange="toggleConcInputs(this.checked)">
-                集中度
-              </label>
-              <div class="field" style="padding-left:18px">
-                <div class="field-row" style="margin-top:2px">
-                  <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
-                  <input type="number" id="conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+            <div class="condition-card-scroll">
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="price_above_ma" checked> MA
+                  <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; MA</span>
+                </label>
+                <div class="field-row">
+                  <input type="range" id="ma_window" min="5" max="120" value="10" oninput="syncN('ma_window')">
+                  <input type="number" id="ma_window_n" value="10" min="5" max="120"
+                         oninput="syncR('ma_window')" style="width:46px">
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
                 </div>
-                <div class="field-row" style="margin-top:4px">
-                  <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
-                  <input type="number" id="conc_min" value="0.10" step="0.005" disabled style="flex:1">
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="bb_breakout"> Bollinger
+                  <span style="margin-left:auto;font-size:11px;color:#787b86">close &gt; BB+</span>
+                </label>
+                <div class="field-row">
+                  <input type="range" id="bb_window" min="5" max="120" value="22" oninput="syncN('bb_window')">
+                  <input type="number" id="bb_window_n" value="22" min="5" max="120"
+                         oninput="syncR('bb_window')" style="width:46px">
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="use_rsi" onchange="toggleRsiInputs(this.checked)"> RSI
+                </label>
+                <div class="field-row">
+                  <input type="range" id="rsi_period" min="5" max="50" value="14"
+                         oninput="syncN('rsi_period')" disabled>
+                  <input type="number" id="rsi_period_n" value="14" min="5" max="50"
+                         oninput="syncR('rsi_period')" style="width:46px" disabled>
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+                </div>
+                <div class="field-row" style="margin-top:3px">
+                  <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
+                  <input type="number" id="rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
+                  <span style="font-size:11px;color:#787b86">–</span>
+                  <input type="number" id="rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="use_volume" onchange="toggleVolumeInputs(this.checked)"> Volume
+                  <span style="margin-left:auto;font-size:11px;color:#787b86">vol ≥ × MA vol</span>
+                </label>
+                <div class="field-row">
+                  <input type="range" id="volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
+                         oninput="syncVolLabel()" disabled>
+                  <span class="val" id="vol_ratio_val">1.5</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row">
+                  <input type="checkbox" id="use_concentration" onchange="toggleConcInputs(this.checked)">
+                  集中度
+                </label>
+                <div class="field" style="padding-left:18px">
+                  <div class="field-row" style="margin-top:2px">
+                    <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
+                    <input type="number" id="conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+                  </div>
+                  <div class="field-row" style="margin-top:4px">
+                    <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
+                    <input type="number" id="conc_min" value="0.10" step="0.005" disabled style="flex:1">
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section class="filter-group condition-card exit" style="margin-top:10px">
+          <section class="filter-group condition-card exit">
             <div class="section-title">Exit Conditions</div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="exit_price_below_ma" checked> MA
-                <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; MA</span>
-              </label>
-              <div class="field-row">
-                <input type="range" id="exit_ma_window" min="5" max="120" value="10" oninput="syncN('exit_ma_window')">
-                <input type="number" id="exit_ma_window_n" value="10" min="5" max="120"
-                       oninput="syncR('exit_ma_window')" style="width:46px">
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="exit_bb_breakdown"> Bollinger
-                <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; BB-</span>
-              </label>
-              <div class="field-row">
-                <input type="range" id="exit_bb_window" min="5" max="120" value="22" oninput="syncN('exit_bb_window')">
-                <input type="number" id="exit_bb_window_n" value="22" min="5" max="120"
-                       oninput="syncR('exit_bb_window')" style="width:46px">
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="exit_use_rsi" onchange="toggleExitRsiInputs(this.checked)"> RSI
-              </label>
-              <div class="field-row">
-                <input type="range" id="exit_rsi_period" min="5" max="50" value="14"
-                       oninput="syncN('exit_rsi_period')" disabled>
-                <input type="number" id="exit_rsi_period_n" value="14" min="5" max="50"
-                       oninput="syncR('exit_rsi_period')" style="width:46px" disabled>
-                <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
-              </div>
-              <div class="field-row" style="margin-top:3px">
-                <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
-                <input type="number" id="exit_rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
-                <span style="font-size:11px;color:#787b86">–</span>
-                <input type="number" id="exit_rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row" style="margin-bottom:2px">
-                <input type="checkbox" id="exit_use_volume" onchange="toggleExitVolumeInputs(this.checked)"> Volume
-              </label>
-              <div class="field-row">
-                <input type="range" id="exit_volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
-                       oninput="syncExitVolLabel()" disabled>
-                <span class="val" id="exit_vol_ratio_val">1.5</span>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="check-row">
-                <input type="checkbox" id="exit_use_concentration" onchange="toggleExitConcInputs(this.checked)">
-                集中度
-              </label>
-              <div class="field" style="padding-left:18px">
-                <div class="field-row" style="margin-top:2px">
-                  <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
-                  <input type="number" id="exit_conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+            <div class="condition-card-scroll">
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="exit_price_below_ma" checked> MA
+                  <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; MA</span>
+                </label>
+                <div class="field-row">
+                  <input type="range" id="exit_ma_window" min="5" max="120" value="10" oninput="syncN('exit_ma_window')">
+                  <input type="number" id="exit_ma_window_n" value="10" min="5" max="120"
+                         oninput="syncR('exit_ma_window')" style="width:46px">
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
                 </div>
-                <div class="field-row" style="margin-top:4px">
-                  <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
-                  <input type="number" id="exit_conc_min" value="0.10" step="0.005" disabled style="flex:1">
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="exit_bb_breakdown"> Bollinger
+                  <span style="margin-left:auto;font-size:11px;color:#787b86">close &lt; BB-</span>
+                </label>
+                <div class="field-row">
+                  <input type="range" id="exit_bb_window" min="5" max="120" value="22" oninput="syncN('exit_bb_window')">
+                  <input type="number" id="exit_bb_window_n" value="22" min="5" max="120"
+                         oninput="syncR('exit_bb_window')" style="width:46px">
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="exit_use_rsi" onchange="toggleExitRsiInputs(this.checked)"> RSI
+                </label>
+                <div class="field-row">
+                  <input type="range" id="exit_rsi_period" min="5" max="50" value="14"
+                         oninput="syncN('exit_rsi_period')" disabled>
+                  <input type="number" id="exit_rsi_period_n" value="14" min="5" max="50"
+                         oninput="syncR('exit_rsi_period')" style="width:46px" disabled>
+                  <span style="font-size:10px;color:#787b86;white-space:nowrap">D</span>
+                </div>
+                <div class="field-row" style="margin-top:3px">
+                  <span style="font-size:11px;color:#787b86;min-width:28px">Range</span>
+                  <input type="number" id="exit_rsi_min" value="0" min="0" max="100" step="1" disabled style="width:46px">
+                  <span style="font-size:11px;color:#787b86">–</span>
+                  <input type="number" id="exit_rsi_max" value="100" min="0" max="100" step="1" disabled style="width:46px">
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row" style="margin-bottom:2px">
+                  <input type="checkbox" id="exit_use_volume" onchange="toggleExitVolumeInputs(this.checked)"> Volume
+                </label>
+                <div class="field-row">
+                  <input type="range" id="exit_volume_ratio" min="1.0" max="5.0" step="0.1" value="1.5"
+                         oninput="syncExitVolLabel()" disabled>
+                  <span class="val" id="exit_vol_ratio_val">1.5</span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="check-row">
+                  <input type="checkbox" id="exit_use_concentration" onchange="toggleExitConcInputs(this.checked)">
+                  集中度
+                </label>
+                <div class="field" style="padding-left:18px">
+                  <div class="field-row" style="margin-top:2px">
+                    <span style="font-size:11px;color:#787b86;min-width:22px">5d</span>
+                    <input type="number" id="exit_conc_5d_min" value="0.05" step="0.005" disabled style="flex:1">
+                  </div>
+                  <div class="field-row" style="margin-top:4px">
+                    <span style="font-size:11px;color:#787b86;min-width:22px">20d</span>
+                    <input type="number" id="exit_conc_min" value="0.10" step="0.005" disabled style="flex:1">
+                  </div>
                 </div>
               </div>
             </div>
@@ -769,6 +828,9 @@ function toggleExitRsiInputs(en) {
   ['exit_rsi_period','exit_rsi_period_n','exit_rsi_min','exit_rsi_max'].forEach(id =>
     document.getElementById(id).disabled = !en);
 }
+function toggleVolumeInputs(en) {
+  document.getElementById('volume_ratio').disabled = !en;
+}
 function toggleExitVolumeInputs(en) {
   document.getElementById('exit_volume_ratio').disabled = !en;
 }
@@ -780,11 +842,214 @@ function toggleMcInput(en) {
   document.getElementById('market_cap_rank').disabled = !en;
 }
 
+// ── Profile system ────────────────────────────────────────────────────────────
+const PROFILE_LAST = '__last__';
+
+function profilesLoad() {
+  try { return JSON.parse(localStorage.getItem('screener_profiles') || '{}'); }
+  catch { return {}; }
+}
+function profilesSave(profiles) {
+  localStorage.setItem('screener_profiles', JSON.stringify(profiles));
+}
+function activeProfileName() {
+  return localStorage.getItem('screener_active_profile') || PROFILE_LAST;
+}
+function setActiveProfile(name) {
+  localStorage.setItem('screener_active_profile', name);
+}
+
+function renderProfileSelect() {
+  const profiles = profilesLoad();
+  const sel = document.getElementById('profile-select');
+  const active = activeProfileName();
+  sel.innerHTML = '<option value="__last__">Last Session</option>';
+  Object.keys(profiles).filter(k => k !== PROFILE_LAST).sort().forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+  sel.value = (profiles[active] || active === PROFILE_LAST) ? active : PROFILE_LAST;
+  document.getElementById('profile-del-btn').style.display =
+    sel.value === PROFILE_LAST ? 'none' : '';
+  updateProfileStat(profiles[sel.value]);
+}
+
+function updateProfileStat(profile) {
+  const el = document.getElementById('profile-stat');
+  if (!profile) { el.textContent = ''; el.className = ''; return; }
+  const s = profile.stats;
+  if (!s) { el.textContent = profile.saved_at ? 'no run yet' : ''; el.className = 'profile-stat'; return; }
+  const wr  = s.win_rate   != null ? s.win_rate.toFixed(1) + '% win' : '—';
+  const avg = s.avg_return != null ? (s.avg_return >= 0 ? '+' : '') + s.avg_return.toFixed(2) + '% avg' : '—';
+  const t   = s.total_trades != null ? s.total_trades + 'T' : '—';
+  const d   = s.run_at ? ' · ' + s.run_at.slice(5) : '';
+  el.textContent = `${wr} · ${avg} · ${t}${d}`;
+  el.className = 'profile-stat has-data';
+}
+
+function onProfileSelect() {
+  const name = document.getElementById('profile-select').value;
+  setActiveProfile(name);
+  const profiles = profilesLoad();
+  if (profiles[name]) applyProfile(profiles[name]);
+  updateProfileStat(profiles[name]);
+  document.getElementById('profile-del-btn').style.display =
+    name === PROFILE_LAST ? 'none' : '';
+}
+
+function onProfileSave() {
+  const input = document.getElementById('profile-name-input');
+  if (!input.classList.contains('visible')) {
+    const curName = document.getElementById('profile-select').value;
+    input.value = curName === PROFILE_LAST ? '' : curName;
+    input.classList.add('visible');
+    input.focus();
+    input.select();
+  } else {
+    const name = input.value.trim();
+    if (name && name !== PROFILE_LAST) saveProfileAs(name);
+    input.classList.remove('visible');
+  }
+}
+
+function onProfileNameKey(e) {
+  if (e.key === 'Enter') {
+    const name = e.target.value.trim();
+    if (name && name !== PROFILE_LAST) saveProfileAs(name);
+    e.target.classList.remove('visible');
+  } else if (e.key === 'Escape') {
+    e.target.classList.remove('visible');
+  }
+}
+
+function saveProfileAs(name, stats) {
+  const profiles = profilesLoad();
+  const existing = profiles[name] || {};
+  profiles[name] = {
+    name,
+    saved_at: new Date().toISOString(),
+    params: getParams(),
+    lookback_days: +document.getElementById('bt-lookback').value,
+    commission: parseFloat(document.getElementById('bt-commission').value),
+    stats: stats || existing.stats || null,
+  };
+  profilesSave(profiles);
+  setActiveProfile(name);
+  renderProfileSelect();
+}
+
+function profileAutoSave(btStats) {
+  const statsData = btStats ? {
+    win_rate:     btStats.win_rate    ?? null,
+    avg_return:   btStats.avg_return_pct ?? null,
+    total_trades: btStats.total_trades ?? null,
+    wins:         btStats.wins        ?? null,
+    losses:       btStats.losses      ?? null,
+    run_at:       new Date().toISOString().slice(0, 10),
+  } : null;
+
+  // Always update Last Session
+  const profiles = profilesLoad();
+  profiles[PROFILE_LAST] = {
+    name: 'Last Session',
+    saved_at: new Date().toISOString(),
+    params: getParams(),
+    lookback_days: +document.getElementById('bt-lookback').value,
+    commission: parseFloat(document.getElementById('bt-commission').value),
+    stats: statsData,
+  };
+
+  // Also update active named profile's stats
+  const active = activeProfileName();
+  if (active !== PROFILE_LAST && profiles[active]) {
+    profiles[active].stats = statsData;
+  }
+
+  profilesSave(profiles);
+  const curSel = document.getElementById('profile-select').value;
+  updateProfileStat(profiles[curSel]);
+}
+
+function onProfileDelete() {
+  const name = document.getElementById('profile-select').value;
+  if (name === PROFILE_LAST) return;
+  if (!confirm(`Delete profile "${name}"?`)) return;
+  const profiles = profilesLoad();
+  delete profiles[name];
+  profilesSave(profiles);
+  setActiveProfile(PROFILE_LAST);
+  renderProfileSelect();
+}
+
+function applyProfile(profile) {
+  const p = profile.params;
+  if (!p) return;
+  const setV = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+  const setC = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.checked = !!val; };
+
+  setV('ma_window', p.ma_window); setV('ma_window_n', p.ma_window);
+  setV('bb_window', p.bb_window); setV('bb_window_n', p.bb_window);
+  setC('price_above_ma', p.price_above_ma ?? true);
+  setC('bb_breakout', p.bb_breakout ?? false);
+
+  const useRsi = p.use_rsi ?? false;
+  setC('use_rsi', useRsi); toggleRsiInputs(useRsi);
+  setV('rsi_period', p.rsi_period); setV('rsi_period_n', p.rsi_period);
+  setV('rsi_min', p.rsi_min ?? 0); setV('rsi_max', p.rsi_max ?? 100);
+
+  const useVol = p.use_volume ?? false;
+  setC('use_volume', useVol); toggleVolumeInputs(useVol);
+  setV('volume_ratio', p.volume_ratio ?? 1.5); syncVolLabel();
+
+  const useConc = p.use_concentration ?? false;
+  setC('use_concentration', useConc); toggleConcInputs(useConc);
+  setV('conc_5d_min', p.conc_5d_min ?? 0.05);
+  setV('conc_min', p.conc_min ?? 0.10);
+
+  setC('exit_price_below_ma', p.exit_price_below_ma ?? true);
+  setV('exit_ma_window', p.exit_ma_window ?? 10); setV('exit_ma_window_n', p.exit_ma_window ?? 10);
+  setC('exit_bb_breakdown', p.exit_bb_breakdown ?? false);
+  setV('exit_bb_window', p.exit_bb_window ?? 22); setV('exit_bb_window_n', p.exit_bb_window ?? 22);
+
+  const useExitRsi = p.exit_use_rsi ?? false;
+  setC('exit_use_rsi', useExitRsi); toggleExitRsiInputs(useExitRsi);
+  setV('exit_rsi_period', p.exit_rsi_period ?? 14); setV('exit_rsi_period_n', p.exit_rsi_period ?? 14);
+  setV('exit_rsi_min', p.exit_rsi_min ?? 0); setV('exit_rsi_max', p.exit_rsi_max ?? 100);
+
+  const useExitVol = p.exit_use_volume ?? false;
+  setC('exit_use_volume', useExitVol); toggleExitVolumeInputs(useExitVol);
+  setV('exit_volume_ratio', p.exit_volume_ratio ?? 1.5); syncExitVolLabel();
+
+  const useExitConc = p.exit_use_concentration ?? false;
+  setC('exit_use_concentration', useExitConc); toggleExitConcInputs(useExitConc);
+  setV('exit_conc_5d_min', p.exit_conc_5d_min ?? 0.05);
+  setV('exit_conc_min', p.exit_conc_min ?? 0.10);
+
+  const hasMC = p.market_cap_rank != null;
+  setC('use_market_cap', hasMC); toggleMcInput(hasMC);
+  if (hasMC) setV('market_cap_rank', p.market_cap_rank);
+
+  if (profile.lookback_days != null) setV('bt-lookback', profile.lookback_days);
+  if (profile.commission != null) setV('bt-commission', profile.commission);
+}
+
+function initProfiles() {
+  renderProfileSelect();
+  const active = activeProfileName();
+  const profiles = profilesLoad();
+  const profile = profiles[active] || profiles[PROFILE_LAST];
+  if (profile) applyProfile(profile);
+}
+
 function getParams() {
   const useRsi = document.getElementById('use_rsi').checked;
   const p = {
     ma_window:         +document.getElementById('ma_window_n').value,
     bb_window:         +document.getElementById('bb_window_n').value,
+    use_rsi:           document.getElementById('use_rsi').checked,
+    use_volume:        document.getElementById('use_volume').checked,
     volume_ratio:      parseFloat(document.getElementById('volume_ratio').value),
     price_above_ma:    document.getElementById('price_above_ma').checked,
     bb_breakout:       document.getElementById('bb_breakout').checked,
@@ -1024,7 +1289,7 @@ async function runBacktest() {
     lookback_days:    days,
     ma_window:        p.ma_window,
     bb_window:        p.bb_window,
-    volume_ratio:     p.volume_ratio,
+    volume_ratio:     p.use_volume ? p.volume_ratio : 1.0,
     price_above_ma:   p.price_above_ma,
     bb_breakout:      p.bb_breakout,
     rsi_period:       p.rsi_period,
@@ -1069,6 +1334,7 @@ async function runBacktest() {
     renderBtStats(btData.stats);
     btStats.classList.add('visible');
     renderBtTables();
+    profileAutoSave(btData.stats);
   } catch (err) {
     status.textContent = 'Error: ' + err.message;
     btSignalsBody.innerHTML = `<tr><td colspan="11" class="bt-msg">Error: ${err.message}</td></tr>`;
@@ -1213,6 +1479,7 @@ function esc(s) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadWatchlists();
+initProfiles();
 </script>
 </body>
 </html>

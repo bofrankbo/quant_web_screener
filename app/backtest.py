@@ -10,6 +10,7 @@ Model: signal-only (no position sizing) — each trade records price delta minus
 """
 import io
 import os
+import time
 from datetime import date, timedelta
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
@@ -181,6 +182,7 @@ def _load_market_value(
     allowed_set = set(allowed_tickers) if allowed_tickers is not None else None
     daily_files = sorted(
         p for p in mv_dir.glob("????-??-??.parquet")
+        if p.stem >= start_date
     )
 
     if daily_files:
@@ -356,12 +358,26 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
     return _empty
 
 
+_overview_cache: dict = {"data": None, "ts": 0.0}
+_OVERVIEW_TTL = 600  # 10 minutes
+
+
+def invalidate_market_overview_cache() -> None:
+    _overview_cache["data"] = None
+    _overview_cache["ts"] = 0.0
+
+
 def get_market_overview() -> list[dict]:
     """Return latest price + concentration for all tickers in local cache.
 
     Reads all parquet files in bulk via DuckDB glob — no per-ticker network calls.
     buy_volume / sell_volume are top-15 broker net shares (in 張, sell is negative).
+    Result is cached for 10 minutes.
     """
+    now = time.monotonic()
+    if _overview_cache["data"] is not None and now - _overview_cache["ts"] < _OVERVIEW_TTL:
+        return _overview_cache["data"]
+
     tickers_glob = str(CACHE_DIR / "tickers" / "*.parquet")
     conc_glob = str(CACHE_DIR / "concentration" / "*.parquet")
     meta_path = CACHE_DIR / "meta" / "ticker_info.parquet"
@@ -374,15 +390,16 @@ def get_market_overview() -> list[dict]:
                 date, close, volume,
                 ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
             FROM read_parquet('{tickers_glob}', filename=true)
+            QUALIFY rn <= 2
         """).pl()
 
         conc_df = conn.execute(f"""
             SELECT
                 replace(split_part(filename, '/', -1), '.parquet', '') AS ticker,
                 date, buy_volume, sell_volume, amount,
-                concentration_5d, concentration_20d,
-                ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
+                concentration_5d, concentration_20d
             FROM read_parquet('{conc_glob}', filename=true)
+            QUALIFY ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) = 1
         """).pl()
     finally:
         conn.close()
@@ -404,7 +421,7 @@ def get_market_overview() -> list[dict]:
         .drop("prev_close")
     )
 
-    conc_df = conc_df.filter(pl.col("rn") == 1).drop(["rn", "date"])
+    conc_df = conc_df.drop("date")
     result = price.join(conc_df, on="ticker", how="left")
 
     if meta_path.exists():
@@ -426,7 +443,11 @@ def get_market_overview() -> list[dict]:
             "volume", "buy_volume", "sell_volume", "amount",
             "concentration_5d", "concentration_20d"]
     result = result.select([c for c in cols if c in result.columns])
-    return result.sort("ticker").to_dicts()
+    rows = result.sort("ticker").to_dicts()
+
+    _overview_cache["data"] = rows
+    _overview_cache["ts"] = now
+    return rows
 
 
 def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
