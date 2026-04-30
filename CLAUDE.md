@@ -1,90 +1,125 @@
 # CLAUDE.md
 
-## Project Goal
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Build a K-line quantitative stock screener web app for Taiwan equities.
+## Project
+
+Taiwan equity K-line screener — FastAPI backend + vanilla HTML/JS frontend deployed on Railway.
 User is a quant trader — do NOT explain basic financial terms. Be concise, CLI-first.
-
-## What This Is
-
-A new standalone repo at `/Users/yanyifu/Documents/_Coding/quant_web_screener/`.
-The existing backtrader research repo at `/Users/yanyifu/Documents/_Coding/Trading/` is untouched — this project reads its data but does not modify it.
-
-## Stack
-
-| Layer | Tool |
-|---|---|
-| Data query | DuckDB (reads CSVs in-place, no migration) |
-| Transforms | Polars |
-| API | FastAPI (`app/api.py`) |
-| Frontend | Streamlit (`frontend/streamlit_app.py`) |
-
-## Data Source (read-only)
-
-All data lives in the **Trading repo** — do not copy or migrate it.
-
-```
-/Users/yanyifu/Documents/_Coding/Trading/history_data/tw/
-  stock_price_adj/   ← 1.1GB, adjusted daily OHLCV CSVs, one file per ticker
-  concentration/     ← 51MB, 籌碼集中度
-  traderinfo/        ← 49GB, 三大法人 (query selectively)
-  PER_PBR/           ← valuation data
-```
-
-Path config is in `app/config.py` and `.env` (copy from `.env.example`).
-
-## Architecture
-
-```
-quant_web_screener/
-  app/
-    config.py       ← env-based path config
-    screener.py     ← DuckDB screening logic (main logic lives here)
-    api.py          ← FastAPI, GET /screen with query params
-  frontend/
-    streamlit_app.py  ← sidebar params → POST to API → dataframe display
-  data/
-    screener.duckdb   ← created on first run (gitignored)
-  scripts/
-    run_dev.sh        ← starts FastAPI :8000 + Streamlit :8501 in parallel
-```
-
-## Current Screener Logic (`app/screener.py`)
-
-Parameters exposed via API:
-- `ma_window` (default 20) — MA period
-- `volume_ratio` (default 1.5) — min ratio of today's vol vs MA vol
-- `price_above_ma` (default true) — close > MA filter
-- `top_n` (default 50)
-
-DuckDB queries `stock_price_adj/*.csv` directly using window functions. Returns a Polars DataFrame.
-
-## What Is NOT Done Yet (next tasks)
-
-The screening conditions are minimal. User needs to decide and implement:
-
-1. **布林通道突破** — Bollinger Band breakout entry signal
-2. **籌碼集中度變化** — use `concentration/` CSVs, join with price data
-3. **三大法人買超** — use `traderinfo/` (49GB — query by ticker, not full scan)
-4. **複合條件篩選** — combine above signals with AND/OR logic in the API
-5. **前端圖表** — add candlestick chart per ticker (consider Plotly in Streamlit)
-6. **排程更新** — cron or n8n to refresh data daily
 
 ## Dev Commands
 
 ```bash
-cp .env.example .env        # set TRADING_DATA_PATH if needed
+cp .env.example .env        # fill in R2_*, FINMIND_API_KEY, GOOGLE_* vars
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-./scripts/run_dev.sh        # FastAPI :8000 + Streamlit :8501
-
-# or separately:
-uvicorn app.api:app --reload --port 8000
-streamlit run frontend/streamlit_app.py
+bash scripts/run_dev.sh     # FastAPI :8000 (auto-reload)
+# API docs: http://localhost:8000/docs
 ```
 
-## Key Decisions Already Made
+### First-time data setup
 
-- **DuckDB not SQLite** — columnar, handles GB-scale CSVs, native Polars integration
-- **No data migration** — DuckDB queries Trading repo CSVs in-place
-- **Two separate repos** — Trading repo stays as backtrader research; this repo is the web product
-- **Streamlit not React** — user wants fast iteration, not a production frontend
+```bash
+python -m scripts.ingest --backfill          # FinMind prices → R2 (~30 min)
+python -m scripts.concentration --backfill   # FinMind broker conc → R2
+python -m scripts.sync_cache --all           # R2 → local data/cache/
+```
+
+### Daily update
+
+```bash
+bash scripts/daily_update.sh              # today
+bash scripts/daily_update.sh 2026-04-25   # specific date
+```
+
+Runs `fetch_prices`, `fetch_concentration`, `fetch_market_value` in parallel, then `sync_cache`.
+Also works on Railway Shell.
+
+## Architecture
+
+```
+FinMind API (999 plan)
+    ↓  daily 19:00 TST (APScheduler inside FastAPI)
+Cloudflare R2  (per-ticker Parquet)
+    tickers/{ticker}.parquet        ← adjusted OHLCV
+    concentration/{ticker}.parquet  ← 籌碼集中度 (5d, 20d)
+    meta/ticker_info.parquet        ← stock names
+    market_value/{ticker}.parquet   ← market cap
+    ↓  startup_sync() + daily sync (scripts/sync_cache.py)
+Railway persistent volume  `APP_DATA_PATH`/cache/
+    ↓  DuckDB reads local parquet (no per-query network overhead)
+FastAPI (:8000)
+    ↓
+Browser (HTML/JS, Lightweight Charts)
+```
+
+App-data persistence on Railway: `APP_DATA_PATH` (volume `/data`) holds both `cache/` and `app.sqlite`.
+
+## Module Map
+
+| File | Role |
+|---|---|
+| `app/api.py` | All FastAPI routes + lifespan (init_db, startup_sync, scheduler) |
+| `app/backtest.py` | Polars indicator engine + signal-only backtest loop |
+| `app/screener.py` | Thin wrapper — `/screen` endpoint uses `backtest.py` helpers |
+| `app/pattern_matcher.py` | DTW pattern match against local cache |
+| `app/auth.py` | Google OAuth flow; HMAC-signed stateless OAuth state tokens |
+| `app/db.py` | SQLite CRUD — users, user_watchlists, watchlist_items, activity_logs |
+| `app/scheduler.py` | APScheduler: daily 19:00 TST job + `startup_sync()` |
+| `app/r2.py` | boto3 R2 client + `download_parquet()` |
+| `app/config.py` | All path config from env (DATA_DIR, PARQUET_CACHE_PATH, SQLITE_PATH, …) |
+| `app/daily_update.py` | Parallelized fetch orchestrator called by scheduler and CLI |
+| `scripts/daily_update.py` | CLI entrypoint → `app/daily_update.run_daily_update()` |
+| `scripts/fetch_prices.py` | FinMind TaiwanStockPriceAdj → R2 tickers/ |
+| `scripts/fetch_concentration.py` | FinMind broker data → R2 concentration/ |
+| `scripts/fetch_market_value.py` | Market cap data → R2 market_value/ |
+| `scripts/sync_cache.py` | R2 → local data/cache/ |
+
+## Auth & Watchlist Dual-Mode
+
+Every watchlist endpoint checks for a logged-in user first:
+- **Logged in**: data read/written to SQLite (`app/db.py`).
+- **Anonymous**: falls back to `data/watchlists.json` (legacy).
+
+On first Google login, `_import_legacy_watchlists_to_user()` migrates JSON → SQLite (no-op if user already has SQLite data).
+
+OAuth state is **stateless HMAC-signed** (not session-stored) — the token embeds `nonce.issued_at.sig`. Verified in `auth.py:verify_oauth_state()`.
+
+## Screener & Backtest Parameters
+
+Entry conditions (all optional, combined with AND):
+- `price_above_ma` — close > MA(ma_window)
+- `bb_breakout` — close > BB upper (bb_window)
+- `volume_ratio` — today vol / MA vol ≥ threshold
+- `rsi_min / rsi_max` — RSI(rsi_period) filter
+- `use_concentration` + `conc_5d_min / conc_20d_min` — 籌碼集中度
+- `market_cap_rank` — restrict universe to top-N by market cap
+- `watchlist` — restrict universe to a named watchlist
+
+Exit conditions mirror entry with separate `exit_*` params.
+
+Indicators (MA, BB, vol_ratio, RSI, concentration) are computed in Polars with `rolling_*().over("ticker")` window ops in `backtest.py:_compute_screen_indicators()`.
+
+## Key Design Decisions
+
+- **DuckDB reads local Parquet cache** — not the Trading repo CSVs; cache is synced from R2.
+- **Stateless OAuth state** — avoids session-storage race conditions on Railway.
+- **SQLite WAL mode** — concurrent reads don't block writes.
+- **No data migration** — original Trading repo at `/Users/yanyifu/Documents/_Coding/Trading/` is untouched; this repo uses R2/FinMind as its own source.
+- **Streamlit removed** — frontend is now vanilla HTML/JS with Lightweight Charts (TradingView OSS).
+
+## Railway Deployment
+
+Required env vars (set in Railway → Variables):
+```
+R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_ENDPOINT
+FINMIND_API_KEY
+SESSION_SECRET_KEY
+GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+GOOGLE_REDIRECT_URI=https://<app>.up.railway.app/auth/google/callback
+APP_DATA_PATH=/data
+```
+
+Volume: mount at `/data`, 2 GB. Start command (railway.toml): `uvicorn app.api:app --host 0.0.0.0 --port $PORT`.
+
+On startup, `startup_sync()` runs in a daemon thread (non-blocking) to populate the cache from R2.

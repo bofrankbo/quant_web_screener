@@ -117,9 +117,11 @@ python -m scripts.sync_cache --all
 ### Daily update (manual)
 
 ```bash
-bash scripts/daily_update.sh          # today
-bash scripts/daily_update.sh 2026-04-25  # specific date
+bash scripts/daily_update.sh              # today
+bash scripts/daily_update.sh 2026-04-25    # specific date
 ```
+
+This same command can be used on Railway Shell as well. The daily update now runs `fetch_prices`, `fetch_concentration`, and `fetch_market_value` in parallel, then runs `sync_cache` after they all finish.
 
 ---
 
