@@ -232,34 +232,44 @@
     "updated_at": "2026-04-30"
   },
   "1264": {
-    "days": 1021,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1161,
+    "updated_at": "2026-04-30"
   },
   "1268": {
-    "days": 1032,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1172,
+    "updated_at": "2026-04-30"
   },
   "1301": {
-    "days": 1169,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1170,
+    "updated_at": "2026-05-01"
   },
   "1303": {
-    "days": 1171,
+    "status": "done",
+    "start_date": "2021-07-01",
+    "next_date": "2026-04-30",
     "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "rows": 1172,
+    "updated_at": "2026-05-01"
   },
   "1304": {
-    "days": 1032,
-    "through": "2026-04-29",
-    "fetched_at": "2026-04-30",
-    "note": "already complete in R2"
+    "status": "processing",
+    "start_date": "2021-07-01",
+    "next_date": "2025-10-31",
+    "through": "2025-10-30",
+    "rows": 1068,
+    "updated_at": "2026-05-01"
   },
   "1305": {
     "days": 1032,
@@ -1240,12 +1250,27 @@
     "updated_at": "2026-04-30"
   },
   "1262": {
-    "status": "processing",
+    "status": "done",
     "start_date": "2021-07-01",
-    "next_date": "2024-04-18",
-    "through": "2024-04-17",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
     "rows": 0,
-    "updated_at": "2026-04-30",
-    "note": "no trader data"
+    "updated_at": "2026-04-30"
+  },
+  "1294": {
+    "status": "done",
+    "start_date": "2022-09-30",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 858,
+    "updated_at": "2026-04-30"
+  },
+  "1295": {
+    "status": "done",
+    "start_date": "2023-12-13",
+    "next_date": "2026-04-30",
+    "through": "2026-04-29",
+    "rows": 571,
+    "updated_at": "2026-05-01"
   }
 }

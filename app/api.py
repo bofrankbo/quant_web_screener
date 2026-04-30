@@ -956,7 +956,7 @@ def api_home_summary():
     volumes = [
         _pick_home_row(row)
         for row in sorted(
-            [r for r in ranked if r["_volume"] is not None],
+            [r for r in ranked if r["_volume"] is not None and not str(r.get("ticker", "")).startswith("0")],
             key=lambda r: r["_volume"],
             reverse=True,
         )[:5]
