@@ -1164,7 +1164,7 @@ function renderPositionsTable(rows) {
           ? (r.current_price / r.entry_price - 1) * 100 : null;
         const uc = unreal != null ? (unreal > 0 ? 'bt-pos' : unreal < 0 ? 'bt-neg' : '') : '';
         const us = unreal != null ? (unreal >= 0 ? '+' : '') + unreal.toFixed(2) + '%' : '—';
-        return `<tr>
+        return `<tr data-ticker="${esc(r.ticker)}" style="cursor:pointer">
           <td><span class="bt-ticker">${esc(r.ticker)}</span>${r.name?`<span class="bt-name">${esc(r.name)}</span>`:''}</td>
           <td>${r.entry_date || '—'}</td>
           <td>${r.entry_price!=null?r.entry_price.toFixed(2):'—'}</td>
@@ -1173,28 +1173,36 @@ function renderPositionsTable(rows) {
         </tr>`;
       }).join('');
   btPositionsBody.innerHTML = `<table class="bt-table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  btPositionsBody.querySelectorAll('tr[data-ticker]').forEach(tr => {
+    tr.addEventListener('click', () => onRowClick(tr.dataset.ticker, tr));
+  });
 }
 
 function renderHistoryTable(rows) {
+  // rows is the flat event log: [{date, ticker, action, price} | {date, ticker, action:"sell", price, return_pct}]
   document.getElementById('bt-history-count').textContent = `${rows.length} rows`;
-  const head = `<tr><th>Ticker</th><th>Entry</th><th>Exit</th><th>Buy</th><th>Sell</th><th>Return</th></tr>`;
+  const head = `<tr><th>Date</th><th>Ticker</th><th>Action</th><th>Price</th><th>Return</th></tr>`;
   const items = rows.slice().reverse();
   const body = !items.length
-    ? `<tr><td colspan="6" class="bt-msg">No completed trades</td></tr>`
+    ? `<tr><td colspan="5" class="bt-msg">No trades</td></tr>`
     : items.map(r => {
-        const ret = r.net_return_pct ?? null;
+        const isSell = r.action === 'sell';
+        const ret = isSell ? (r.return_pct ?? null) : null;
         const rc = ret != null ? (ret > 0 ? 'bt-pos' : ret < 0 ? 'bt-neg' : '') : '';
         const rs = ret != null ? (ret >= 0 ? '+' : '') + ret.toFixed(2) + '%' : '—';
-        return `<tr>
+        const ac = isSell ? 'bt-neg' : 'bt-pos';
+        return `<tr data-ticker="${esc(r.ticker)}" style="cursor:pointer">
+          <td>${r.date || '—'}</td>
           <td><span class="bt-ticker">${esc(r.ticker)}</span></td>
-          <td>${r.entry_date || '—'}</td>
-          <td>${r.exit_date || '—'}</td>
-          <td>${r.entry_price!=null?Number(r.entry_price).toFixed(2):'—'}</td>
-          <td>${r.exit_price!=null?Number(r.exit_price).toFixed(2):'—'}</td>
+          <td class="${ac}">${r.action.toUpperCase()}</td>
+          <td>${r.price!=null?Number(r.price).toFixed(2):'—'}</td>
           <td class="${rc}">${rs}</td>
         </tr>`;
       }).join('');
   btHistoryBody.innerHTML = `<table class="bt-table"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  btHistoryBody.querySelectorAll('tr[data-ticker]').forEach(tr => {
+    tr.addEventListener('click', () => onRowClick(tr.dataset.ticker, tr));
+  });
 }
 
 function esc(s) {

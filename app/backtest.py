@@ -41,9 +41,11 @@ s3 = boto3.client(
     region_name="auto",
 )
 
-_DEFAULT_COMMISSION = 0.001425
+_DEFAULT_COMMISSION = 0.001425  # Taiwan brokerage: 0.1425% each side
 _STOCK_TYPES = {"twse", "tpex"}
 _NON_STOCK_CATEGORIES = {
+    # FinMind industry_category values that identify non-stock instruments.
+    # These must be excluded from the universe; otherwise ETFs inflate signal counts.
     "受益證券", "上櫃指數股票型基金(ETF)", "上櫃ETF",
     "所有證券", "ETN", "存託憑證", "ETF", "大盤", "index", "Food",
 }
@@ -56,7 +58,13 @@ def get_conn() -> duckdb.DuckDBPyConnection:
 
 
 def _compute_screen_indicators(df: pl.DataFrame, ma_window: int, bb_window: int, rsi_period: int) -> pl.DataFrame:
-    """Compute MA, Bollinger, vol_ratio, RSI per ticker using Polars window ops."""
+    """Compute MA, Bollinger, vol_ratio, RSI per ticker using Polars window ops.
+
+    Used by get_kline() for the chart endpoint — NOT by run_backtest()
+    (which calls _compute_indicators() instead to also build exit-side signals).
+    RSI uses a simple rolling mean of gains/losses rather than Wilder's EMA;
+    the difference is negligible over 14 bars and avoids the cold-start issue.
+    """
     df = df.sort(["ticker", "date"])
 
     df = df.with_columns([
@@ -71,6 +79,7 @@ def _compute_screen_indicators(df: pl.DataFrame, ma_window: int, bb_window: int,
     df = df.with_columns([
         (pl.col("bb_mid") + 2.0 * pl.col("bb_std")).alias("bb_upper"),
         (pl.col("bb_mid") - 2.0 * pl.col("bb_std")).alias("bb_lower"),
+        # Replace zero avg_vol with null so vol_ratio comes out null rather than inf.
         (pl.col("volume") / pl.col("avg_vol").replace(0, None)).alias("vol_ratio"),
     ])
     df = df.drop(["bb_mid", "bb_std"])
@@ -85,12 +94,14 @@ def _compute_screen_indicators(df: pl.DataFrame, ma_window: int, bb_window: int,
         pl.col("_loss").rolling_mean(window_size=rsi_period).over("ticker").alias("_avg_loss"),
     ])
     df = df.with_columns(
+        # +1e-10 guards against division by zero when avg_loss is 0 (all-up streak).
         (100.0 - 100.0 / (1.0 + pl.col("_avg_gain") / (pl.col("_avg_loss") + 1e-10))).alias("rsi")
     )
 
     return df.drop(["_delta", "_gain", "_loss", "_avg_gain", "_avg_loss"])
 
 def _read_parquet_r2(key: str) -> pl.DataFrame | None:
+    """Read a parquet from local cache, falling back to R2 on cache miss."""
     local = CACHE_DIR / key
     if local.exists():
         return pl.read_parquet(local)
@@ -104,6 +115,11 @@ def _read_parquet_r2(key: str) -> pl.DataFrame | None:
 
 
 def _load_price_data(start_date: str, tickers: list[str] | None = None) -> pl.DataFrame:
+    """Scan all per-ticker parquets via DuckDB glob, extracting ticker name from filename.
+
+    Passing tickers=None loads the full universe (all files in cache/tickers/).
+    Passing an empty list returns an empty DataFrame without hitting disk.
+    """
     import duckdb
     parquet_glob = str(CACHE_DIR / "tickers" / "*.parquet")
     ticker_filter = ""
@@ -132,6 +148,7 @@ def _load_price_data(start_date: str, tickers: list[str] | None = None) -> pl.Da
 
 
 def _load_concentration(start_date: str) -> pl.DataFrame:
+    """Scan concentration parquets — one file per ticker, same glob pattern as prices."""
     import duckdb
     parquet_glob = str(CACHE_DIR / "concentration" / "*.parquet")
     query = f"""
@@ -153,10 +170,12 @@ def _load_market_value(
     market_cap_rank: int,
     allowed_tickers: list[str] | None = None,
 ) -> pl.DataFrame | None:
-    """Load date-based market-cap membership from local cache.
+    """Build a (date, ticker) membership table for the top-N market-cap universe.
 
-    Prefer the per-day `market_value/YYYY-MM-DD.parquet` snapshots so the
-    backtest can honor arbitrary `market_cap_rank` values.
+    Reads per-day snapshot files (market_value/YYYY-MM-DD.parquet) so the rank
+    reflects the actual market cap on each historical date rather than today's value.
+    Returns columns [date, ticker, in_mc=True]; unmatched rows will be null after
+    a left-join, which the caller fills with False.
     """
     mv_dir = CACHE_DIR / "market_value"
     allowed_set = set(allowed_tickers) if allowed_tickers is not None else None
@@ -180,6 +199,7 @@ def _load_market_value(
                 mv_df = mv_df.filter(pl.col("stock_id").is_in(list(allowed_set)))
             mv_df = mv_df.with_columns(pl.col("date").cast(pl.Date))
             mv_df = mv_df.filter(pl.col("date") >= pl.lit(start_date).cast(pl.Date))
+            # Rank descending within each day so rank=1 is the largest cap.
             mv_df = mv_df.with_columns(
                 pl.col("market_value")
                 .rank(method="ordinal", descending=True)
@@ -203,6 +223,7 @@ def _load_ticker_names() -> dict[str, str]:
 
 
 def _load_ticker_info() -> pl.DataFrame | None:
+    """Load ticker metadata, preferring the R2 parquet over the legacy local CSV."""
     df = _read_parquet_r2("meta/ticker_info.parquet")
     if df is not None and not df.is_empty():
         return df
@@ -223,6 +244,12 @@ def _load_ticker_info() -> pl.DataFrame | None:
 
 @lru_cache(maxsize=1)
 def _stock_tickers() -> tuple[str, ...]:
+    """Return all stock-only ticker IDs, cached for the process lifetime.
+
+    The cache is intentionally process-scoped (lru_cache on module-level function)
+    because ticker_info is updated at most once per day and re-loading 3k rows
+    on every screener call would be wasteful.
+    """
     df = _load_ticker_info()
     if df is None or df.is_empty():
         return ()
@@ -236,6 +263,12 @@ def _stock_tickers() -> tuple[str, ...]:
 
 
 def _filter_stock_only_tickers(tickers: list[str] | None) -> list[str] | None:
+    """Intersect a caller-supplied ticker list with the stock-only universe.
+
+    If tickers is None, returns the full stock universe.
+    If the metadata is unavailable (empty _stock_tickers), passes tickers through
+    unchanged rather than silently returning an empty list.
+    """
     if tickers is None:
         return list(_stock_tickers())
     stock_set = set(_stock_tickers())
@@ -245,7 +278,11 @@ def _filter_stock_only_tickers(tickers: list[str] | None) -> list[str] | None:
 
 
 def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
-    """Return last close, day%, 5d%, 10d%, 20d% for each ticker."""
+    """Return last close, day%, 5d%, 10d%, 20d% for each ticker.
+
+    Fetches only the last 22 rows per ticker to minimise memory; 22 bars is
+    enough for all percentage lookbacks (1, 5, 10, 20 days).
+    """
     _empty = pl.DataFrame(schema={
         "ticker": pl.Utf8, "close": pl.Float64,
         "day_pct": pl.Float64, "pct_5d": pl.Float64,
@@ -319,6 +356,79 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
     return _empty
 
 
+def get_market_overview() -> list[dict]:
+    """Return latest price + concentration for all tickers in local cache.
+
+    Reads all parquet files in bulk via DuckDB glob — no per-ticker network calls.
+    buy_volume / sell_volume are top-15 broker net shares (in 張, sell is negative).
+    """
+    tickers_glob = str(CACHE_DIR / "tickers" / "*.parquet")
+    conc_glob = str(CACHE_DIR / "concentration" / "*.parquet")
+    meta_path = CACHE_DIR / "meta" / "ticker_info.parquet"
+
+    conn = duckdb.connect()
+    try:
+        price_df = conn.execute(f"""
+            SELECT
+                replace(split_part(filename, '/', -1), '.parquet', '') AS ticker,
+                date, close, volume,
+                ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
+            FROM read_parquet('{tickers_glob}', filename=true)
+        """).pl()
+
+        conc_df = conn.execute(f"""
+            SELECT
+                replace(split_part(filename, '/', -1), '.parquet', '') AS ticker,
+                date, buy_volume, sell_volume, amount,
+                concentration_5d, concentration_20d,
+                ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
+            FROM read_parquet('{conc_glob}', filename=true)
+        """).pl()
+    finally:
+        conn.close()
+
+    latest = price_df.filter(pl.col("rn") == 1).drop("rn")
+    prev = (
+        price_df.filter(pl.col("rn") == 2)
+        .select(["ticker", pl.col("close").alias("prev_close")])
+    )
+    price = (
+        latest
+        .join(prev, on="ticker", how="left")
+        .with_columns([
+            ((pl.col("close") - pl.col("prev_close")).round(2)).alias("day_chg"),
+            (
+                (pl.col("close") - pl.col("prev_close")) / pl.col("prev_close") * 100
+            ).round(2).alias("day_pct"),
+        ])
+        .drop("prev_close")
+    )
+
+    conc_df = conc_df.filter(pl.col("rn") == 1).drop(["rn", "date"])
+    result = price.join(conc_df, on="ticker", how="left")
+
+    if meta_path.exists():
+        names = (
+            pl.read_parquet(meta_path)
+            .select([pl.col("stock_id").alias("ticker"), pl.col("stock_name").alias("name")])
+            .unique("ticker")
+        )
+        result = result.join(names, on="ticker", how="left")
+    else:
+        result = result.with_columns(pl.lit("").alias("name"))
+
+    result = result.with_columns([
+        pl.col("date").cast(pl.Utf8),
+        pl.col("name").fill_null(""),
+    ])
+
+    cols = ["ticker", "name", "date", "close", "day_chg", "day_pct",
+            "volume", "buy_volume", "sell_volume", "amount",
+            "concentration_5d", "concentration_20d"]
+    result = result.select([c for c in cols if c in result.columns])
+    return result.sort("ticker").to_dicts()
+
+
 def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
     """Return full OHLCV + MA + Bollinger history for a single ticker."""
     df = download_parquet(f"tickers/{ticker}.parquet")
@@ -344,7 +454,13 @@ def _compute_indicators(
     exit_bb_window: int,
     exit_rsi_period: int,
 ) -> pl.DataFrame:
-    """Compute entry and exit indicators per ticker."""
+    """Compute entry-side and exit-side indicators in a single Polars pass.
+
+    Entry indicators: sma, bb_upper, bb_lower, vol_ratio, rsi
+    Exit indicators:  exit_sma, exit_bb_lower, exit_vol_ratio, exit_rsi
+    Both sets use .over("ticker") so the entire universe is processed at once
+    without a Python loop over individual tickers.
+    """
     df = df.sort(["ticker", "date"])
 
     df = df.with_columns([
@@ -367,6 +483,8 @@ def _compute_indicators(
         (pl.col("exit_bb_mid") - 2.0 * pl.col("exit_bb_std")).alias("exit_bb_lower"),
     ]).drop(["bb_mid", "bb_std", "vol_ma", "exit_vol_ma"])
 
+    # RSI: separate gain/loss series, then rolling mean of each.
+    # Using SMA (not EMA) for simplicity — avoids seed-value sensitivity on short histories.
     df = df.with_columns(
         pl.col("close").diff().over("ticker").alias("_d")
     ).with_columns([
@@ -398,6 +516,13 @@ def _entry_mask(
     rsi_min: float,
     rsi_max: float,
 ) -> pl.Expr:
+    """Build a Polars boolean expression for entry signal detection.
+
+    All active conditions are combined with AND — a ticker must satisfy every
+    enabled filter on a given day to generate an entry signal.
+    Starts from a base null-guard (sma and bb_upper must be non-null) so tickers
+    with insufficient history are silently excluded rather than raising errors.
+    """
     mask = pl.col("sma").is_not_null() & pl.col("bb_upper").is_not_null()
 
     if price_above_ma:
@@ -434,14 +559,21 @@ def _exit_mask(
     exit_conc_5d_min: float,
     exit_conc_min: float,
 ) -> pl.Expr:
-    mask = pl.lit(False)
+    """Build a Polars boolean expression for exit signal detection.
+
+    All active exit conditions are combined with AND — every enabled condition
+    must trigger simultaneously to close the position.
+    Returns False (never exit) when no conditions are configured.
+    """
+    conditions: list[pl.Expr] = []
 
     if exit_price_below_ma:
-        mask = mask | (pl.col("close") < pl.col("exit_sma"))
+        conditions.append(pl.col("close") < pl.col("exit_sma"))
     if exit_bb_breakdown:
-        mask = mask | (pl.col("close") < pl.col("exit_bb_lower"))
+        conditions.append(pl.col("close") < pl.col("exit_bb_lower"))
     if exit_use_rsi and (exit_rsi_min > 0.0 or exit_rsi_max < 100.0):
-        mask = mask | (
+        # RSI out of range in either direction (inner OR is intentional)
+        conditions.append(
             pl.col("exit_rsi").is_not_null()
             & (
                 (pl.col("exit_rsi") <= exit_rsi_min)
@@ -449,24 +581,34 @@ def _exit_mask(
             )
         )
     if exit_use_volume and exit_volume_ratio > 1.0:
-        mask = mask | (
+        conditions.append(
             pl.col("exit_vol_ratio").is_not_null()
             & (pl.col("exit_vol_ratio") <= exit_volume_ratio)
         )
     if exit_use_concentration:
-        conc_mask = pl.lit(False)
+        conc_conditions: list[pl.Expr] = []
         if exit_conc_5d_min > 0.0:
-            conc_mask = conc_mask | (
+            conc_conditions.append(
                 pl.col("concentration_5d").is_not_null()
                 & (pl.col("concentration_5d") <= exit_conc_5d_min)
             )
         if exit_conc_min > 0.0:
-            conc_mask = conc_mask | (
+            conc_conditions.append(
                 pl.col("concentration_20d").is_not_null()
                 & (pl.col("concentration_20d") <= exit_conc_min)
             )
-        mask = mask | conc_mask
+        if conc_conditions:
+            conc_mask = conc_conditions[0]
+            for c in conc_conditions[1:]:
+                conc_mask = conc_mask & c
+            conditions.append(conc_mask)
 
+    if not conditions:
+        return pl.lit(False)
+
+    mask = conditions[0]
+    for c in conditions[1:]:
+        mask = mask & c
     return mask
 
 
@@ -476,12 +618,18 @@ class _TradeTracker:
     def __init__(self, commission: float = _DEFAULT_COMMISSION):
         self.commission = commission
         self.open_trades: dict[str, dict] = {}  # ticker -> {entry_price, entry_date}
-        self.completed: list[dict] = []
+        self.completed: list[dict] = []  # flat event log: buy + sell rows
 
     def enter(self, ticker: str, price: float, entry_date: date) -> bool:
         if ticker in self.open_trades:
             return False
         self.open_trades[ticker] = {"entry_price": price, "entry_date": entry_date}
+        self.completed.append({
+            "date": str(entry_date),
+            "ticker": ticker,
+            "action": "buy",
+            "price": round(float(price), 2),
+        })
         return True
 
     def exit(self, ticker: str, price: float, exit_date: date) -> bool:
@@ -490,37 +638,37 @@ class _TradeTracker:
         pos = self.open_trades.pop(ticker)
         net_return_pct = (price * (1 - self.commission)) / (pos["entry_price"] * (1 + self.commission)) - 1
         self.completed.append({
+            "date": str(exit_date),
             "ticker": ticker,
-            "entry_date": str(pos["entry_date"]),
-            "exit_date": str(exit_date),
-            "entry_price": round(float(pos["entry_price"]), 2),
-            "exit_price": round(float(price), 2),
-            "net_return_pct": round(net_return_pct * 100, 4),
+            "action": "sell",
+            "price": round(float(price), 2),
+            "return_pct": round(net_return_pct * 100, 2),
         })
         return True
 
     def get_stats(self) -> dict:
-        n = len(self.completed)
+        sells = [t for t in self.completed if t["action"] == "sell"]
+        n = len(sells)
         if n == 0:
             return {"total_trades": 0, "wins": 0, "losses": 0, "win_rate": 0.0, "avg_return_pct": 0.0}
-        wins = sum(1 for t in self.completed if t["net_return_pct"] > 0)
-        avg = sum(t["net_return_pct"] for t in self.completed) / n
+        wins = sum(1 for t in sells if t["return_pct"] > 0)
+        avg = sum(t["return_pct"] for t in sells) / n
         return {
             "total_trades": n,
             "wins": wins,
             "losses": n - wins,
             "win_rate": round(wins / n * 100, 2),
-            "avg_return_pct": round(avg, 4),
+            "avg_return_pct": round(avg, 2),
         }
 
 
 # ── Main entry ────────────────────────────────────────────────────────────────
 
 def run_backtest(
-    lookback_days: int = 365,
+    lookback_days: int = 120,
     ma_window: int = 10,
     bb_window: int = 22,
-    volume_ratio: float = 1.5,
+    volume_ratio: float = 1.0,
     price_above_ma: bool = True,
     bb_breakout: bool = False,
     rsi_period: int = 14,
@@ -547,6 +695,9 @@ def run_backtest(
     commission: float = _DEFAULT_COMMISSION,
     debug: bool = False,
 ) -> dict:
+    # Load extra history before sim_start so all rolling windows are warm by day 1
+    # of the simulation. Without warmup, early MA/BB/RSI values would be null and
+    # the first ~bb_window trading days would produce zero signals.
     warmup = max(ma_window, bb_window, rsi_period, exit_ma_window, exit_bb_window, exit_rsi_period) + 10
     start_date = str(date.today() - timedelta(days=lookback_days + warmup))
 
@@ -563,10 +714,12 @@ def run_backtest(
         price_df, ma_window, bb_window, rsi_period, exit_ma_window, exit_bb_window, exit_rsi_period
     )
 
+    # Trim to the actual simulation window after indicators are computed.
     sim_start = str(date.today() - timedelta(days=lookback_days))
     df = price_df.filter(pl.col("date") >= pl.lit(sim_start).cast(pl.Date))
 
-    # Concentration
+    # ── Optional overlays ─────────────────────────────────────────────────────
+    # this is optional data : concentration, etc ...
     if use_concentration:
         print("[backtest] Loading concentration data...")
         conc_df = _load_concentration(start_date)
@@ -586,7 +739,6 @@ def run_backtest(
             pl.lit(None).cast(pl.Float64).alias("concentration_20d"),
         ])
 
-    # Market cap
     if market_cap_rank is not None:
         print("[backtest] Loading market value data...")
         mv_df = _load_market_value(start_date, market_cap_rank, allowed_tickers=stock_tickers)
@@ -599,6 +751,8 @@ def run_backtest(
         df = df.with_columns(pl.lit(True).alias("in_mc"))
 
     if market_cap_rank is not None:
+        # Use yesterday's market-cap membership as the universe filter for today's entry.
+        # This avoids look-ahead bias: we only know today's cap rank after the close.
         df = df.sort(["ticker", "date"])
         df = df.with_columns(
             pl.col("in_mc").shift(1).over("ticker").fill_null(False).alias("in_mc_prev")
@@ -641,9 +795,13 @@ def run_backtest(
         day = df.filter(pl.col("date") == dt)
         open_prices = dict(zip(day["ticker"].to_list(), day["open"].to_list()))
 
-        # Execute orders generated on the previous trading day at today's open.
+        # ── Next-day fill model ───────────────────────────────────────────────
+        # Signals are generated on the close of day D.
+        # Orders are queued with execute_date = D+1 and filled at D+1 open price.
+        # This prevents look-ahead bias from using today's close as fill price.
         todays_orders = [o for o in pending_orders if o["execute_date"] == dt]
         if todays_orders:
+            # Process sells first to free up capital before buys.
             for order in todays_orders:
                 if order["type"] != "sell":
                     continue
@@ -664,7 +822,7 @@ def run_backtest(
 
         held = set(tracker.open_trades.keys())
 
-        # Exit signals generated on today's close → execute at next open.
+        # Check exit conditions for all open positions at today's close.
         for ticker in list(held):
             row = day.filter(pl.col("ticker") == ticker)
             if row.is_empty():
@@ -674,11 +832,12 @@ def run_backtest(
             ):
                 pending_orders.append({"type": "sell", "ticker": ticker, "execute_date": next_dt})
 
-        # Entry signals → execute at next open.
+        # Check entry conditions for all tickers in the active universe.
         for row in day.filter(universe_mask & cond).iter_rows(named=True):
             ticker = row["ticker"]
             if ticker in held:
                 continue
+            # Deduplicate: don't queue a second buy order for the same ticker on the same next_dt.
             if any(
                 o["type"] == "buy" and o["ticker"] == ticker and o["execute_date"] == next_dt
                 for o in pending_orders
@@ -693,11 +852,13 @@ def run_backtest(
                 "pending": len(pending_orders),
             })
 
+    # ── End-of-period snapshot ────────────────────────────────────────────────
+
     last_dt = trading_dates[-1]
     last_day = df.filter(pl.col("date") == last_dt)
     last_prices = dict(zip(last_day["ticker"].to_list(), last_day["close"].to_list()))
 
-    # Open trades still running at end of period
+    # Positions still open at simulation end — valued at last close, not yet closed.
     open_trades = sorted([
         {
             "ticker": t,
@@ -709,7 +870,7 @@ def run_backtest(
         for t, pos in tracker.open_trades.items()
     ], key=lambda x: x["entry_date"], reverse=True)
 
-    # Next-day entry signals
+    # Tickers that fired an entry signal on the last trading day → actionable tomorrow.
     held = set(tracker.open_trades.keys())
     signals = []
     for r in last_day.filter(universe_mask & cond).iter_rows(named=True):
@@ -725,6 +886,7 @@ def run_backtest(
             "rsi": round(r["rsi"], 1) if r["rsi"] is not None else None,
             "conc_5d": round(r["concentration_5d"], 4) if r["concentration_5d"] is not None else None,
             "conc_20d": round(r["concentration_20d"], 4) if r["concentration_20d"] is not None else None,
+            # already_held lets the UI distinguish "new signal" from "signal on an open position".
             "already_held": r["ticker"] in held,
         })
 

@@ -35,7 +35,7 @@ from app.db import (
 )
 from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
-from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names
+from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names, get_market_overview
 
 
 def _load_watchlists() -> dict:
@@ -637,3 +637,14 @@ def backtest_page():
 @app.get("/watchlist-manager")
 def watchlist_manager():
     return RedirectResponse(url="/static/watchlist.html")
+
+
+@app.get("/market-overview")
+def market_overview_page():
+    return RedirectResponse(url="/static/market_overview.html")
+
+
+@app.get("/api/market-overview")
+def api_market_overview():
+    rows = get_market_overview()
+    return JSONResponse(content=rows)
