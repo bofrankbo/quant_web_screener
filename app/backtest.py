@@ -371,6 +371,80 @@ _overview_cache: dict = {"data": None, "ts": 0.0}
 _OVERVIEW_TTL = 600  # 10 minutes
 
 
+def _normalize_instrument_kind(industry_category: str | None, listing_type: str | None) -> str:
+    """Map FinMind metadata to one of the overview filter groups."""
+    cat = (industry_category or "").strip()
+    if not cat:
+        return "股票" if listing_type in {"twse", "tpex"} else "未知"
+    if "ETF" in cat:
+        return "其他"
+    if "ETN" in cat:
+        return "其他"
+    if "受益證券" in cat:
+        return "其他"
+    if "存託" in cat:
+        return "其他"
+    if "指數" in cat or cat in {"大盤", "index"}:
+        return "指數"
+    if "債" in cat:
+        return "其他"
+    if listing_type in {"twse", "tpex"}:
+        return "股票"
+    return "未知"
+
+
+def _load_market_overview_meta() -> pl.DataFrame:
+    """Load raw ticker metadata for market overview grouping."""
+    if not TICKER_INFO_PATH.exists():
+        return pl.DataFrame(schema={
+            "ticker": pl.Utf8,
+            "industry_category": pl.Utf8,
+            "type": pl.Utf8,
+        })
+
+    df = pl.read_csv(
+        TICKER_INFO_PATH,
+        null_values=["None", "null", "NULL", ""],
+        try_parse_dates=True,
+    )
+    if df.is_empty():
+        return pl.DataFrame(schema={
+            "ticker": pl.Utf8,
+            "industry_category": pl.Utf8,
+            "type": pl.Utf8,
+        })
+
+    required_cols = ["stock_id", "industry_category", "type"]
+    if not set(required_cols).issubset(df.columns):
+        return pl.DataFrame(schema={
+            "ticker": pl.Utf8,
+            "industry_category": pl.Utf8,
+            "type": pl.Utf8,
+        })
+
+    if "date" in df.columns:
+        df = (
+            df.sort("date")
+            .group_by("stock_id", maintain_order=True)
+            .agg([
+                pl.col("industry_category").last(),
+                pl.col("type").last(),
+            ])
+        )
+    else:
+        df = df.select([
+            pl.col("stock_id"),
+            pl.col("industry_category"),
+            pl.col("type"),
+        ]).unique("stock_id", keep="last")
+
+    return df.select([
+        pl.col("stock_id").alias("ticker"),
+        pl.col("industry_category"),
+        pl.col("type"),
+    ])
+
+
 def invalidate_market_overview_cache() -> None:
     _overview_cache["data"] = None
     _overview_cache["ts"] = 0.0
@@ -427,7 +501,6 @@ def get_market_overview() -> list[dict]:
                 (pl.col("close") - pl.col("prev_close")) / pl.col("prev_close") * 100
             ).round(2).alias("day_pct"),
         ])
-        .drop("prev_close")
     )
 
     conc_df = conc_df.drop("date")
@@ -448,10 +521,32 @@ def get_market_overview() -> list[dict]:
         pl.col("name").fill_null(""),
     ])
 
+    meta_df = _load_market_overview_meta()
+    if not meta_df.is_empty():
+        result = result.join(meta_df, on="ticker", how="left")
+
     cols = ["ticker", "name", "date", "close", "day_chg", "day_pct",
             "volume", "buy_volume", "sell_volume", "amount",
-            "concentration_5d", "concentration_20d"]
+            "prev_close",
+            "concentration_5d", "concentration_20d",
+            "industry_category", "type"]
     result = result.select([c for c in cols if c in result.columns])
+    if "industry_category" not in result.columns:
+        result = result.with_columns(pl.lit(None).cast(pl.Utf8).alias("industry_category"))
+    if "type" not in result.columns:
+        result = result.with_columns(pl.lit(None).cast(pl.Utf8).alias("type"))
+    if "industry_category" in result.columns or "type" in result.columns:
+        result = result.with_columns(
+            pl.struct(["industry_category", "type"]).map_elements(
+                lambda x: _normalize_instrument_kind(
+                    x.get("industry_category"),
+                    x.get("type"),
+                ),
+                return_dtype=pl.Utf8,
+            ).alias("kind")
+        )
+    else:
+        result = result.with_columns(pl.lit("未知").alias("kind"))
     rows = result.sort("ticker").to_dicts()
 
     _overview_cache["data"] = rows

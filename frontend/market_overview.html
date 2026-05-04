@@ -18,7 +18,9 @@
     color: #e6edf3;
     font-family: 'SF Mono', 'Fira Code', monospace;
     font-size: 13px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: auto;
+    min-width: 0;
   }
 
   header {
@@ -31,6 +33,28 @@
     position: sticky;
     top: var(--app-topbar-height, 54px);
     z-index: 100;
+  }
+
+  .kind-btn {
+    border: 1px solid #30363d;
+    background: #161b22;
+    color: #8b949e;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .kind-btn:hover {
+    border-color: #58a6ff;
+    color: #f0f6fc;
+  }
+
+  .kind-btn.active {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
   }
 
   header h1 {
@@ -55,6 +79,25 @@
 
   #search:focus { border-color: #58a6ff; }
   #search::placeholder { color: #484f58; }
+
+  .search-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .kind-btn-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .kind-btn-group .kind-btn {
+    white-space: nowrap;
+  }
 
   #stats {
     margin-left: auto;
@@ -87,7 +130,9 @@
   .table-wrap {
     flex: 1;
     overflow-x: auto;
-    overflow-y: auto;
+    overflow-y: visible;
+    min-height: 0;
+    min-width: 0;
   }
 
   table {
@@ -280,7 +325,15 @@
 
 <header>
   <h1>市場總覽</h1>
-  <input id="search" type="text" placeholder="代號 / 股名搜尋…" autocomplete="off">
+  <div class="search-tools">
+    <input id="search" type="text" placeholder="代號 / 股名搜尋…" autocomplete="off">
+    <div class="kind-btn-group">
+      <button class="kind-btn active" data-kind="all" onclick="setGroupFilter('all')">全部</button>
+      <button class="kind-btn" data-kind="股票" onclick="setGroupFilter('股票')">股票</button>
+      <button class="kind-btn" data-kind="指數" onclick="setGroupFilter('指數')">指數</button>
+      <button class="kind-btn" data-kind="其他" onclick="setGroupFilter('其他')">其他</button>
+    </div>
+  </div>
   <div id="stats"></div>
   <div id="last-updated"></div>
 </header>
@@ -306,7 +359,7 @@
         <th data-col="ticker"   data-type="str">代號</th>
         <th data-col="name"     data-type="str">股名</th>
         <th data-col="date"     data-type="str">日期</th>
-        <th data-col="close"    data-type="num">收盤</th>
+        <th data-col="close"    data-type="num">現價</th>
         <th data-col="day_chg"  data-type="num">漲跌</th>
         <th data-col="day_pct"  data-type="num">漲跌%</th>
         <th data-col="volume"   data-type="num">成交量(張)</th>
@@ -335,6 +388,11 @@ let allRows = [];
 let filtered = [];
 let sortCol = 'ticker';
 let sortDir = 1; // 1 = asc, -1 = desc
+let activeGroup = 'all';
+let _quotesInterval = null;
+let _chartData = null;
+let _chartTicker = null;
+let _liveQuotes = {};
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
@@ -349,6 +407,9 @@ async function loadData() {
       document.getElementById('last-updated').textContent = `資料日期: ${latest}`;
     }
     applyFilter();
+    refreshLiveQuotes();
+    if (_quotesInterval) clearInterval(_quotesInterval);
+    _quotesInterval = setInterval(refreshLiveQuotes, 30000);
   } catch (e) {
     document.getElementById('loading').style.display = 'none';
     const banner = document.getElementById('error-banner');
@@ -360,12 +421,52 @@ async function loadData() {
 // ── Filter ─────────────────────────────────────────────────────────────────
 function applyFilter() {
   const q = document.getElementById('search').value.trim().toLowerCase();
-  filtered = q
-    ? allRows.filter(r =>
-        (r.ticker || '').toLowerCase().includes(q) ||
-        (r.name   || '').toLowerCase().includes(q))
-    : allRows.slice();
+  filtered = allRows.filter(r => {
+    const matchesGroup = activeGroup === 'all' || (r.kind || '') === activeGroup;
+    const matchesQuery = !q || (
+      (r.ticker || '').toLowerCase().includes(q) ||
+      (r.name   || '').toLowerCase().includes(q) ||
+      (r.industry_category || '').toLowerCase().includes(q)
+    );
+    return matchesGroup && matchesQuery;
+  });
   sortData();
+}
+
+function setGroupFilter(kind) {
+  activeGroup = kind;
+  document.querySelectorAll('.kind-btn-group .kind-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.kind === kind);
+  });
+  applyFilter();
+}
+
+function overlayRowsWithQuotes(quotes) {
+  let updated = false;
+  allRows.forEach(row => {
+    const q = quotes[row.ticker];
+    if (!q || q.close == null) return;
+    row.close = q.close;
+    const prevClose = row.prev_close;
+    if (prevClose != null) {
+      row.day_chg = +((q.close - prevClose)).toFixed(2);
+      row.day_pct = +((q.close / prevClose - 1) * 100).toFixed(2);
+    }
+    updated = true;
+  });
+  return updated;
+}
+
+async function refreshLiveQuotes() {
+  try {
+    const quotes = await fetch('/api/quotes').then(r => r.json());
+    _liveQuotes = quotes || {};
+    const updated = overlayRowsWithQuotes(_liveQuotes);
+    if (updated) applyFilter();
+    if (_chartTicker) await applyLiveQuote(_chartTicker, _liveQuotes);
+  } catch (e) {
+    console.error('refreshLiveQuotes failed:', e);
+  }
 }
 
 // ── Sort ───────────────────────────────────────────────────────────────────
@@ -476,6 +577,7 @@ document.getElementById('search').addEventListener('input', () => {
 
 // ── Chart ──────────────────────────────────────────────────────────────────
 function openChart(ticker) {
+  _chartTicker = ticker;
   document.getElementById('chart-ticker-label').textContent = ticker;
   document.getElementById('chart-panel').classList.add('visible');
   fetchKline(ticker);
@@ -484,13 +586,17 @@ function openChart(ticker) {
 function closeChart() {
   document.getElementById('chart-panel').classList.remove('visible');
   KlineChart.destroy(document.getElementById('lwc-container'));
+  _chartTicker = null;
+  _chartData = null;
 }
 
 async function fetchKline(ticker) {
   try {
     const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    renderChart(await resp.json());
+    _chartData = await resp.json();
+    renderChart(_chartData);
+    await applyLiveQuote(ticker, _liveQuotes);
   } catch (e) { console.error('kline fetch:', e); }
 }
 
@@ -499,6 +605,25 @@ function renderChart(rows) {
   KlineChart.render(container, rows, {
     volumeTopMargin: 0.91,
   });
+}
+
+async function applyLiveQuote(ticker, quotes) {
+  try {
+    const quoteMap = quotes || (await fetch('/api/quotes').then(r => r.json()));
+    const q = quoteMap[ticker];
+    if (!q || q.close == null || !_chartData || !_chartData.length) return;
+    const last = _chartData[_chartData.length - 1];
+    KlineChart.updateLastCandle(document.getElementById('lwc-container'), {
+      time:   last.date,
+      open:   q.open   ?? last.open,
+      high:   q.high   ?? last.high,
+      low:    q.low    ?? last.low,
+      close:  q.close,
+      volume: q.volume ?? last.volume,
+    });
+  } catch (e) {
+    console.error('applyLiveQuote failed:', e);
+  }
 }
 
 document.addEventListener('keydown', e => {
