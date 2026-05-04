@@ -215,16 +215,25 @@ def stock_universe():
     return JSONResponse(content=rows)
 
 
+@app.get("/login")
+def login_page(request: Request):
+    if _current_user(request):
+        return RedirectResponse(url="/")
+    return RedirectResponse(url="/static/login.html")
+
+
 @app.get("/auth/google/login")
-def auth_google_login(request: Request):
+def auth_google_login(request: Request, next: str | None = None):
     if not auth_enabled():
         return JSONResponse(
             status_code=400,
             content={
                 "detail": "Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET."
             },
-    )
-    login_url, state, redirect_uri = build_google_login_url(request)
+        )
+    if next:
+        request.session["login_next"] = next
+    login_url, _state, _redirect_uri = build_google_login_url(request)
     return RedirectResponse(url=login_url)
 
 
@@ -254,7 +263,8 @@ def auth_google_callback(
     userinfo = fetch_google_userinfo(token["access_token"])
     user_row = login_user_from_google(request, userinfo)
     _import_legacy_watchlists_to_user(user_row["id"])
-    return RedirectResponse(url="/watchlist-manager")
+    next_url = request.session.pop("login_next", "/watchlist-manager")
+    return RedirectResponse(url=next_url)
 
 
 @app.get("/auth/me")
@@ -390,123 +400,80 @@ class ActiveRequest(BaseModel):
 @app.get("/watchlists")
 def list_watchlists(request: Request):
     user = _current_user(request)
-    if user:
-        return JSONResponse(content=get_watchlist_counts_for_user(user["id"]))
-    wl = _load_watchlists()
-    return JSONResponse(content={k: len(_tickers(v)) for k, v in wl.items()})
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    return JSONResponse(content=get_watchlist_counts_for_user(user["id"]))
 
 
 @app.get("/watchlists/{name}")
 def get_watchlist(request: Request, name: str):
     user = _current_user(request)
-    if user:
-        watchlist = get_watchlist_by_name(user["id"], name)
-        if watchlist is None:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        items = get_watchlist_items_for_user(user["id"], name)
-        return JSONResponse(content=[item["ticker"] for item in items])
-    wl = _load_watchlists()
-    if name not in wl:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    watchlist = get_watchlist_by_name(user["id"], name)
+    if watchlist is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-    return JSONResponse(content=_tickers(wl[name]))
+    items = get_watchlist_items_for_user(user["id"], name)
+    return JSONResponse(content=[item["ticker"] for item in items])
 
 
 @app.post("/watchlists/{name}")
 def create_watchlist(request: Request, name: str):
     user = _current_user(request)
-    if user:
-        create_watchlist_for_user(user["id"], name)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name not in wl:
-        wl[name] = {"tickers": [], "custom_label": "備註", "custom": {}}
-        _save_watchlists(wl)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    create_watchlist_for_user(user["id"], name)
     return JSONResponse(content={"ok": True})
 
 
 @app.delete("/watchlists/{name}")
 def delete_watchlist(request: Request, name: str):
     user = _current_user(request)
-    if user:
-        delete_watchlist_for_user(user["id"], name)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    wl.pop(name, None)
-    _save_watchlists(wl)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    delete_watchlist_for_user(user["id"], name)
     return JSONResponse(content={"ok": True})
 
 
 @app.put("/watchlists/{name}/tickers/{ticker}")
 def add_ticker(request: Request, name: str, ticker: str):
     user = _current_user(request)
-    if user:
-        try:
-            add_ticker_to_watchlist(user["id"], name, ticker)
-        except KeyError:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name not in wl:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    try:
+        add_ticker_to_watchlist(user["id"], name, ticker)
+    except KeyError:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-    t_list = _tickers(wl[name])
-    if ticker not in t_list:
-        t_list.append(ticker)
-        if isinstance(wl[name], dict):
-            wl[name]["tickers"] = t_list
-        else:
-            wl[name] = {"tickers": t_list, "custom_label": "備註", "custom": {}}
-        _save_watchlists(wl)
     return JSONResponse(content={"ok": True})
 
 
 @app.delete("/watchlists/{name}/tickers/{ticker}")
 def remove_ticker(request: Request, name: str, ticker: str):
     user = _current_user(request)
-    if user:
-        remove_ticker_from_watchlist(user["id"], name, ticker)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name in wl:
-        t_list = _tickers(wl[name])
-        if ticker in t_list:
-            t_list.remove(ticker)
-            if isinstance(wl[name], dict):
-                wl[name]["tickers"] = t_list
-            else:
-                wl[name] = {"tickers": t_list, "custom_label": "備註", "custom": {}}
-            _save_watchlists(wl)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    remove_ticker_from_watchlist(user["id"], name, ticker)
     return JSONResponse(content={"ok": True})
 
 
 @app.get("/watchlists/{name}/summary")
 def watchlist_summary(request: Request, name: str):
     user = _current_user(request)
-    if user:
-        watchlist = get_watchlist_by_name(user["id"], name)
-        if watchlist is None:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        items = get_watchlist_items_for_user(user["id"], name)
-        tickers = [item["ticker"] for item in items]
-        custom_data = {item["ticker"]: item.get("note", "") for item in items}
-        active_data = {item["ticker"]: bool(item.get("active", 1)) for item in items}
-        return JSONResponse(
-            content=_build_watchlist_summary(
-                tickers=tickers,
-                custom_label=watchlist.get("custom_label", "備註"),
-                custom_data=custom_data,
-                active_data=active_data,
-            )
-        )
-
-    legacy = _legacy_watchlist_summary(name)
-    if legacy is None:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    watchlist = get_watchlist_by_name(user["id"], name)
+    if watchlist is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
+    items = get_watchlist_items_for_user(user["id"], name)
+    tickers = [item["ticker"] for item in items]
+    custom_data = {item["ticker"]: item.get("note", "") for item in items}
+    active_data = {item["ticker"]: bool(item.get("active", 1)) for item in items}
     return JSONResponse(
         content=_build_watchlist_summary(
-            tickers=legacy["tickers"],
-            custom_label=legacy["custom_label"],
-            custom_data=legacy["custom_data"],
-            active_data=legacy["active_data"],
+            tickers=tickers,
+            custom_label=watchlist.get("custom_label", "備註"),
+            custom_data=custom_data,
+            active_data=active_data,
         )
     )
 
@@ -514,63 +481,33 @@ def watchlist_summary(request: Request, name: str):
 @app.put("/watchlists/{name}/custom_label")
 def update_custom_label(request: Request, name: str, req: CustomLabelRequest):
     user = _current_user(request)
-    if user:
-        if get_watchlist_by_name(user["id"], name) is None:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        set_watchlist_custom_label(user["id"], name, req.label)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name not in wl:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    if get_watchlist_by_name(user["id"], name) is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-    if isinstance(wl[name], dict):
-        wl[name]["custom_label"] = req.label
-    else:
-        wl[name] = {"tickers": wl[name], "custom_label": req.label, "custom": {}}
-    _save_watchlists(wl)
+    set_watchlist_custom_label(user["id"], name, req.label)
     return JSONResponse(content={"ok": True})
 
 
 @app.put("/watchlists/{name}/custom/{ticker}")
 def update_custom_value(request: Request, name: str, ticker: str, req: CustomValueRequest):
     user = _current_user(request)
-    if user:
-        if get_watchlist_by_name(user["id"], name) is None:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        set_watchlist_note(user["id"], name, ticker, req.value)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name not in wl:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    if get_watchlist_by_name(user["id"], name) is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-    if isinstance(wl[name], dict):
-        wl[name].setdefault("custom", {})[ticker] = req.value
-    else:
-        wl[name] = {"tickers": wl[name], "custom_label": "備註", "custom": {ticker: req.value}}
-    _save_watchlists(wl)
+    set_watchlist_note(user["id"], name, ticker, req.value)
     return JSONResponse(content={"ok": True})
 
 
 @app.put("/watchlists/{name}/active/{ticker}")
 def set_ticker_active(request: Request, name: str, ticker: str, req: ActiveRequest):
     user = _current_user(request)
-    if user:
-        if get_watchlist_by_name(user["id"], name) is None:
-            return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-        set_watchlist_item_active(user["id"], name, ticker, req.active)
-        return JSONResponse(content={"ok": True})
-    wl = _load_watchlists()
-    if name not in wl:
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    if get_watchlist_by_name(user["id"], name) is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
-    entry = wl[name]
-    if isinstance(entry, dict):
-        entry.setdefault("active", {})
-        if req.active:
-            entry["active"].pop(ticker, None)   # absence = active, save space
-        else:
-            entry["active"][ticker] = False
-    else:
-        active = {} if req.active else {ticker: False}
-        wl[name] = {"tickers": entry, "custom_label": "備註", "custom": {}, "active": active}
-    _save_watchlists(wl)
+    set_watchlist_item_active(user["id"], name, ticker, req.active)
     return JSONResponse(content={"ok": True})
 
 
@@ -877,7 +814,9 @@ def backtest_page():
 
 
 @app.get("/watchlist-manager")
-def watchlist_manager():
+def watchlist_manager(request: Request):
+    if not _current_user(request):
+        return RedirectResponse(url="/login?next=/watchlist-manager")
     return RedirectResponse(url="/static/watchlist.html")
 
 
@@ -887,7 +826,9 @@ def market_overview_page():
 
 
 @app.get("/portfolio")
-def portfolio_page():
+def portfolio_page(request: Request):
+    if not _current_user(request):
+        return RedirectResponse(url="/login?next=/portfolio")
     return RedirectResponse(url="/static/portfolio.html")
 
 

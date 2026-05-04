@@ -549,6 +549,12 @@ td.editable input {
       <div><label>融資張數</label><input type="number" id="f-margin-lots" value="0" step="0.001"></div>
       <div><label>備註</label><input id="f-note"></div>
     </div>
+    <div id="new-portfolio-fields" style="display:none">
+      <div class="form-row">
+        <label>Portfolio 名稱</label>
+        <input id="f-portfolio-name" placeholder="My Portfolio">
+      </div>
+    </div>
     <!-- Trade sub-fields (buy/sell) -->
     <div id="trade-fields" style="display:none">
       <div class="form-row row2">
@@ -1047,10 +1053,12 @@ function openModal(mode, ticker = null, name = '') {
   modalTicker = ticker;
   const overlay = document.getElementById('modal-overlay');
   const title = document.getElementById('modal-title');
+  const newPortfolioFields = document.getElementById('new-portfolio-fields');
   const tradeFields = document.getElementById('trade-fields');
   const monthFields = document.getElementById('month-fields');
-  const mainFields = document.querySelectorAll('#modal .form-row:not(#trade-fields .form-row):not(#month-fields .form-row)');
+  const mainFields = document.querySelectorAll('#modal .form-row:not(#trade-fields .form-row):not(#month-fields .form-row):not(#new-portfolio-fields .form-row)');
 
+  newPortfolioFields.style.display = 'none';
   tradeFields.style.display = 'none';
   monthFields.style.display = 'none';
 
@@ -1078,7 +1086,8 @@ function openModal(mode, ticker = null, name = '') {
     mainFields.forEach(r => r.style.display = 'none');
   } else if (mode === 'new-portfolio') {
     title.textContent = '新增 Portfolio';
-    document.getElementById('f-name').value = '';
+    newPortfolioFields.style.display = '';
+    document.getElementById('f-portfolio-name').value = '';
     mainFields.forEach(r => r.style.display = 'none');
   } else if (mode === 'add-month') {
     title.textContent = '新增月份';
@@ -1091,6 +1100,11 @@ function openModal(mode, ticker = null, name = '') {
   if (mode === 'add-position') mainFields.forEach(r => r.style.display = '');
 
   overlay.classList.add('open');
+
+  if (mode === 'new-portfolio') {
+    document.getElementById('f-portfolio-name').focus();
+    document.getElementById('f-portfolio-name').select();
+  }
 }
 
 function openTrade(action, ticker, name) {
@@ -1102,6 +1116,7 @@ document.getElementById('modal-cancel').addEventListener('click', () => {
   document.getElementById('modal-overlay').classList.remove('open');
   // Restore hidden rows
   document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+  document.getElementById('new-portfolio-fields').style.display = 'none';
 });
 
 document.getElementById('modal-ok').addEventListener('click', async () => {
@@ -1148,7 +1163,7 @@ document.getElementById('modal-ok').addEventListener('click', async () => {
       showToast('已記錄');
 
     } else if (modalMode === 'new-portfolio') {
-      const name = document.getElementById('f-name').value.trim();
+      const name = document.getElementById('f-portfolio-name').value.trim();
       if (!name) { alert('請輸入名稱'); return; }
       await apiFetch(`/api/portfolios/${encodeURIComponent(name)}`, { method: 'POST' });
       showToast('已建立');
@@ -1165,6 +1180,7 @@ document.getElementById('modal-ok').addEventListener('click', async () => {
 
     document.getElementById('modal-overlay').classList.remove('open');
     document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+    document.getElementById('new-portfolio-fields').style.display = 'none';
   } catch (e) { alert(e.message); }
 });
 
@@ -1176,6 +1192,7 @@ document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('modal-overlay')) {
     document.getElementById('modal-overlay').classList.remove('open');
     document.querySelectorAll('#modal .form-row').forEach(r => r.style.display = '');
+    document.getElementById('new-portfolio-fields').style.display = 'none';
   }
 });
 

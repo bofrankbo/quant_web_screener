@@ -83,7 +83,7 @@
       console.error('auth status failed:', err);
     }
 
-    slot.innerHTML = '<a class="app-auth-link" href="/auth/google/login">Sign in with Google</a>';
+    slot.innerHTML = '<a class="app-auth-link" href="/login">Sign in</a>';
   }
 
   function renderTopbar() {
