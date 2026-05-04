@@ -796,6 +796,10 @@ let debounceTimer = null;
 let activeRow = null;
 let watchlistData = {};
 let popupTicker = null;
+let screenerProfiles = {};
+let screenerActiveProfile = '__last__';
+let screenerStateLoaded = false;
+const SCREENER_LOGIN_URL = '/login?next=/backtest';
 
 // ── Slider sync ───────────────────────────────────────────────────────────────
 function syncN(id) {
@@ -844,23 +848,73 @@ function toggleMcInput(en) {
 const PROFILE_LAST = '__last__';
 
 function profilesLoad() {
-  try { return JSON.parse(localStorage.getItem('screener_profiles') || '{}'); }
-  catch { return {}; }
-}
-function profilesSave(profiles) {
-  localStorage.setItem('screener_profiles', JSON.stringify(profiles));
+  return screenerProfiles;
 }
 function activeProfileName() {
-  return localStorage.getItem('screener_active_profile') || PROFILE_LAST;
+  return screenerActiveProfile || PROFILE_LAST;
 }
-function setActiveProfile(name) {
-  localStorage.setItem('screener_active_profile', name);
+async function setActiveProfile(name) {
+  screenerActiveProfile = name || PROFILE_LAST;
+  if (!screenerStateLoaded) return;
+  try {
+    const resp = await fetch('/screener/active', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: screenerActiveProfile }),
+    });
+    if (resp.status === 401) return redirectToLogin();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  } catch (err) {
+    console.error('setActiveProfile failed:', err);
+  }
+}
+
+function redirectToLogin() {
+  window.location.replace(SCREENER_LOGIN_URL);
+}
+
+async function ensureAuthenticated() {
+  try {
+    const resp = await fetch('/auth/me');
+    if (resp.status === 401) {
+      redirectToLogin();
+      return false;
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return true;
+  } catch (err) {
+    console.error('auth check failed:', err);
+    redirectToLogin();
+    return false;
+  }
+}
+
+async function loadScreenerState() {
+  try {
+    const resp = await fetch('/screener/state');
+    if (resp.status === 401) {
+      redirectToLogin();
+      return false;
+    }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    screenerProfiles = data.profiles || {};
+    screenerActiveProfile = data.active_profile || PROFILE_LAST;
+    screenerStateLoaded = true;
+    return true;
+  } catch (err) {
+    console.error('loadScreenerState:', err);
+    redirectToLogin();
+    return false;
+  }
 }
 
 function renderProfileSelect() {
   const profiles = profilesLoad();
   const sel = document.getElementById('profile-select');
   const active = activeProfileName();
+  const resolvedActive = (profiles[active] || active === PROFILE_LAST) ? active : PROFILE_LAST;
+  if (resolvedActive !== active) screenerActiveProfile = resolvedActive;
   sel.innerHTML = '<option value="__last__">Last Session</option>';
   Object.keys(profiles).filter(k => k !== PROFILE_LAST).sort().forEach(name => {
     const opt = document.createElement('option');
@@ -868,7 +922,7 @@ function renderProfileSelect() {
     opt.textContent = name;
     sel.appendChild(opt);
   });
-  sel.value = (profiles[active] || active === PROFILE_LAST) ? active : PROFILE_LAST;
+  sel.value = resolvedActive;
   document.getElementById('profile-del-btn').style.display =
     sel.value === PROFILE_LAST ? 'none' : '';
   updateProfileStat(profiles[sel.value]);
@@ -887,9 +941,9 @@ function updateProfileStat(profile) {
   el.className = 'profile-stat has-data';
 }
 
-function onProfileSelect() {
+async function onProfileSelect() {
   const name = document.getElementById('profile-select').value;
-  setActiveProfile(name);
+  await setActiveProfile(name);
   const profiles = profilesLoad();
   if (profiles[name]) applyProfile(profiles[name]);
   updateProfileStat(profiles[name]);
@@ -922,23 +976,35 @@ function onProfileNameKey(e) {
   }
 }
 
-function saveProfileAs(name, stats) {
-  const profiles = profilesLoad();
-  const existing = profiles[name] || {};
-  profiles[name] = {
-    name,
-    saved_at: new Date().toISOString(),
+function buildProfilePayload(stats, existingProfile = null) {
+  return {
     params: getParams(),
     lookback_days: +document.getElementById('bt-lookback').value,
     commission: parseFloat(document.getElementById('bt-commission').value),
-    stats: stats || existing.stats || null,
+    stats: stats ?? existingProfile?.stats ?? null,
   };
-  profilesSave(profiles);
-  setActiveProfile(name);
-  renderProfileSelect();
 }
 
-function profileAutoSave(btStats) {
+async function saveProfileAs(name, stats) {
+  const profiles = profilesLoad();
+  const existing = profiles[name] || {};
+  try {
+    const resp = await fetch(`/screener/profiles/${encodeURIComponent(name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildProfilePayload(stats, existing)),
+    });
+    if (resp.status === 401) return redirectToLogin();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    await setActiveProfile(name);
+    await loadScreenerState();
+    initProfiles();
+  } catch (err) {
+    console.error('saveProfileAs failed:', err);
+  }
+}
+
+async function profileAutoSave(btStats) {
   const statsData = btStats ? {
     win_rate:     btStats.win_rate    ?? null,
     avg_return:   btStats.avg_return_pct ?? null,
@@ -947,38 +1013,48 @@ function profileAutoSave(btStats) {
     losses:       btStats.losses      ?? null,
     run_at:       new Date().toISOString().slice(0, 10),
   } : null;
+  try {
+    const lastResp = await fetch(`/screener/profiles/${encodeURIComponent(PROFILE_LAST)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildProfilePayload(statsData)),
+    });
+    if (lastResp.status === 401) return redirectToLogin();
+    if (!lastResp.ok) throw new Error(`HTTP ${lastResp.status}`);
 
-  // Always update Last Session
-  const profiles = profilesLoad();
-  profiles[PROFILE_LAST] = {
-    name: 'Last Session',
-    saved_at: new Date().toISOString(),
-    params: getParams(),
-    lookback_days: +document.getElementById('bt-lookback').value,
-    commission: parseFloat(document.getElementById('bt-commission').value),
-    stats: statsData,
-  };
+    const active = activeProfileName();
+    if (active !== PROFILE_LAST && profilesLoad()[active]) {
+      const statResp = await fetch(`/screener/profiles/${encodeURIComponent(active)}/stats`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stats: statsData }),
+      });
+      if (statResp.status === 401) return redirectToLogin();
+      if (!statResp.ok) throw new Error(`HTTP ${statResp.status}`);
+    }
 
-  // Also update active named profile's stats
-  const active = activeProfileName();
-  if (active !== PROFILE_LAST && profiles[active]) {
-    profiles[active].stats = statsData;
+    await loadScreenerState();
+    const curSel = document.getElementById('profile-select').value;
+    updateProfileStat(profilesLoad()[curSel]);
+  } catch (err) {
+    console.error('profileAutoSave failed:', err);
   }
-
-  profilesSave(profiles);
-  const curSel = document.getElementById('profile-select').value;
-  updateProfileStat(profiles[curSel]);
 }
 
-function onProfileDelete() {
+async function onProfileDelete() {
   const name = document.getElementById('profile-select').value;
   if (name === PROFILE_LAST) return;
   if (!confirm(`Delete profile "${name}"?`)) return;
-  const profiles = profilesLoad();
-  delete profiles[name];
-  profilesSave(profiles);
-  setActiveProfile(PROFILE_LAST);
-  renderProfileSelect();
+  try {
+    const resp = await fetch(`/screener/profiles/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    if (resp.status === 401) return redirectToLogin();
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    await setActiveProfile(PROFILE_LAST);
+    await loadScreenerState();
+    initProfiles();
+  } catch (err) {
+    console.error('onProfileDelete failed:', err);
+  }
 }
 
 function applyProfile(profile) {
@@ -1034,6 +1110,7 @@ function applyProfile(profile) {
 }
 
 function initProfiles() {
+  if (!screenerStateLoaded) return;
   renderProfileSelect();
   const active = activeProfileName();
   const profiles = profilesLoad();
@@ -1126,6 +1203,7 @@ function renderChart(rows) {
 async function loadWatchlists() {
   try {
     const resp = await fetch('/watchlists');
+    if (resp.status === 401) return redirectToLogin();
     if (!resp.ok) return;
     const counts = await resp.json();
     const names = Object.keys(counts);
@@ -1291,7 +1369,7 @@ async function runBacktest() {
     renderBtStats(btData.stats);
     btStats.classList.add('visible');
     renderBtTables();
-    profileAutoSave(btData.stats);
+    await profileAutoSave(btData.stats);
   } catch (err) {
     status.textContent = 'Error: ' + err.message;
     btSignalsBody.innerHTML = `<tr><td colspan="11" class="bt-msg">Error: ${err.message}</td></tr>`;
@@ -1436,8 +1514,12 @@ function esc(s) {
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  loadWatchlists();
-  initProfiles();
+  (async () => {
+    if (!await ensureAuthenticated()) return;
+    await loadWatchlists();
+    await loadScreenerState();
+    initProfiles();
+  })();
 });
 </script>
 <script src="/static/shared_topbar.js"></script>

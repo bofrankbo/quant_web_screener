@@ -35,6 +35,13 @@ from app.db import (
     set_watchlist_custom_label,
     set_watchlist_item_active,
     set_watchlist_note,
+    # screener profiles
+    get_screener_profiles_for_user,
+    upsert_screener_profile_for_user,
+    update_screener_profile_stats_for_user,
+    delete_screener_profile_for_user,
+    get_user_preference,
+    set_user_preference,
     # portfolio
     get_portfolios_for_user,
     get_portfolio_by_name,
@@ -217,6 +224,21 @@ class PatternMatchRequest(BaseModel):
     top_n: int = 30
 
 
+class ScreenerProfilePayload(BaseModel):
+    params: dict | None = None
+    lookback_days: int | None = None
+    commission: float | None = None
+    stats: dict | None = None
+
+
+class ScreenerProfileStatsPayload(BaseModel):
+    stats: dict | None = None
+
+
+class ScreenerActiveProfilePayload(BaseModel):
+    name: str
+
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -324,6 +346,72 @@ def kline(
     if df.is_empty():
         return JSONResponse(status_code=404, content={"detail": f"{ticker} not found"})
     return JSONResponse(content=df.with_columns(pl.col("date").cast(pl.Utf8)).to_dicts())
+
+
+@app.get("/screener/state")
+def screener_state(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    active = get_user_preference(user["id"], "screener_active_profile", "__last__")
+    profiles = get_screener_profiles_for_user(user["id"])
+    profile_names = {profile["name"] for profile in profiles}
+    if not profiles or (active not in profile_names and active != "__last__"):
+        active = "__last__"
+    return JSONResponse(content={
+        "active_profile": active,
+        "profiles": {profile["name"]: profile for profile in profiles},
+    })
+
+
+@app.put("/screener/active")
+def set_screener_active_profile(request: Request, payload: ScreenerActiveProfilePayload):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    set_user_preference(user["id"], "screener_active_profile", payload.name)
+    return JSONResponse(content={"ok": True, "active_profile": payload.name})
+
+
+@app.put("/screener/profiles/{name}")
+def save_screener_profile(request: Request, name: str, payload: ScreenerProfilePayload):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    profile = upsert_screener_profile_for_user(
+        user["id"],
+        name,
+        params=payload.params,
+        lookback_days=payload.lookback_days,
+        commission=payload.commission,
+        stats=payload.stats,
+    )
+    return JSONResponse(content=profile)
+
+
+@app.patch("/screener/profiles/{name}/stats")
+def update_screener_profile_stats(request: Request, name: str, payload: ScreenerProfileStatsPayload):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    profile = update_screener_profile_stats_for_user(user["id"], name, payload.stats)
+    if profile is None:
+        return JSONResponse(status_code=404, content={"detail": "profile not found"})
+    return JSONResponse(content=profile)
+
+
+@app.delete("/screener/profiles/{name}")
+def delete_screener_profile(request: Request, name: str):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    if name == "__last__":
+        return JSONResponse(status_code=400, content={"detail": "last session profile cannot be deleted"})
+    delete_screener_profile_for_user(user["id"], name)
+    active = get_user_preference(user["id"], "screener_active_profile", "__last__")
+    if active == name:
+        set_user_preference(user["id"], "screener_active_profile", "__last__")
+    return JSONResponse(content={"ok": True})
 
 
 @app.post("/pattern_match")
@@ -860,7 +948,9 @@ def draw():
 
 
 @app.get("/backtest")
-def backtest_page():
+def backtest_page(request: Request):
+    if not _current_user(request):
+        return RedirectResponse(url="/login?next=/backtest")
     return RedirectResponse(url="/static/screener.html")
 
 

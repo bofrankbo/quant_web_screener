@@ -100,7 +100,7 @@
       <a class="app-brand" href="/">
         <span class="app-brand-mark" aria-hidden="true"></span>
         <span class="app-brand-copy">
-          <span class="app-brand-name">Quant Backtest</span>
+          <span class="app-brand-name">Quant Phronesis</span>
           <span class="app-brand-page">${pageTitle}</span>
         </span>
       </a>

@@ -52,6 +52,20 @@ def init_db(db_path: Path = SQLITE_PATH) -> None:
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
 
+            CREATE TABLE IF NOT EXISTS user_screener_profiles (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                params_json TEXT NOT NULL DEFAULT '{}',
+                lookback_days INTEGER,
+                commission REAL,
+                stats_json TEXT,
+                saved_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+                updated_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+                UNIQUE(user_id, name),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
             CREATE TABLE IF NOT EXISTS user_watchlists (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
@@ -86,6 +100,8 @@ def init_db(db_path: Path = SQLITE_PATH) -> None:
 
             CREATE INDEX IF NOT EXISTS idx_user_watchlists_user_id
                 ON user_watchlists(user_id);
+            CREATE INDEX IF NOT EXISTS idx_user_screener_profiles_user_id
+                ON user_screener_profiles(user_id);
             CREATE INDEX IF NOT EXISTS idx_watchlist_items_watchlist_id
                 ON watchlist_items(watchlist_id);
             CREATE INDEX IF NOT EXISTS idx_activity_logs_user_id
@@ -190,6 +206,19 @@ def init_db(db_path: Path = SQLITE_PATH) -> None:
             )
 
 
+def _json_loads(value, default):
+    if not value:
+        return default
+    try:
+        return json.loads(value)
+    except Exception:
+        return default
+
+
+def _json_dumps(value) -> str:
+    return json.dumps(value if value is not None else {}, ensure_ascii=False)
+
+
 def log_activity(action: str, payload: dict | None = None, user_id: int | None = None) -> None:
     payload_json = json.dumps(payload or {}, ensure_ascii=False)
     with get_connection() as conn:
@@ -243,6 +272,190 @@ def get_user_by_id(user_id: int) -> dict | None:
             (user_id,),
         ).fetchone()
         return dict(row) if row else None
+
+
+def get_user_preference(user_id: int, key: str, default=None):
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT preferences_json
+            FROM user_preferences
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+        prefs = _json_loads(row["preferences_json"], {}) if row else {}
+        return prefs.get(key, default)
+
+
+def set_user_preference(user_id: int, key: str, value) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO user_preferences (user_id)
+            VALUES (?)
+            ON CONFLICT(user_id) DO NOTHING
+            """,
+            (user_id,),
+        )
+        row = conn.execute(
+            """
+            SELECT preferences_json
+            FROM user_preferences
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+        prefs = _json_loads(row["preferences_json"], {}) if row else {}
+        prefs[key] = value
+        conn.execute(
+            """
+            UPDATE user_preferences
+            SET preferences_json = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ?
+            """,
+            (_json_dumps(prefs), user_id),
+        )
+
+
+def get_screener_profiles_for_user(user_id: int) -> list[dict]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT name, params_json, lookback_days, commission, stats_json, saved_at, updated_at
+            FROM user_screener_profiles
+            WHERE user_id = ?
+            ORDER BY CASE WHEN name = '__last__' THEN 0 ELSE 1 END, name COLLATE NOCASE
+            """,
+            (user_id,),
+        ).fetchall()
+        return [
+            {
+                "name": row["name"],
+                "saved_at": row["saved_at"],
+                "lookback_days": row["lookback_days"],
+                "commission": row["commission"],
+                "params": _json_loads(row["params_json"], {}),
+                "stats": _json_loads(row["stats_json"], None),
+                "updated_at": row["updated_at"],
+            }
+            for row in rows
+        ]
+
+
+def get_screener_profile_for_user(user_id: int, name: str) -> dict | None:
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT name, params_json, lookback_days, commission, stats_json, saved_at, updated_at
+            FROM user_screener_profiles
+            WHERE user_id = ? AND name = ?
+            """,
+            (user_id, name),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "name": row["name"],
+            "saved_at": row["saved_at"],
+            "lookback_days": row["lookback_days"],
+            "commission": row["commission"],
+            "params": _json_loads(row["params_json"], {}),
+            "stats": _json_loads(row["stats_json"], None),
+            "updated_at": row["updated_at"],
+        }
+
+
+def upsert_screener_profile_for_user(
+    user_id: int,
+    name: str,
+    params: dict | None = None,
+    lookback_days: int | None = None,
+    commission: float | None = None,
+    stats: dict | None = None,
+) -> dict:
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO user_screener_profiles
+                (user_id, name, params_json, lookback_days, commission, stats_json, saved_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, name) DO UPDATE SET
+                params_json = excluded.params_json,
+                lookback_days = excluded.lookback_days,
+                commission = excluded.commission,
+                stats_json = excluded.stats_json,
+                saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (
+                user_id,
+                name,
+                _json_dumps(params or {}),
+                lookback_days,
+                commission,
+                json.dumps(stats, ensure_ascii=False) if stats is not None else None,
+            ),
+        )
+        row = conn.execute(
+            """
+            SELECT name, params_json, lookback_days, commission, stats_json, saved_at, updated_at
+            FROM user_screener_profiles
+            WHERE user_id = ? AND name = ?
+            """,
+            (user_id, name),
+        ).fetchone()
+        return {
+            "name": row["name"],
+            "saved_at": row["saved_at"],
+            "lookback_days": row["lookback_days"],
+            "commission": row["commission"],
+            "params": _json_loads(row["params_json"], {}),
+            "stats": _json_loads(row["stats_json"], None),
+            "updated_at": row["updated_at"],
+        }
+
+
+def update_screener_profile_stats_for_user(user_id: int, name: str, stats: dict | None) -> dict | None:
+    with get_connection() as conn:
+        conn.execute(
+            """
+            UPDATE user_screener_profiles
+            SET stats_json = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = ? AND name = ?
+            """,
+            (json.dumps(stats, ensure_ascii=False) if stats is not None else None, user_id, name),
+        )
+        row = conn.execute(
+            """
+            SELECT name, params_json, lookback_days, commission, stats_json, saved_at, updated_at
+            FROM user_screener_profiles
+            WHERE user_id = ? AND name = ?
+            """,
+            (user_id, name),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "name": row["name"],
+            "saved_at": row["saved_at"],
+            "lookback_days": row["lookback_days"],
+            "commission": row["commission"],
+            "params": _json_loads(row["params_json"], {}),
+            "stats": _json_loads(row["stats_json"], None),
+            "updated_at": row["updated_at"],
+        }
+
+
+def delete_screener_profile_for_user(user_id: int, name: str) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            """
+            DELETE FROM user_screener_profiles
+            WHERE user_id = ? AND name = ?
+            """,
+            (user_id, name),
+        )
 
 
 def get_watchlists_for_user(user_id: int) -> list[dict]:
