@@ -245,6 +245,47 @@ body {
   display: none;
 }
 
+#overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.overview-expand-btns { display: flex; gap: 6px; }
+.overview-expand-btn {
+  font-size: 11px;
+  color: #787b86;
+  border: 1px solid #2a2e39;
+  background: none;
+  border-radius: 4px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.overview-expand-btn:hover { border-color: #2962ff; color: #2962ff; }
+
+.expand-chevron {
+  display: inline-block;
+  width: 14px;
+  font-size: 9px;
+  color: #4c525e;
+  margin-right: 2px;
+  user-select: none;
+}
+.overview-summary-row td { background: #1e222d; border-top: 2px solid #2a2e39; }
+.overview-summary-row td:nth-child(2) { font-weight: 700; color: #fff; text-align: left; }
+.overview-summary-row td:first-child  { text-align: left; padding-right: 0; }
+.overview-summary-row:hover td { background: #232839 !important; }
+.overview-ticker-row { border-bottom: 1px solid #161a26; }
+.overview-ticker-row td {
+  padding: 7px 16px;
+  font-size: 12px;
+  background: #161a28;
+  color: #b0b4be;
+}
+.overview-ticker-row td:first-child { padding-left: 36px; }
+.overview-ticker-row:last-child td { border-bottom: 2px solid #2a2e39; }
+.overview-ticker-row:hover td { background: #1a1e30; }
+
 #right-content {
   flex: 1;
   display: none;
@@ -632,14 +673,22 @@ tr.row-inactive td:not(.toggle-col) {
   <!-- Right: watchlist detail -->
   <div id="right">
     <div id="overview-panel">
-      <div id="overview-header">選股清單總覽</div>
+      <div id="overview-header">
+        <span>選股清單總覽</span>
+        <div class="overview-expand-btns">
+          <button class="overview-expand-btn" onclick="expandAll()">展開全部</button>
+          <button class="overview-expand-btn" onclick="collapseAll()">收合全部</button>
+        </div>
+      </div>
       <div id="overview-area">
         <div id="overview-loading">Loading…</div>
         <table id="overview-table">
           <thead>
             <tr>
-              <th>清單名稱</th>
+              <th style="width:24px"></th>
+              <th style="text-align:left">清單名稱</th>
               <th>股數</th>
+              <th>平均日%</th>
               <th>平均 5d%</th>
               <th>平均 10d%</th>
               <th>平均 20d%</th>
@@ -710,12 +759,13 @@ tr.row-inactive td:not(.toggle-col) {
 </div>
 
 <script>
-let currentWl = null;
-let wlCounts = {};        // {name: count} — for left panel
-let currentRows = [];     // cached summary rows for sorting (data rows only, no group headers)
-let allGroupedRows = [];  // full row list including group-header pseudo-rows (for "全部" view)
+let currentWl = '__all__';
+let wlCounts = {};
+let currentRows = [];
+let overviewData = {};    // {name: {rows, custom_label}} — cached from loadOverview
+let expandedWls = new Set();
 let sortCol = null;
-let sortDir = 1;          // 1 = asc, -1 = desc
+let sortDir = 1;
 let stockUniverse = [];
 let stockUniverseLoaded = false;
 let addSuggestionIndex = -1;
@@ -729,18 +779,10 @@ async function loadAll() {
     wlCounts = await resp.json();
     renderLeft();
 
-    if (currentWl === '__all__') {
-      await loadAllSummary();
-    } else if (currentWl !== null) {
-      if (wlCounts[currentWl] !== undefined) {
-        await loadSummary(currentWl);
-      } else {
-        currentWl = null;
-        showOverview();
-        await loadOverview();
-      }
+    if (currentWl !== null && currentWl !== '__all__' && wlCounts[currentWl] !== undefined) {
+      await loadSummary(currentWl);
     } else {
-      // Default: show overview on first load
+      currentWl = '__all__';
       showOverview();
       await loadOverview();
     }
@@ -755,7 +797,7 @@ async function loadOverview() {
   const loadingEl = document.getElementById('overview-loading');
 
   if (!names.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#4c525e;padding:32px">No watchlists yet — create one on the left.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#4c525e;padding:32px">No watchlists yet — create one on the left.</td></tr>';
     return;
   }
 
@@ -766,13 +808,18 @@ async function loadOverview() {
     const results = await Promise.all(
       names.map(name =>
         fetch('/watchlists/' + encodeURIComponent(name) + '/summary')
-          .then(r => r.ok ? r.json() : { rows: [] })
-          .then(data => ({ name, rows: data.rows || [] }))
+          .then(r => r.ok ? r.json() : { rows: [], custom_label: '備註' })
+          .then(data => ({ name, rows: data.rows || [], custom_label: data.custom_label || '備註' }))
       )
     );
 
+    overviewData = {};
+    for (const { name, rows, custom_label } of results) {
+      overviewData[name] = { rows, custom_label };
+    }
+
     loadingEl.style.display = 'none';
-    renderOverview(results);
+    renderOverview();
   } catch (e) {
     loadingEl.style.display = 'none';
     console.error('loadOverview failed:', e);
@@ -800,42 +847,8 @@ function sortRows(rows) {
   });
 }
 
-function sortGroupedRows(rows) {
-  if (!sortCol) return rows.slice();
-  const out = [];
-  let groupHeader = null;
-  let groupRows = [];
-
-  const flushGroup = () => {
-    if (!groupHeader) return;
-    out.push(groupHeader);
-    out.push(...sortRows(groupRows));
-  };
-
-  for (const row of rows) {
-    if (row._isGroup) {
-      flushGroup();
-      groupHeader = row;
-      groupRows = [];
-      continue;
-    }
-    groupRows.push(row);
-  }
-  flushGroup();
-  return out;
-}
 
 function renderCurrentView() {
-  if (currentWl === '__all__') {
-    renderAllTable(allGroupedRows.slice());
-    const activeCount = currentRows.filter(r => r.active !== false).length;
-    document.getElementById('wl-ticker-count').textContent =
-      activeCount < currentRows.length
-        ? `${activeCount}/${currentRows.length} tickers`
-        : `${currentRows.length} ticker${currentRows.length !== 1 ? 's' : ''}`;
-    return;
-  }
-
   const total = currentRows.length;
   renderTable(currentRows);
   document.getElementById('wl-ticker-count').textContent =
@@ -943,31 +956,76 @@ function moveAddSuggestion(delta) {
   renderAddSuggestions();
 }
 
-function renderOverview(results) {
+function renderOverview() {
   const tbody = document.getElementById('overview-tbody');
   tbody.innerHTML = '';
 
-  for (const { name, rows } of results) {
-    const activeCount = rows.filter(r => r.active !== false).length;
-    const avg5  = avgPct(rows, 'pct_5d');
-    const avg10 = avgPct(rows, 'pct_10d');
-    const avg20 = avgPct(rows, 'pct_20d');
+  const names = Object.keys(overviewData);
+  if (!names.length) return;
 
-    const countLabel = activeCount < rows.length
-      ? `${activeCount}/${rows.length}`
+  for (const name of names) {
+    const { rows } = overviewData[name];
+    const activeRows = rows.filter(r => r.active !== false);
+    const countLabel = activeRows.length < rows.length
+      ? `${activeRows.length}/${rows.length}`
       : `${rows.length}`;
+    const isExpanded = expandedWls.has(name);
 
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
+    const avgDay = avgPct(activeRows, 'day_pct');
+    const avg5   = avgPct(activeRows, 'pct_5d');
+    const avg10  = avgPct(activeRows, 'pct_10d');
+    const avg20  = avgPct(activeRows, 'pct_20d');
+
+    const summaryTr = document.createElement('tr');
+    summaryTr.className = 'overview-summary-row';
+    summaryTr.innerHTML = `
+      <td><span class="expand-chevron">${isExpanded ? '▼' : '▶'}</span></td>
       <td>${escHtml(name)}</td>
       <td>${countLabel}</td>
+      <td class="${pctClass(avgDay)}">${fmtPct(avgDay)}</td>
       <td class="${pctClass(avg5)}">${fmtPct(avg5)}</td>
       <td class="${pctClass(avg10)}">${fmtPct(avg10)}</td>
       <td class="${pctClass(avg20)}">${fmtPct(avg20)}</td>
     `;
-    tr.addEventListener('click', () => selectWatchlist(name));
-    tbody.appendChild(tr);
+    summaryTr.addEventListener('click', () => toggleExpand(name));
+    tbody.appendChild(summaryTr);
+
+    if (isExpanded) {
+      for (const row of activeRows) {
+        const tickerTr = document.createElement('tr');
+        tickerTr.className = 'overview-ticker-row';
+        tickerTr.innerHTML = `
+          <td></td>
+          <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a>${row.stock_name ? `<span style="color:#787b86;margin-left:5px;font-size:11px">${escHtml(row.stock_name)}</span>` : ''}</td>
+          <td style="text-align:right">${row.close != null ? row.close : '—'}</td>
+          <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
+          <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
+          <td class="${pctClass(row.pct_10d)}">${fmtPct(row.pct_10d)}</td>
+          <td class="${pctClass(row.pct_20d)}">${fmtPct(row.pct_20d)}</td>
+        `;
+        tbody.appendChild(tickerTr);
+      }
+    }
   }
+}
+
+function toggleExpand(name) {
+  if (expandedWls.has(name)) {
+    expandedWls.delete(name);
+  } else {
+    expandedWls.add(name);
+  }
+  renderOverview();
+}
+
+function expandAll() {
+  Object.keys(overviewData).forEach(n => expandedWls.add(n));
+  renderOverview();
+}
+
+function collapseAll() {
+  expandedWls.clear();
+  renderOverview();
 }
 
 async function loadSummary(name) {
@@ -1059,106 +1117,10 @@ function selectWatchlist(name) {
 async function selectAll() {
   currentWl = '__all__';
   renderLeft();
-  showContent();
-  document.getElementById('wl-title').textContent = '全部';
-  document.getElementById('wl-title').style.display = '';
-  document.getElementById('wl-title-input').style.display = 'none';
-  document.getElementById('btn-rename').style.display = 'none';
-  document.getElementById('add-section').style.display = 'none';
-  // Switch to watchlist column, hide custom column
-  document.getElementById('th-custom').style.display = 'none';
-  document.getElementById('th-wl-col').style.display = '';
-  await loadAllSummary();
+  showOverview();
+  await loadOverview();
 }
 
-async function loadAllSummary() {
-  setLoading(true);
-  try {
-    const names = Object.keys(wlCounts);
-    if (!names.length) {
-      currentRows = [];
-      allGroupedRows = [];
-      renderAllTable([]);
-      document.getElementById('wl-ticker-count').textContent = '0 tickers';
-      return;
-    }
-
-    const results = await Promise.all(
-      names.map(name =>
-        fetch('/watchlists/' + encodeURIComponent(name) + '/summary')
-          .then(r => r.ok ? r.json() : { rows: [] })
-          .then(data => ({ name, rows: data.rows || [] }))
-      )
-    );
-
-    allGroupedRows = [];
-    for (const { name, rows } of results) {
-      if (!rows.length) continue;
-      allGroupedRows.push({ _isGroup: true, _groupName: name });
-      rows.forEach(r => allGroupedRows.push({ ...r, _wlName: name }));
-    }
-
-    currentRows = allGroupedRows.filter(r => !r._isGroup);
-    sortCol = null; sortDir = 1;
-    clearSortIndicators();
-    renderCurrentView();
-  } catch (e) {
-    console.error('loadAllSummary failed:', e);
-  } finally {
-    setLoading(false);
-  }
-}
-
-function renderAllTable(rows) {
-  const tbody = document.getElementById('stock-tbody');
-  tbody.innerHTML = '';
-
-  if (!rows.length) {
-    const tr = document.createElement('tr');
-    tr.className = 'empty-row';
-    tr.innerHTML = '<td colspan="8">No tickers in any watchlist.</td>';
-    tbody.appendChild(tr);
-    return;
-  }
-
-  for (const row of rows) {
-    if (row._isGroup) {
-      // Skip group header if all its tickers are inactive
-      const hasActive = rows.some(
-        r => !r._isGroup && r._wlName === row._groupName && r.active !== false
-      );
-      if (!hasActive) continue;
-      const tr = document.createElement('tr');
-      tr.className = 'group-header-row';
-      tr.innerHTML = `<td colspan="10">${escHtml(row._groupName)}</td>`;
-      tbody.appendChild(tr);
-      continue;
-    }
-
-    // Only show active tickers in the All view
-    if (row.active === false) continue;
-
-    const tr = document.createElement('tr');
-    tr.dataset.ticker = row.ticker;
-    const wlName = row._wlName || '';
-    tr.innerHTML = `
-      <td class="toggle-col"></td>
-      <td><a class="ticker-link" onclick="openChart('${escAttr(row.ticker)}')">${escHtml(row.ticker)}</a>${row.stock_name ? `<span style="font-weight:400;color:#787b86;margin-left:5px;font-size:11px">${escHtml(row.stock_name)}</span>` : ''}</td>
-      <td>${row.close != null ? row.close : '—'}</td>
-      <td class="${pctClass(row.day_pct)}">${fmtPct(row.day_pct)}</td>
-      <td class="${pctClass(row.pct_5d)}">${fmtPct(row.pct_5d)}</td>
-      <td class="${pctClass(row.pct_10d)}">${fmtPct(row.pct_10d)}</td>
-      <td class="${pctClass(row.pct_20d)}">${fmtPct(row.pct_20d)}</td>
-      <td class="custom-cell" style="display:none" data-ticker="${escAttr(row.ticker)}"></td>
-      <td class="wl-name-cell">${escHtml(wlName)}</td>
-      <td><button class="del-row-btn" title="Remove">✕</button></td>
-    `;
-    tr.querySelector('.del-row-btn').addEventListener('click', () => {
-      removeTicker(wlName, row.ticker);
-    });
-    tbody.appendChild(tr);
-  }
-}
 
 function showOverview() {
   document.getElementById('overview-panel').classList.remove('hidden');
@@ -1248,11 +1210,7 @@ function sortBy(col) {
     headers[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
   }
 
-  if (currentWl === '__all__') {
-    renderAllTable(sortGroupedRows(allGroupedRows.slice()));
-  } else {
-    renderTable(sortRows(currentRows));
-  }
+  renderTable(sortRows(currentRows));
 }
 
 function clearSortIndicators() {
@@ -1278,12 +1236,14 @@ async function deleteWatchlist(name) {
   if (!confirm(`Delete watchlist "${name}"?\nThis cannot be undone.`)) return;
   await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
   delete wlCounts[name];
-  if (currentWl === name || currentWl === null) {
-    currentWl = null;
+  delete overviewData[name];
+  expandedWls.delete(name);
+  if (currentWl === name) {
+    currentWl = '__all__';
     showOverview();
-    await loadOverview();
+    renderOverview();
   } else if (currentWl === '__all__') {
-    await loadAllSummary();
+    renderOverview();
   }
   renderLeft();
 }

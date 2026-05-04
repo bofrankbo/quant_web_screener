@@ -294,13 +294,13 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
         return _empty
 
     def _fetch(ticker: str):
-        df = download_parquet(f"tickers/{ticker}.parquet")
+        df = _read_parquet_r2(f"tickers/{ticker}.parquet")
         if df is None or df.is_empty():
             return None
         return ticker, df.sort("date").tail(22)["close"].to_list()
 
     rows = []
-    with ThreadPoolExecutor(max_workers=10) as pool:
+    with ThreadPoolExecutor(max_workers=20) as pool:
         futures = {pool.submit(_fetch, t): t for t in tickers}
         for fut in as_completed(futures):
             result = fut.result()
