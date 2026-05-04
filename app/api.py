@@ -31,6 +31,7 @@ from app.db import (
     get_watchlists_for_user,
     clear_watchlists_for_user,
     remove_ticker_from_watchlist,
+    rename_watchlist_for_user,
     set_watchlist_custom_label,
     set_watchlist_item_active,
     set_watchlist_note,
@@ -465,6 +466,21 @@ def delete_watchlist(request: Request, name: str):
         return JSONResponse(status_code=401, content={"detail": "login required"})
     delete_watchlist_for_user(user["id"], name)
     return JSONResponse(content={"ok": True})
+
+
+@app.put("/watchlists/{name}/rename")
+def rename_watchlist(request: Request, name: str, new_name: str = Query(..., min_length=1, max_length=100)):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    if name == new_name:
+        return JSONResponse(content={"ok": True, "name": name})
+    if get_watchlist_by_name(user["id"], name) is None:
+        return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
+    if get_watchlist_by_name(user["id"], new_name) is not None:
+        return JSONResponse(status_code=409, content={"detail": f"{new_name} already exists"})
+    rename_watchlist_for_user(user["id"], name, new_name)
+    return JSONResponse(content={"ok": True, "name": new_name})
 
 
 @app.put("/watchlists/{name}/tickers/{ticker}")

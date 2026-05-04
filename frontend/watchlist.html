@@ -1458,7 +1458,7 @@ function startRename() {
   const btn = document.getElementById('btn-rename');
   input.value = currentWl;
   title.style.display = 'none';
-  input.style.display = '';
+  input.style.display = 'inline-block';
   btn.style.display = 'none';
   input.focus();
   input.select();
@@ -1475,17 +1475,24 @@ async function commitRename() {
   const newName = input.value.trim();
   if (!newName || newName === currentWl) { cancelRename(); return; }
 
-  // Get tickers from current summary rows
-  const tickers = currentRows.map(r => r.ticker);
-
-  await fetch('/watchlists/' + encodeURIComponent(newName), { method: 'POST' });
-  await Promise.all(tickers.map(t =>
-    fetch(`/watchlists/${encodeURIComponent(newName)}/tickers/${encodeURIComponent(t)}`,
-      { method: 'PUT' })
-  ));
-  await fetch('/watchlists/' + encodeURIComponent(currentWl), { method: 'DELETE' });
-  currentWl = newName;
-  await loadAll();
+  try {
+    const resp = await fetch(
+      `/watchlists/${encodeURIComponent(currentWl)}/rename?new_name=${encodeURIComponent(newName)}`,
+      { method: 'PUT' }
+    );
+    if (!resp.ok) {
+      const detail = await resp.json().catch(() => ({}));
+      throw new Error(detail.detail || `HTTP ${resp.status}`);
+    }
+    const data = await resp.json();
+    currentWl = data.name || newName;
+    renderLeft();
+    await loadAll();
+  } catch (err) {
+    console.error('commitRename failed:', err);
+    alert('Rename failed. The original watchlist was kept.');
+    cancelRename();
+  }
 }
 
 function handleRenameKey(e) {
