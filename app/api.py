@@ -51,6 +51,7 @@ from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
 from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names, get_market_overview
 from app.stock_universe import load_stock_info
+from app.quotes import get_quotes
 
 
 def _load_watchlists() -> dict:
@@ -127,6 +128,10 @@ def _build_watchlist_summary(tickers: list[str], custom_label: str, custom_data:
             "pct_5d": row.get("pct_5d"),
             "pct_10d": row.get("pct_10d"),
             "pct_20d": row.get("pct_20d"),
+            "ref_1d":  row.get("ref_1d"),
+            "ref_5d":  row.get("ref_5d"),
+            "ref_10d": row.get("ref_10d"),
+            "ref_20d": row.get("ref_20d"),
             "custom": custom_data.get(t, ""),
             "active": active_data.get(t, True),
         })
@@ -197,6 +202,11 @@ class PatternMatchRequest(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/quotes")
+def api_quotes():
+    return get_quotes()
 
 
 @app.get("/api/stock-universe")

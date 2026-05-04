@@ -289,6 +289,8 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
         "ticker": pl.Utf8, "close": pl.Float64,
         "day_pct": pl.Float64, "pct_5d": pl.Float64,
         "pct_10d": pl.Float64, "pct_20d": pl.Float64,
+        "ref_1d": pl.Float64, "ref_5d": pl.Float64,
+        "ref_10d": pl.Float64, "ref_20d": pl.Float64,
     })
     if not tickers:
         return _empty
@@ -316,6 +318,9 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
                     return round((last / old - 1) * 100, 2) if old else None
                 return None
 
+            def _ref(back: int, closes=closes, n=n):
+                return round(closes[-(back + 1)], 2) if n >= back + 1 else None
+
             rows.append({
                 "ticker": ticker,
                 "close": round(last, 2),
@@ -323,6 +328,10 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
                 "pct_5d": _pct(5),
                 "pct_10d": _pct(10),
                 "pct_20d": _pct(20),
+                "ref_1d":  _ref(1),
+                "ref_5d":  _ref(5),
+                "ref_10d": _ref(10),
+                "ref_20d": _ref(20),
             })
 
     return pl.DataFrame(rows) if rows else _empty

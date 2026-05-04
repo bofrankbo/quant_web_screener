@@ -729,7 +729,7 @@ tr.row-inactive td:not(.toggle-col) {
             <tr>
               <th style="width:28px"></th>
               <th class="sortable" onclick="sortBy('ticker')">代號</th>
-              <th class="sortable" onclick="sortBy('close')">收盤</th>
+              <th class="sortable" onclick="sortBy('close')">現價</th>
               <th class="sortable" onclick="sortBy('day_pct')">日%</th>
               <th class="sortable" onclick="sortBy('pct_5d')">5d%</th>
               <th class="sortable" onclick="sortBy('pct_10d')">10d%</th>
@@ -764,6 +764,7 @@ let wlCounts = {};
 let currentRows = [];
 let overviewData = {};    // {name: {rows, custom_label}} — cached from loadOverview
 let expandedWls = new Set();
+let _quotesInterval = null;
 let sortCol = null;
 let sortDir = 1;
 let stockUniverse = [];
@@ -820,6 +821,9 @@ async function loadOverview() {
 
     loadingEl.style.display = 'none';
     renderOverview();
+    overlayOverviewQuotes();
+    if (_quotesInterval) clearInterval(_quotesInterval);
+    _quotesInterval = setInterval(overlayOverviewQuotes, 30000);
   } catch (e) {
     loadingEl.style.display = 'none';
     console.error('loadOverview failed:', e);
@@ -1046,11 +1050,54 @@ async function loadSummary(name) {
     sortCol = null; sortDir = 1;
     clearSortIndicators();
     renderCurrentView();
+    overlayQuotes();
+    if (_quotesInterval) clearInterval(_quotesInterval);
+    _quotesInterval = setInterval(overlayQuotes, 30000);
   } catch (e) {
     console.error('loadSummary failed:', e);
   } finally {
     setLoading(false);
   }
+}
+
+async function overlayQuotes() {
+  try {
+    const quotes = await fetch('/api/quotes').then(r => r.json());
+    let updated = false;
+    currentRows.forEach(row => {
+      const q = quotes[row.ticker];
+      if (!q || q.close == null) return;
+      row.close = q.close;
+      const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
+      if (row.ref_1d  != null) row.day_pct = pct(row.ref_1d);
+      if (row.ref_5d  != null) row.pct_5d  = pct(row.ref_5d);
+      if (row.ref_10d != null) row.pct_10d = pct(row.ref_10d);
+      if (row.ref_20d != null) row.pct_20d = pct(row.ref_20d);
+      updated = true;
+    });
+    if (updated) renderTable(currentRows);
+  } catch (_) {}
+}
+
+async function overlayOverviewQuotes() {
+  try {
+    const quotes = await fetch('/api/quotes').then(r => r.json());
+    let updated = false;
+    for (const name of Object.keys(overviewData)) {
+      overviewData[name].rows.forEach(row => {
+        const q = quotes[row.ticker];
+        if (!q || q.close == null) return;
+        row.close = q.close;
+        const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
+        if (row.ref_1d  != null) row.day_pct = pct(row.ref_1d);
+        if (row.ref_5d  != null) row.pct_5d  = pct(row.ref_5d);
+        if (row.ref_10d != null) row.pct_10d = pct(row.ref_10d);
+        if (row.ref_20d != null) row.pct_20d = pct(row.ref_20d);
+        updated = true;
+      });
+    }
+    if (updated) renderOverview();
+  } catch (_) {}
 }
 
 // ── Left panel ────────────────────────────────────────────────────────────────
@@ -1479,9 +1526,27 @@ async function fetchKline(ticker) {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
     renderChart(_chartData);
+    applyLiveQuote(ticker);
   } catch (e) {
     console.error('kline fetch failed:', e);
   }
+}
+
+async function applyLiveQuote(ticker) {
+  try {
+    const quotes = await fetch('/api/quotes').then(r => r.json());
+    const q = quotes[ticker];
+    if (!q || q.close == null || !_chartData || !_chartData.length) return;
+    const last = _chartData[_chartData.length - 1];
+    KlineChart.updateLastCandle(document.getElementById('lwc-container'), {
+      time:   last.date,
+      open:   q.open   ?? last.open,
+      high:   q.high   ?? last.high,
+      low:    q.low    ?? last.low,
+      close:  q.close,
+      volume: q.volume ?? last.volume,
+    });
+  } catch (_) {}
 }
 
 function renderChart(rows) {

@@ -8,6 +8,7 @@ from pathlib import Path
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from app.daily_update import run_daily_update
 
 logger = logging.getLogger(__name__)
@@ -45,5 +46,14 @@ scheduler.add_job(
     daily_update,
     CronTrigger(hour=19, minute=0, timezone="Asia/Taipei"),
     id="daily_update",
+    replace_existing=True,
+)
+
+from app.quotes import fetch_and_store_quotes  # noqa: E402
+
+scheduler.add_job(
+    fetch_and_store_quotes,
+    IntervalTrigger(seconds=30),
+    id="live_quotes",
     replace_existing=True,
 )

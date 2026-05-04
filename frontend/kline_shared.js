@@ -120,5 +120,18 @@
     return state;
   }
 
-  window.KlineChart = { render, destroy, theme: THEME };
+  function updateLastCandle(container, bar) {
+    const state = chartState.get(container);
+    if (!state) return;
+    state.candles.update({ time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close });
+    if (bar.volume != null) {
+      state.vol.update({
+        time: bar.time,
+        value: bar.volume,
+        color: bar.close >= bar.open ? THEME.volumeUp : THEME.volumeDown,
+      });
+    }
+  }
+
+  window.KlineChart = { render, destroy, updateLastCandle, theme: THEME };
 })();
