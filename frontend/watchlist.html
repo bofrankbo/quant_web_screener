@@ -770,6 +770,26 @@ let sortDir = 1;
 let stockUniverse = [];
 let stockUniverseLoaded = false;
 let addSuggestionIndex = -1;
+let _liveQuotes = {};
+let _summaryAsOfDate = null;
+let _overviewAsOfDate = null;
+
+function getLiveQuoteDate(quotes) {
+  const meta = quotes && quotes.__meta__;
+  if (meta && /^\d{4}-\d{2}-\d{2}/.test(String(meta.date || ''))) return String(meta.date).slice(0, 10);
+  if (!quotes) return null;
+  for (const key of Object.keys(quotes)) {
+    const q = quotes[key];
+    if (q && /^\d{4}-\d{2}-\d{2}/.test(String(q.date || ''))) return String(q.date).slice(0, 10);
+  }
+  return null;
+}
+
+async function fetchLiveQuotes(forceRefresh = true) {
+  const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
+  _liveQuotes = quotes || {};
+  return _liveQuotes;
+}
 
 // ── Load / refresh ────────────────────────────────────────────────────────────
 
@@ -806,9 +826,12 @@ async function loadOverview() {
   tbody.innerHTML = '';
 
   try {
+    const quotes = await fetchLiveQuotes(true);
+    const asOfDate = getLiveQuoteDate(quotes);
+    _overviewAsOfDate = asOfDate;
     const results = await Promise.all(
       names.map(name =>
-        fetch('/watchlists/' + encodeURIComponent(name) + '/summary')
+        fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''))
           .then(r => r.ok ? r.json() : { rows: [], custom_label: '備註' })
           .then(data => ({ name, rows: data.rows || [], custom_label: data.custom_label || '備註' }))
       )
@@ -821,7 +844,7 @@ async function loadOverview() {
 
     loadingEl.style.display = 'none';
     renderOverview();
-    overlayOverviewQuotes();
+    overlayOverviewQuotes(quotes);
     if (_quotesInterval) clearInterval(_quotesInterval);
     _quotesInterval = setInterval(overlayOverviewQuotes, 30000);
   } catch (e) {
@@ -1035,7 +1058,10 @@ function collapseAll() {
 async function loadSummary(name) {
   setLoading(true);
   try {
-    const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary');
+    const quotes = await fetchLiveQuotes(true);
+    const asOfDate = getLiveQuoteDate(quotes);
+    _summaryAsOfDate = asOfDate;
+    const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
     if (!r.ok) return;
     const data = await r.json();
 
@@ -1050,7 +1076,7 @@ async function loadSummary(name) {
     sortCol = null; sortDir = 1;
     clearSortIndicators();
     renderCurrentView();
-    overlayQuotes();
+    overlayQuotes(quotes);
     if (_quotesInterval) clearInterval(_quotesInterval);
     _quotesInterval = setInterval(overlayQuotes, 30000);
   } catch (e) {
@@ -1060,12 +1086,17 @@ async function loadSummary(name) {
   }
 }
 
-async function overlayQuotes() {
+async function overlayQuotes(quotes = null) {
   try {
-    const quotes = await fetch('/api/quotes').then(r => r.json());
+    const liveQuotes = quotes || await fetchLiveQuotes();
+    const liveDate = getLiveQuoteDate(liveQuotes);
+    if (_summaryAsOfDate && liveDate && liveDate !== _summaryAsOfDate) {
+      await loadSummary(currentWl);
+      return;
+    }
     let updated = false;
     currentRows.forEach(row => {
-      const q = quotes[row.ticker];
+      const q = liveQuotes[row.ticker];
       if (!q || q.close == null) return;
       row.close = q.close;
       const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
@@ -1079,13 +1110,18 @@ async function overlayQuotes() {
   } catch (_) {}
 }
 
-async function overlayOverviewQuotes() {
+async function overlayOverviewQuotes(quotes = null) {
   try {
-    const quotes = await fetch('/api/quotes').then(r => r.json());
+    const liveQuotes = quotes || await fetchLiveQuotes();
+    const liveDate = getLiveQuoteDate(liveQuotes);
+    if (_overviewAsOfDate && liveDate && liveDate !== _overviewAsOfDate) {
+      await loadOverview();
+      return;
+    }
     let updated = false;
     for (const name of Object.keys(overviewData)) {
       overviewData[name].rows.forEach(row => {
-        const q = quotes[row.ticker];
+        const q = liveQuotes[row.ticker];
         if (!q || q.close == null) return;
         row.close = q.close;
         const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
@@ -1522,30 +1558,46 @@ function closeChart() {
 
 async function fetchKline(ticker) {
   try {
-    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22`);
+    const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes();
+    const q = quotes[ticker];
+    const asOfDate = q?.date || getLiveQuoteDate(quotes);
+    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
     renderChart(_chartData);
-    applyLiveQuote(ticker);
+    applyLiveQuote(ticker, quotes);
   } catch (e) {
     console.error('kline fetch failed:', e);
   }
 }
 
-async function applyLiveQuote(ticker) {
+async function applyLiveQuote(ticker, quotes = null) {
   try {
-    const quotes = await fetch('/api/quotes').then(r => r.json());
-    const q = quotes[ticker];
+    const quoteMap = quotes || await fetchLiveQuotes(true);
+    const q = quoteMap[ticker];
     if (!q || q.close == null || !_chartData || !_chartData.length) return;
+    const matched = q.date ? _chartData.find(r => r.date === q.date) : null;
     const last = _chartData[_chartData.length - 1];
+    const shouldAppend = !matched && q.date && String(q.date) > String(last.date);
+    const target = matched || last;
+    const bar = {
+      time: q.date && shouldAppend ? q.date : target.date,
+      open:  q.open   ?? target.open,
+      high:  q.high   ?? target.high,
+      low:   q.low    ?? target.low,
+      close: q.close,
+      volume: q.total_volume ?? q.volume ?? target.volume,
+    };
     KlineChart.updateLastCandle(document.getElementById('lwc-container'), {
-      time:   last.date,
-      open:   q.open   ?? last.open,
-      high:   q.high   ?? last.high,
-      low:    q.low    ?? last.low,
-      close:  q.close,
-      volume: q.volume ?? last.volume,
+      time: bar.time,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
     });
+    if (shouldAppend) _chartData.push({ date: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume });
+    else if (matched) Object.assign(matched, { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume });
   } catch (_) {}
 }
 

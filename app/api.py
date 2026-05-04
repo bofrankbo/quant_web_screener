@@ -51,7 +51,7 @@ from app.pattern_matcher import match_pattern
 from app.scheduler import scheduler, startup_sync
 from app.backtest import run_backtest, get_kline, get_ticker_summary, get_ticker_names, get_market_overview
 from app.stock_universe import load_stock_info
-from app.quotes import get_quotes
+from app.quotes import fetch_and_store_quotes, get_quotes
 
 
 def _load_watchlists() -> dict:
@@ -87,6 +87,17 @@ def _current_user(request: Request) -> dict | None:
     return get_session_user(request)
 
 
+def _live_snapshot_date() -> str | None:
+    quotes = get_quotes()
+    meta = quotes.get("__meta__") if isinstance(quotes, dict) else None
+    if isinstance(meta, dict) and meta.get("date"):
+        return str(meta["date"])
+    for row in quotes.values() if isinstance(quotes, dict) else []:
+        if isinstance(row, dict) and row.get("date"):
+            return str(row["date"])
+    return None
+
+
 def _legacy_watchlist_summary(name: str) -> dict | None:
     wl = _load_watchlists()
     if name not in wl:
@@ -105,11 +116,17 @@ def _legacy_watchlist_summary(name: str) -> dict | None:
     }
 
 
-def _build_watchlist_summary(tickers: list[str], custom_label: str, custom_data: dict, active_data: dict) -> dict:
+def _build_watchlist_summary(
+    tickers: list[str],
+    custom_label: str,
+    custom_data: dict,
+    active_data: dict,
+    as_of_date: str | None = None,
+) -> dict:
     if not tickers:
         return {"custom_label": custom_label, "rows": []}
 
-    summary_df = get_ticker_summary(tickers)
+    summary_df = get_ticker_summary(tickers, as_of_date=as_of_date)
     names_df = get_ticker_names(tickers)
 
     if not summary_df.is_empty() and not names_df.is_empty():
@@ -205,7 +222,9 @@ def health():
 
 
 @app.get("/api/quotes")
-def api_quotes():
+def api_quotes(refresh: bool = Query(default=False)):
+    if refresh:
+        fetch_and_store_quotes()
     return get_quotes()
 
 
@@ -296,8 +315,11 @@ def kline(
     ticker: str,
     ma_window: int = Query(default=10, ge=5, le=120),
     bb_window: int = Query(default=22, ge=5, le=120),
+    as_of_date: str | None = Query(default=None),
 ):
-    df = get_kline(ticker=ticker, ma_window=ma_window, bb_window=bb_window)
+    if as_of_date is None:
+        as_of_date = _live_snapshot_date()
+    df = get_kline(ticker=ticker, ma_window=ma_window, bb_window=bb_window, as_of_date=as_of_date)
     if df.is_empty():
         return JSONResponse(status_code=404, content={"detail": f"{ticker} not found"})
     return JSONResponse(content=df.with_columns(pl.col("date").cast(pl.Utf8)).to_dicts())
@@ -467,13 +489,15 @@ def remove_ticker(request: Request, name: str, ticker: str):
 
 
 @app.get("/watchlists/{name}/summary")
-def watchlist_summary(request: Request, name: str):
+def watchlist_summary(request: Request, name: str, as_of_date: str | None = Query(default=None)):
     user = _current_user(request)
     if not user:
         return JSONResponse(status_code=401, content={"detail": "login required"})
     watchlist = get_watchlist_by_name(user["id"], name)
     if watchlist is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
+    if as_of_date is None:
+        as_of_date = _live_snapshot_date()
     items = get_watchlist_items_for_user(user["id"], name)
     tickers = [item["ticker"] for item in items]
     custom_data = {item["ticker"]: item.get("note", "") for item in items}
@@ -484,6 +508,7 @@ def watchlist_summary(request: Request, name: str):
             custom_label=watchlist.get("custom_label", "備註"),
             custom_data=custom_data,
             active_data=active_data,
+            as_of_date=as_of_date,
         )
     )
 
@@ -843,8 +868,10 @@ def portfolio_page(request: Request):
 
 
 @app.get("/api/market-overview")
-def api_market_overview():
-    rows = get_market_overview()
+def api_market_overview(as_of_date: str | None = Query(default=None)):
+    if as_of_date is None:
+        as_of_date = _live_snapshot_date()
+    rows = get_market_overview(as_of_date=as_of_date)
     return JSONResponse(content=rows)
 
 
@@ -871,7 +898,7 @@ def _pick_home_row(row: dict) -> dict:
 
 @app.get("/api/home-summary")
 def api_home_summary():
-    rows = get_market_overview()
+    rows = get_market_overview(as_of_date=_live_snapshot_date())
     if not rows:
         return JSONResponse(content={
             "latest_date": None,

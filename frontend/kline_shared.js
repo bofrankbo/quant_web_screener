@@ -14,6 +14,22 @@
 
   const chartState = new WeakMap();
 
+  function syncPriceSeries(state) {
+    if (!state || !state.rows) return;
+    state.candles.setData(state.rows.map(r => ({
+      time: r.date,
+      open: r.open,
+      high: r.high,
+      low: r.low,
+      close: r.close,
+    })));
+    state.vol.setData(state.rows.map(r => ({
+      time: r.date,
+      value: r.volume,
+      color: r.close >= r.open ? THEME.volumeUp : THEME.volumeDown,
+    })));
+  }
+
   function destroy(container) {
     const state = chartState.get(container);
     if (!state) return;
@@ -115,7 +131,7 @@
     });
     ro.observe(container);
 
-    const state = { chart, ro, candles, ma, bbUpper, bbLower, vol };
+    const state = { chart, ro, candles, ma, bbUpper, bbLower, vol, rows: rows.map(r => ({ ...r })) };
     chartState.set(container, state);
     return state;
   }
@@ -123,13 +139,29 @@
   function updateLastCandle(container, bar) {
     const state = chartState.get(container);
     if (!state) return;
-    state.candles.update({ time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close });
-    if (bar.volume != null) {
-      state.vol.update({
-        time: bar.time,
-        value: bar.volume,
-        color: bar.close >= bar.open ? THEME.volumeUp : THEME.volumeDown,
-      });
+    if (!state.rows || !state.rows.length) return;
+    const idx = state.rows.findIndex(r => r.date === bar.time);
+    const lastIdx = state.rows.length - 1;
+    const shouldAppend = idx < 0 && String(bar.time) > String(state.rows[lastIdx].date);
+    const targetIdx = idx >= 0 ? idx : lastIdx;
+    if (targetIdx < 0) return;
+    const nextRow = {
+      ...state.rows[targetIdx],
+      date: bar.time,
+      open: bar.open ?? state.rows[targetIdx].open,
+      high: bar.high ?? state.rows[targetIdx].high,
+      low: bar.low ?? state.rows[targetIdx].low,
+      close: bar.close ?? state.rows[targetIdx].close,
+      volume: bar.volume ?? state.rows[targetIdx].volume,
+    };
+    if (shouldAppend) {
+      state.rows.push(nextRow);
+    } else {
+      state.rows[targetIdx] = nextRow;
+    }
+    syncPriceSeries(state);
+    if (state.chart && state.chart.timeScale) {
+      state.chart.timeScale().scrollToRealTime();
     }
   }
 

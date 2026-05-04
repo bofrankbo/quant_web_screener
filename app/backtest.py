@@ -52,6 +52,20 @@ _NON_STOCK_CATEGORIES = {
 }
 
 
+def _normalize_as_of_date(as_of_date: str | None) -> str | None:
+    if not as_of_date:
+        return None
+    if isinstance(as_of_date, date):
+        return as_of_date.isoformat()
+    s = str(as_of_date).strip()
+    if not s:
+        return None
+    try:
+        return date.fromisoformat(s[:10]).isoformat()
+    except ValueError:
+        return None
+
+
 # ── Data loading ──────────────────────────────────────────────────────────────
 
 def get_conn() -> duckdb.DuckDBPyConnection:
@@ -279,12 +293,14 @@ def _filter_stock_only_tickers(tickers: list[str] | None) -> list[str] | None:
     return [t for t in tickers if t in stock_set]
 
 
-def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
+def get_ticker_summary(tickers: list[str], as_of_date: str | None = None) -> pl.DataFrame:
     """Return last close, day%, 5d%, 10d%, 20d% for each ticker.
 
     Fetches only the last 22 rows per ticker to minimise memory; 22 bars is
-    enough for all percentage lookbacks (1, 5, 10, 20 days).
+    enough for all percentage lookbacks used by the UI (1, 4, 9, 19 trading days
+    behind the latest as-of bar).
     """
+    as_of_date = _normalize_as_of_date(as_of_date)
     _empty = pl.DataFrame(schema={
         "ticker": pl.Utf8, "close": pl.Float64,
         "day_pct": pl.Float64, "pct_5d": pl.Float64,
@@ -298,6 +314,13 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
     def _fetch(ticker: str):
         df = _read_parquet_r2(f"tickers/{ticker}.parquet")
         if df is None or df.is_empty():
+            return None
+        if "date" not in df.columns or "close" not in df.columns:
+            return None
+        df = df.with_columns(pl.col("date").cast(pl.Date, strict=False))
+        if as_of_date is not None:
+            df = df.filter(pl.col("date") <= pl.lit(as_of_date).cast(pl.Date))
+        if df.is_empty():
             return None
         return ticker, df.sort("date").tail(22)["close"].to_list()
 
@@ -321,17 +344,22 @@ def get_ticker_summary(tickers: list[str]) -> pl.DataFrame:
             def _ref(back: int, closes=closes, n=n):
                 return round(closes[-(back + 1)], 2) if n >= back + 1 else None
 
+            lookback_1d = 1
+            lookback_5d = 4
+            lookback_10d = 9
+            lookback_20d = 19
+
             rows.append({
                 "ticker": ticker,
                 "close": round(last, 2),
-                "day_pct": _pct(1),
-                "pct_5d": _pct(5),
-                "pct_10d": _pct(10),
-                "pct_20d": _pct(20),
-                "ref_1d":  _ref(1),
-                "ref_5d":  _ref(5),
-                "ref_10d": _ref(10),
-                "ref_20d": _ref(20),
+                "day_pct": _pct(lookback_1d),
+                "pct_5d": _pct(lookback_5d),
+                "pct_10d": _pct(lookback_10d),
+                "pct_20d": _pct(lookback_20d),
+                "ref_1d":  _ref(lookback_1d),
+                "ref_5d":  _ref(lookback_5d),
+                "ref_10d": _ref(lookback_10d),
+                "ref_20d": _ref(lookback_20d),
             })
 
     return pl.DataFrame(rows) if rows else _empty
@@ -367,7 +395,7 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
     return _empty
 
 
-_overview_cache: dict = {"data": None, "ts": 0.0}
+_overview_cache: dict = {"data": None, "ts": 0.0, "as_of_date": None}
 _OVERVIEW_TTL = 600  # 10 minutes
 
 
@@ -448,22 +476,30 @@ def _load_market_overview_meta() -> pl.DataFrame:
 def invalidate_market_overview_cache() -> None:
     _overview_cache["data"] = None
     _overview_cache["ts"] = 0.0
+    _overview_cache["as_of_date"] = None
 
 
-def get_market_overview() -> list[dict]:
+def get_market_overview(as_of_date: str | None = None) -> list[dict]:
     """Return latest price + concentration for all tickers in local cache.
 
     Reads all parquet files in bulk via DuckDB glob — no per-ticker network calls.
     buy_volume / sell_volume are top-15 broker net shares (in 張, sell is negative).
     Result is cached for 10 minutes.
     """
+    as_of_date = _normalize_as_of_date(as_of_date)
     now = time.monotonic()
-    if _overview_cache["data"] is not None and now - _overview_cache["ts"] < _OVERVIEW_TTL:
+    if (
+        _overview_cache["data"] is not None
+        and _overview_cache.get("as_of_date") == as_of_date
+        and now - _overview_cache["ts"] < _OVERVIEW_TTL
+    ):
         return _overview_cache["data"]
 
     tickers_glob = str(CACHE_DIR / "tickers" / "*.parquet")
     conc_glob = str(CACHE_DIR / "concentration" / "*.parquet")
     meta_path = CACHE_DIR / "meta" / "ticker_info.parquet"
+    price_where = f"WHERE date <= DATE '{as_of_date}'" if as_of_date is not None else ""
+    conc_where = f"WHERE date <= DATE '{as_of_date}'" if as_of_date is not None else ""
 
     conn = duckdb.connect()
     try:
@@ -473,6 +509,7 @@ def get_market_overview() -> list[dict]:
                 date, close, volume,
                 ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) AS rn
             FROM read_parquet('{tickers_glob}', filename=true)
+            {price_where}
             QUALIFY rn <= 2
         """).pl()
 
@@ -482,6 +519,7 @@ def get_market_overview() -> list[dict]:
                 date, buy_volume, sell_volume, amount,
                 concentration_5d, concentration_20d
             FROM read_parquet('{conc_glob}', filename=true)
+            {conc_where}
             QUALIFY ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) = 1
         """).pl()
     finally:
@@ -551,13 +589,21 @@ def get_market_overview() -> list[dict]:
 
     _overview_cache["data"] = rows
     _overview_cache["ts"] = now
+    _overview_cache["as_of_date"] = as_of_date
     return rows
 
 
-def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22) -> pl.DataFrame:
+def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22, as_of_date: str | None = None) -> pl.DataFrame:
     """Return full OHLCV + MA + Bollinger history for a single ticker."""
+    as_of_date = _normalize_as_of_date(as_of_date)
     df = download_parquet(f"tickers/{ticker}.parquet")
     if df is None or df.is_empty():
+        return pl.DataFrame()
+
+    df = df.with_columns(pl.col("date").cast(pl.Date, strict=False))
+    if as_of_date is not None:
+        df = df.filter(pl.col("date") <= pl.lit(as_of_date).cast(pl.Date))
+    if df.is_empty():
         return pl.DataFrame()
 
     df = df.sort("date")

@@ -393,11 +393,32 @@ let _quotesInterval = null;
 let _chartData = null;
 let _chartTicker = null;
 let _liveQuotes = {};
+let _dataAsOfDate = null;
+
+function getLiveQuoteDate(quotes) {
+  const meta = quotes && quotes.__meta__;
+  if (meta && /^\d{4}-\d{2}-\d{2}/.test(String(meta.date || ''))) return String(meta.date).slice(0, 10);
+  if (!quotes) return null;
+  for (const key of Object.keys(quotes)) {
+    const q = quotes[key];
+    if (q && /^\d{4}-\d{2}-\d{2}/.test(String(q.date || ''))) return String(q.date).slice(0, 10);
+  }
+  return null;
+}
+
+async function fetchLiveQuotes(forceRefresh = true) {
+  const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
+  _liveQuotes = quotes || {};
+  return _liveQuotes;
+}
 
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const res = await fetch('/api/market-overview');
+    const quotes = await fetchLiveQuotes(true);
+    const asOfDate = getLiveQuoteDate(quotes);
+    _dataAsOfDate = asOfDate;
+    const res = await fetch('/api/market-overview' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     allRows = await res.json();
     document.getElementById('loading').style.display = 'none';
@@ -407,7 +428,7 @@ async function loadData() {
       document.getElementById('last-updated').textContent = `資料日期: ${latest}`;
     }
     applyFilter();
-    refreshLiveQuotes();
+    refreshLiveQuotes(quotes);
     if (_quotesInterval) clearInterval(_quotesInterval);
     _quotesInterval = setInterval(refreshLiveQuotes, 30000);
   } catch (e) {
@@ -457,13 +478,17 @@ function overlayRowsWithQuotes(quotes) {
   return updated;
 }
 
-async function refreshLiveQuotes() {
+async function refreshLiveQuotes(quotes = null) {
   try {
-    const quotes = await fetch('/api/quotes').then(r => r.json());
-    _liveQuotes = quotes || {};
-    const updated = overlayRowsWithQuotes(_liveQuotes);
+    const liveQuotes = quotes || await fetchLiveQuotes();
+    const liveDate = getLiveQuoteDate(liveQuotes);
+    if (_dataAsOfDate && liveDate && liveDate !== _dataAsOfDate) {
+      await loadData();
+      return;
+    }
+    const updated = overlayRowsWithQuotes(liveQuotes);
     if (updated) applyFilter();
-    if (_chartTicker) await applyLiveQuote(_chartTicker, _liveQuotes);
+    if (_chartTicker) await applyLiveQuote(_chartTicker, liveQuotes);
   } catch (e) {
     console.error('refreshLiveQuotes failed:', e);
   }
@@ -592,11 +617,14 @@ function closeChart() {
 
 async function fetchKline(ticker) {
   try {
-    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22`);
+    const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes(true);
+    const q = quotes[ticker];
+    const asOfDate = q?.date || getLiveQuoteDate(quotes);
+    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
     renderChart(_chartData);
-    await applyLiveQuote(ticker, _liveQuotes);
+    await applyLiveQuote(ticker, quotes);
   } catch (e) { console.error('kline fetch:', e); }
 }
 
@@ -609,18 +637,31 @@ function renderChart(rows) {
 
 async function applyLiveQuote(ticker, quotes) {
   try {
-    const quoteMap = quotes || (await fetch('/api/quotes').then(r => r.json()));
+    const quoteMap = quotes || await fetchLiveQuotes();
     const q = quoteMap[ticker];
     if (!q || q.close == null || !_chartData || !_chartData.length) return;
+    const matched = q.date ? _chartData.find(r => r.date === q.date) : null;
     const last = _chartData[_chartData.length - 1];
+    const shouldAppend = !matched && q.date && String(q.date) > String(last.date);
+    const target = matched || last;
+    const bar = {
+      time: q.date && shouldAppend ? q.date : target.date,
+      open:  q.open   ?? target.open,
+      high:  q.high   ?? target.high,
+      low:   q.low    ?? target.low,
+      close: q.close,
+      volume: q.total_volume ?? q.volume ?? target.volume,
+    };
     KlineChart.updateLastCandle(document.getElementById('lwc-container'), {
-      time:   last.date,
-      open:   q.open   ?? last.open,
-      high:   q.high   ?? last.high,
-      low:    q.low    ?? last.low,
-      close:  q.close,
-      volume: q.volume ?? last.volume,
+      time: bar.time,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
     });
+    if (shouldAppend) _chartData.push({ date: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume });
+    else if (matched) Object.assign(matched, { open: bar.open, high: bar.high, low: bar.low, close: bar.close, volume: bar.volume });
   } catch (e) {
     console.error('applyLiveQuote failed:', e);
   }
