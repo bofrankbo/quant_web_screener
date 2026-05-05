@@ -31,3 +31,6 @@ PARQUET_CACHE_PATH = DATA_DIR / "cache"
 (PARQUET_CACHE_PATH / "tickers").mkdir(parents=True, exist_ok=True)
 (PARQUET_CACHE_PATH / "meta").mkdir(parents=True, exist_ok=True)
 (PARQUET_CACHE_PATH / "market_value").mkdir(parents=True, exist_ok=True)
+(PARQUET_CACHE_PATH / "market_overview").mkdir(parents=True, exist_ok=True)
+
+MARKET_OVERVIEW_CACHE_PATH = PARQUET_CACHE_PATH / "market_overview"

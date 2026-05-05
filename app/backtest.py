@@ -8,6 +8,7 @@ Exit: mirrored exit controls with separate MA, BB, RSI, volume, concentration se
 Model: signal-only (no position sizing) — each trade records price delta minus commission.
        Win rate and avg return are computed from completed trades.
 """
+import json
 import io
 import os
 import time
@@ -21,7 +22,7 @@ import duckdb
 import polars as pl
 from botocore.config import Config
 from dotenv import load_dotenv
-from app.config import DB_PATH, PARQUET_CACHE_PATH, TICKER_INFO_PATH
+from app.config import DB_PATH, PARQUET_CACHE_PATH, TICKER_INFO_PATH, MARKET_OVERVIEW_CACHE_PATH
 from app.r2 import download_parquet
 
 load_dotenv()
@@ -395,8 +396,87 @@ def get_ticker_names(tickers: list[str]) -> pl.DataFrame:
     return _empty
 
 
-_overview_cache: dict = {"data": None, "ts": 0.0, "as_of_date": None}
+_overview_cache: dict[str, dict] = {}
 _OVERVIEW_TTL = 600  # 10 minutes
+_MARKET_OVERVIEW_CACHE_VERSION = 1
+
+
+def _market_overview_cache_key(as_of_date: str | None) -> str:
+    return as_of_date or "latest"
+
+
+def _market_overview_cache_paths(as_of_date: str | None) -> tuple[Path, Path]:
+    key = _market_overview_cache_key(as_of_date)
+    return (
+        MARKET_OVERVIEW_CACHE_PATH / f"{key}.parquet",
+        MARKET_OVERVIEW_CACHE_PATH / f"{key}.meta.json",
+    )
+
+
+def _market_overview_empty_df() -> pl.DataFrame:
+    return pl.DataFrame(schema={
+        "ticker": pl.Utf8,
+        "name": pl.Utf8,
+        "date": pl.Utf8,
+        "close": pl.Float64,
+        "day_chg": pl.Float64,
+        "day_pct": pl.Float64,
+        "volume": pl.Int64,
+        "buy_volume": pl.Float64,
+        "sell_volume": pl.Float64,
+        "amount": pl.Float64,
+        "prev_close": pl.Float64,
+        "concentration_5d": pl.Float64,
+        "concentration_20d": pl.Float64,
+        "industry_category": pl.Utf8,
+        "type": pl.Utf8,
+        "kind": pl.Utf8,
+    })
+
+
+def _load_market_overview_disk_cache(as_of_date: str | None) -> list[dict] | None:
+    parquet_path, meta_path = _market_overview_cache_paths(as_of_date)
+    if not parquet_path.exists() or not meta_path.exists():
+        return None
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if meta.get("version") != _MARKET_OVERVIEW_CACHE_VERSION:
+        return None
+    if meta.get("as_of_date") != as_of_date:
+        return None
+    try:
+        df = pl.read_parquet(parquet_path)
+    except Exception:
+        return None
+    if df.is_empty():
+        return []
+    return df.to_dicts()
+
+
+def _store_market_overview_disk_cache(as_of_date: str | None, result: pl.DataFrame) -> None:
+    parquet_path, meta_path = _market_overview_cache_paths(as_of_date)
+    MARKET_OVERVIEW_CACHE_PATH.mkdir(parents=True, exist_ok=True)
+    result.write_parquet(parquet_path)
+    meta = {
+        "version": _MARKET_OVERVIEW_CACHE_VERSION,
+        "as_of_date": as_of_date,
+        "generated_at": time.time(),
+        "row_count": result.height,
+    }
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _clear_market_overview_disk_cache() -> None:
+    if not MARKET_OVERVIEW_CACHE_PATH.exists():
+        return
+    for path in MARKET_OVERVIEW_CACHE_PATH.glob("*"):
+        if path.is_file():
+            try:
+                path.unlink()
+            except FileNotFoundError:
+                pass
 
 
 def _normalize_instrument_kind(industry_category: str | None, listing_type: str | None) -> str:
@@ -473,10 +553,10 @@ def _load_market_overview_meta() -> pl.DataFrame:
     ])
 
 
-def invalidate_market_overview_cache() -> None:
-    _overview_cache["data"] = None
-    _overview_cache["ts"] = 0.0
-    _overview_cache["as_of_date"] = None
+def invalidate_market_overview_cache(clear_disk: bool = False) -> None:
+    _overview_cache.clear()
+    if clear_disk:
+        _clear_market_overview_disk_cache()
 
 
 def get_market_overview(as_of_date: str | None = None) -> list[dict]:
@@ -488,12 +568,15 @@ def get_market_overview(as_of_date: str | None = None) -> list[dict]:
     """
     as_of_date = _normalize_as_of_date(as_of_date)
     now = time.monotonic()
-    if (
-        _overview_cache["data"] is not None
-        and _overview_cache.get("as_of_date") == as_of_date
-        and now - _overview_cache["ts"] < _OVERVIEW_TTL
-    ):
-        return _overview_cache["data"]
+    cache_key = _market_overview_cache_key(as_of_date)
+    cached = _overview_cache.get(cache_key)
+    if cached is not None and now - cached["ts"] < _OVERVIEW_TTL:
+        return cached["data"]
+
+    disk_cached = _load_market_overview_disk_cache(as_of_date)
+    if disk_cached is not None:
+        _overview_cache[cache_key] = {"data": disk_cached, "ts": now}
+        return disk_cached
 
     tickers_glob = str(CACHE_DIR / "tickers" / "*.parquet")
     conc_glob = str(CACHE_DIR / "concentration" / "*.parquet")
@@ -585,11 +668,11 @@ def get_market_overview(as_of_date: str | None = None) -> list[dict]:
         )
     else:
         result = result.with_columns(pl.lit("未知").alias("kind"))
-    rows = result.sort("ticker").to_dicts()
+    result = result.sort("ticker")
+    _store_market_overview_disk_cache(as_of_date, result)
+    rows = result.to_dicts()
 
-    _overview_cache["data"] = rows
-    _overview_cache["ts"] = now
-    _overview_cache["as_of_date"] = as_of_date
+    _overview_cache[cache_key] = {"data": rows, "ts": now}
     return rows
 
 

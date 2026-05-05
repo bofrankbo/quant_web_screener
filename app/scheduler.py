@@ -22,7 +22,7 @@ def daily_update() -> None:
     if not result.get("success", False):
         logger.error("Daily update finished with errors")
     from app.backtest import invalidate_market_overview_cache
-    invalidate_market_overview_cache()
+    invalidate_market_overview_cache(clear_disk=result.get("success", False))
     logger.info("=== Daily update done ===")
 
 
