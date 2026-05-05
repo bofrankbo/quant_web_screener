@@ -12,6 +12,7 @@ Usage:
   python -m scripts.backfill_concentration
   python -m scripts.backfill_concentration --ticker-start 1101 --ticker-end 9999
   python -m scripts.backfill_concentration --reset
+  python -m scripts.backfill_concentration --concurrency 8
 """
 from __future__ import annotations
 
@@ -20,8 +21,10 @@ import io
 import json
 import os
 import time
+import threading
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
 import polars as pl
@@ -55,20 +58,43 @@ s3 = boto3.client(
 )
 
 
-def _load_progress() -> dict:
-    if PROGRESS_FILE.exists():
-        return json.loads(PROGRESS_FILE.read_text())
+def _load_progress(progress_file: Path) -> dict:
+    if progress_file.exists():
+        return json.loads(progress_file.read_text())
     return {}
 
 
-def _save_progress(progress: dict) -> None:
-    PROGRESS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    PROGRESS_FILE.write_text(json.dumps(progress, indent=2, ensure_ascii=False))
+def _save_progress(progress_file: Path, progress: dict) -> None:
+    progress_file.parent.mkdir(parents=True, exist_ok=True)
+    progress_file.write_text(json.dumps(progress, indent=2, ensure_ascii=False))
 
 
-def _mark_ticker(progress: dict, ticker: str, **meta) -> None:
+def _mark_ticker(progress_file: Path, progress: dict, ticker: str, **meta) -> None:
     progress[ticker] = meta
-    _save_progress(progress)
+    _save_progress(progress_file, progress)
+
+
+class RateLimiter:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._pause_until = 0.0
+
+    def wait(self) -> None:
+        while True:
+            with self._lock:
+                pause_until = self._pause_until
+            now = time.time()
+            if now >= pause_until:
+                return
+            time.sleep(min(60, pause_until - now))
+
+    def trip(self, seconds: int) -> None:
+        with self._lock:
+            self._pause_until = max(self._pause_until, time.time() + seconds)
+
+
+def _missing_days(start_date: str, end_date: str, existing_dates: set[date]) -> list[date]:
+    return [day for day in _iter_days(start_date, end_date) if day not in existing_dates]
 
 
 def _r2_download(ticker: str) -> pl.DataFrame | None:
@@ -88,8 +114,15 @@ def _r2_upload(ticker: str, df: pl.DataFrame) -> None:
     s3.put_object(Bucket=R2_BUCKET, Key=f"concentration/{ticker}.parquet", Body=buf.getvalue())
 
 
-def _finmind_get(dataset: str, start_date: str, end_date: str, stock_id: str) -> list[dict]:
+def _finmind_get(
+    dataset: str,
+    start_date: str,
+    end_date: str,
+    stock_id: str,
+    rate_limiter: RateLimiter,
+) -> list[dict]:
     while True:
+        rate_limiter.wait()
         resp = requests.get(
             FINMIND_DATA_URL,
             params={
@@ -113,7 +146,7 @@ def _finmind_get(dataset: str, start_date: str, end_date: str, stock_id: str) ->
             wake_at = datetime.now() + timedelta(seconds=RATE_LIMIT_SLEEP)
             print(f"\n  [RATE LIMIT] {msg}")
             print(f"  Sleeping 1h -> resuming at {wake_at.strftime('%H:%M:%S')}\n")
-            time.sleep(RATE_LIMIT_SLEEP)
+            rate_limiter.trip(RATE_LIMIT_SLEEP)
             continue
 
         raise RuntimeError(f"FinMind status={status} msg={msg}")
@@ -219,22 +252,43 @@ def _listing_start(ticker: str) -> str:
     return max(BACKFILL_START, listing_date)
 
 
-def backfill_ticker(ticker: str, progress: dict, end_date: str) -> None:
+def _fetch_missing_day(
+    ticker: str,
+    day: date,
+    rate_limiter: RateLimiter,
+) -> tuple[date, pl.DataFrame | None]:
+    day_s = str(day)
+    records = _finmind_get(
+        "TaiwanStockTradingDailyReport",
+        day_s,
+        day_s,
+        ticker,
+        rate_limiter,
+    )
+    return day, _compute_daily_row(records)
+
+
+def backfill_ticker(
+    ticker: str,
+    progress_file: Path,
+    progress: dict,
+    end_date: str,
+    concurrency: int,
+) -> None:
     start_date = _listing_start(ticker)
-    state = progress.get(ticker, {})
-    cursor = state.get("next_date", start_date)
-    if cursor < start_date:
-        cursor = start_date
 
     existing = _r2_download(ticker)
     existing_dates = _load_existing_dates(existing)
+    missing_days = _missing_days(start_date, end_date, existing_dates)
     combined = _strip_rolling(existing) if existing is not None else None
     updated_days = 0
+    rate_limiter = RateLimiter()
 
-    print(f"  start: {start_date}  cursor: {cursor}  existing: {len(existing_dates)} days")
+    print(f"  start: {start_date}  existing: {len(existing_dates)} days  missing: {len(missing_days)}")
 
-    if cursor > end_date:
+    if not missing_days:
         _mark_ticker(
+            progress_file,
             progress,
             ticker,
             status="done",
@@ -246,64 +300,31 @@ def backfill_ticker(ticker: str, progress: dict, end_date: str) -> None:
         )
         return
 
-    for day in _iter_days(cursor, end_date):
-        day_s = str(day)
-        next_day_s = str(day + timedelta(days=1))
+    rows: list[pl.DataFrame] = []
+    with ThreadPoolExecutor(max_workers=max(1, concurrency)) as executor:
+        future_map = {
+            executor.submit(_fetch_missing_day, ticker, day, rate_limiter): day
+            for day in missing_days
+        }
+        for future in as_completed(future_map):
+            day = future_map[future]
+            day_s = str(day)
+            _, row = future.result()
+            if row is None or row.is_empty():
+                print(f"    {day_s} -> no trader data")
+                continue
+            rows.append(row)
+            updated_days += 1
+            print(f"    {day_s} -> fetched")
 
-        if day in existing_dates:
-            _mark_ticker(
-                progress,
-                ticker,
-                status=state.get("status", "processing"),
-                start_date=start_date,
-                next_date=next_day_s,
-                through=day_s,
-                rows=len(existing) if existing is not None else 0,
-                updated_at=str(date.today()),
-                note="already exists in concentration",
-            )
-            continue
-
-        records = _finmind_get(
-            "TaiwanStockTradingDailyReport",
-            day_s,
-            day_s,
-            ticker,
-        )
-        row = _compute_daily_row(records)
-        if row is None or row.is_empty():
-            _mark_ticker(
-                progress,
-                ticker,
-                status=state.get("status", "processing"),
-                start_date=start_date,
-                next_date=next_day_s,
-                through=day_s,
-                rows=len(combined) if combined is not None else (len(existing) if existing is not None else 0),
-                updated_at=str(date.today()),
-                note="no trader data",
-            )
-            continue
-
-        combined = _merge_daily(combined if combined is not None else existing, row)
+    if rows:
+        new_rows = pl.concat(rows).sort("date")
+        combined = _merge_daily(combined, new_rows)
         _r2_upload(ticker, combined)
-        existing = combined
-        existing_dates.add(day)
-        updated_days += 1
-        _mark_ticker(
-            progress,
-            ticker,
-            status="processing",
-            start_date=start_date,
-            next_date=next_day_s,
-            through=day_s,
-            rows=len(combined),
-            updated_at=str(date.today()),
-        )
-        print(f"    {day_s} -> uploaded ({len(combined)} rows)")
 
     final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
     _mark_ticker(
+        progress_file,
         progress,
         ticker,
         status="done",
@@ -322,13 +343,16 @@ def main() -> None:
     parser.add_argument("--ticker-start", type=int, default=1101)
     parser.add_argument("--ticker-end", type=int, default=9999)
     parser.add_argument("--reset", action="store_true", help="Clear progress and start over")
+    parser.add_argument("--concurrency", type=int, default=8, help="Concurrent FinMind requests per ticker")
     args = parser.parse_args()
 
-    if args.reset and PROGRESS_FILE.exists():
-        PROGRESS_FILE.unlink()
-        print("Progress file cleared.")
+    progress_file = PROGRESS_FILE
 
-    progress = _load_progress()
+    if args.reset and progress_file.exists():
+        progress_file.unlink()
+        print(f"Progress file cleared: {progress_file}")
+
+    progress = _load_progress(progress_file)
     tickers = [
         t for t in get_stock_tickers(args.ticker_start, args.ticker_end)
         if args.ticker_start <= int(t) <= args.ticker_end
@@ -337,7 +361,7 @@ def main() -> None:
     print(f"=== Concentration backfill: {args.ticker_start} -> {args.ticker_end} ===")
     print(f"    target range: {BACKFILL_START} -> {yesterday}")
     print(f"    tickers: {len(tickers)}")
-    print(f"    progress: {PROGRESS_FILE}\n")
+    print(f"    progress: {progress_file}\n")
 
     for i, ticker in enumerate(tickers, 1):
         prefix = f"[{i:4d}/{len(tickers)}] {ticker}"
@@ -348,9 +372,10 @@ def main() -> None:
 
         print(prefix)
         try:
-            backfill_ticker(ticker, progress, yesterday)
+            backfill_ticker(ticker, progress_file, progress, yesterday, args.concurrency)
         except Exception as e:
             _mark_ticker(
+                progress_file,
                 progress,
                 ticker,
                 status="error",

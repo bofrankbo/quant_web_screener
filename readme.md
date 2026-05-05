@@ -84,7 +84,16 @@ python -m scripts.sync_cache --all
 python -m scripts.daily_update --date 2026-04-30
 python -m scripts.build_stock_universe
 python -m scripts.backfill_concentration
+bash scripts/run_backfill_concentration.sh
 ```
+
+`scripts/backfill_concentration.py` also supports sharded parallel runs:
+
+```bash
+python -m scripts.backfill_concentration --concurrency 8
+```
+
+For Railway cron jobs, use `bash scripts/run_backfill_concentration.sh` as the start command and set `BACKFILL_CONCURRENCY` to the request count you want.
 
 ## Notes
 

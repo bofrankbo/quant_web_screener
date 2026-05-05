@@ -785,7 +785,7 @@ function getLiveQuoteDate(quotes) {
   return null;
 }
 
-async function fetchLiveQuotes(forceRefresh = true) {
+async function fetchLiveQuotes(forceRefresh = false) {
   const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
   _liveQuotes = quotes || {};
   return _liveQuotes;
@@ -826,7 +826,7 @@ async function loadOverview() {
   tbody.innerHTML = '';
 
   try {
-    const quotes = await fetchLiveQuotes(true);
+    const quotes = await fetchLiveQuotes();
     const asOfDate = getLiveQuoteDate(quotes);
     _overviewAsOfDate = asOfDate;
     const results = await Promise.all(
@@ -1058,7 +1058,7 @@ function collapseAll() {
 async function loadSummary(name) {
   setLoading(true);
   try {
-    const quotes = await fetchLiveQuotes(true);
+    const quotes = await fetchLiveQuotes();
     const asOfDate = getLiveQuoteDate(quotes);
     _summaryAsOfDate = asOfDate;
     const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
@@ -1580,7 +1580,7 @@ async function fetchKline(ticker) {
 
 async function applyLiveQuote(ticker, quotes = null) {
   try {
-    const quoteMap = quotes || await fetchLiveQuotes(true);
+    const quoteMap = quotes || await fetchLiveQuotes();
     const q = quoteMap[ticker];
     if (!q || q.close == null || !_chartData || !_chartData.length) return;
     const matched = q.date ? _chartData.find(r => r.date === q.date) : null;

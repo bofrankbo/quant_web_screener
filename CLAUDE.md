@@ -30,6 +30,7 @@ python -m scripts.sync_cache --all           # R2 → local data/cache/
 ```bash
 bash scripts/daily_update.sh              # today (all steps)
 bash scripts/daily_update.sh 2026-04-25   # specific date
+bash scripts/run_backfill_concentration.sh # Railway-friendly concentration backfill
 ```
 
 Runs steps 1–3 in parallel, then step 4. Also works on Railway Shell.
@@ -81,6 +82,7 @@ App-data persistence on Railway: `APP_DATA_PATH` (volume `/data`) holds both `ca
 | `scripts/fetch_concentration.py` | FinMind broker data → R2 concentration/ |
 | `scripts/fetch_market_value.py` | Market cap data → R2 market_value/ |
 | `scripts/sync_cache.py` | R2 → local data/cache/ |
+| `scripts/backfill_concentration.py` | Parallel per-ticker concentration backfill |
 
 ## Auth & Watchlist Dual-Mode
 
@@ -128,5 +130,7 @@ APP_DATA_PATH=/data
 ```
 
 Volume: mount at `/data`, 2 GB. Start command (railway.toml): `uvicorn app.api:app --host 0.0.0.0 --port $PORT`.
+
+For a one-off or scheduled backfill on Railway, create a separate cron/job service and use `bash scripts/run_backfill_concentration.sh` as the command. Set `BACKFILL_CONCURRENCY` to the number of parallel FinMind requests per ticker.
 
 On startup, `startup_sync()` runs in a daemon thread (non-blocking) to populate the cache from R2.

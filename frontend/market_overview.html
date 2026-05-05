@@ -406,7 +406,7 @@ function getLiveQuoteDate(quotes) {
   return null;
 }
 
-async function fetchLiveQuotes(forceRefresh = true) {
+async function fetchLiveQuotes(forceRefresh = false) {
   const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
   _liveQuotes = quotes || {};
   return _liveQuotes;
@@ -415,7 +415,7 @@ async function fetchLiveQuotes(forceRefresh = true) {
 // ── Fetch ──────────────────────────────────────────────────────────────────
 async function loadData() {
   try {
-    const quotes = await fetchLiveQuotes(true);
+    const quotes = await fetchLiveQuotes();
     const asOfDate = getLiveQuoteDate(quotes);
     _dataAsOfDate = asOfDate;
     const res = await fetch('/api/market-overview' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
@@ -617,7 +617,7 @@ function closeChart() {
 
 async function fetchKline(ticker) {
   try {
-    const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes(true);
+    const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes();
     const q = quotes[ticker];
     const asOfDate = q?.date || getLiveQuoteDate(quotes);
     const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`);
