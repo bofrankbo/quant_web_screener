@@ -6,6 +6,7 @@
 <title>Quant Phronesis | Watchlist Manager</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="/static/kline_shared.js"></script>
+<script src="/static/quotes_cache.js"></script>
 <link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -763,6 +764,7 @@ let currentWl = '__all__';
 let wlCounts = {};
 let currentRows = [];
 let overviewData = {};    // {name: {rows, custom_label}} — cached from loadOverview
+let watchlistCache = {};  // {name: {rows, custom_label, asOfDate}} — cached from loadSummary
 let expandedWls = new Set();
 let _quotesInterval = null;
 let sortCol = null;
@@ -774,20 +776,23 @@ let _liveQuotes = {};
 let _summaryAsOfDate = null;
 let _overviewAsOfDate = null;
 
-function getLiveQuoteDate(quotes) {
-  const meta = quotes && quotes.__meta__;
-  if (meta && /^\d{4}-\d{2}-\d{2}/.test(String(meta.date || ''))) return String(meta.date).slice(0, 10);
-  if (!quotes) return null;
-  for (const key of Object.keys(quotes)) {
-    const q = quotes[key];
-    if (q && /^\d{4}-\d{2}-\d{2}/.test(String(q.date || ''))) return String(q.date).slice(0, 10);
-  }
-  return null;
-}
+function getLiveQuoteDate(quotes) { return QuotesCache.getDate(quotes); }
 
 async function fetchLiveQuotes(forceRefresh = false) {
-  const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
-  _liveQuotes = quotes || {};
+  if (!forceRefresh) {
+    const cached = QuotesCache.load();
+    if (cached && Object.keys(cached).length > 1) {
+      _liveQuotes = cached;
+      // background refresh — re-overlay when fresh data arrives
+      QuotesCache.fetchFresh().then(fresh => {
+        _liveQuotes = fresh;
+        overlayQuotes(fresh);
+      }).catch(() => {});
+      return _liveQuotes;
+    }
+  }
+  const quotes = await QuotesCache.fetchFresh(forceRefresh);
+  _liveQuotes = quotes;
   return _liveQuotes;
 }
 
@@ -1056,14 +1061,34 @@ function collapseAll() {
 }
 
 async function loadSummary(name) {
+  const quotes = await fetchLiveQuotes();
+  const asOfDate = getLiveQuoteDate(quotes);
+  _summaryAsOfDate = asOfDate;
+
+  const cached = watchlistCache[name];
+  if (cached && cached.asOfDate === asOfDate) {
+    currentRows = cached.rows;
+    const thCustom = document.getElementById('th-custom');
+    if (!thCustom.querySelector('input')) {
+      thCustom.dataset.label = cached.custom_label || '備註';
+      thCustom.textContent = cached.custom_label || '備註';
+    }
+    sortCol = null; sortDir = 1;
+    clearSortIndicators();
+    renderCurrentView();
+    overlayQuotes(quotes);
+    if (_quotesInterval) clearInterval(_quotesInterval);
+    _quotesInterval = setInterval(overlayQuotes, 30000);
+    return;
+  }
+
   setLoading(true);
   try {
-    const quotes = await fetchLiveQuotes();
-    const asOfDate = getLiveQuoteDate(quotes);
-    _summaryAsOfDate = asOfDate;
     const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
     if (!r.ok) return;
     const data = await r.json();
+
+    watchlistCache[name] = { rows: data.rows || [], custom_label: data.custom_label, asOfDate };
 
     // Update custom header label
     const thCustom = document.getElementById('th-custom');
@@ -1100,7 +1125,7 @@ async function overlayQuotes(quotes = null) {
       if (!q || q.close == null) return;
       row.close = q.close;
       const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
-      if (row.ref_1d  != null) row.day_pct = pct(row.ref_1d);
+      row.day_pct = q.change_rate != null ? +Number(q.change_rate).toFixed(2) : pct(row.ref_1d);
       if (row.ref_5d  != null) row.pct_5d  = pct(row.ref_5d);
       if (row.ref_10d != null) row.pct_10d = pct(row.ref_10d);
       if (row.ref_20d != null) row.pct_20d = pct(row.ref_20d);
@@ -1125,7 +1150,7 @@ async function overlayOverviewQuotes(quotes = null) {
         if (!q || q.close == null) return;
         row.close = q.close;
         const pct = (ref) => ref ? +((q.close / ref - 1) * 100).toFixed(2) : null;
-        if (row.ref_1d  != null) row.day_pct = pct(row.ref_1d);
+        row.day_pct = q.change_rate != null ? +Number(q.change_rate).toFixed(2) : pct(row.ref_1d);
         if (row.ref_5d  != null) row.pct_5d  = pct(row.ref_5d);
         if (row.ref_10d != null) row.pct_10d = pct(row.ref_10d);
         if (row.ref_20d != null) row.pct_20d = pct(row.ref_20d);
@@ -1320,6 +1345,7 @@ async function deleteWatchlist(name) {
   await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
   delete wlCounts[name];
   delete overviewData[name];
+  delete watchlistCache[name];
   expandedWls.delete(name);
   if (currentWl === name) {
     currentWl = '__all__';
@@ -1346,12 +1372,14 @@ async function addTickers() {
       { method: 'PUT' })
   ));
   input.value = '';
+  delete watchlistCache[currentWl];
   await loadAll();
 }
 
 async function removeTicker(wlName, ticker) {
   await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
     { method: 'DELETE' });
+  delete watchlistCache[wlName];
   await loadAll();
 }
 

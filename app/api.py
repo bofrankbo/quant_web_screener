@@ -130,11 +130,12 @@ def _build_watchlist_summary(
     custom_data: dict,
     active_data: dict,
     as_of_date: str | None = None,
+    snapshot_mode: bool = False,
 ) -> dict:
     if not tickers:
         return {"custom_label": custom_label, "rows": []}
 
-    summary_df = get_ticker_summary(tickers, as_of_date=as_of_date)
+    summary_df = get_ticker_summary(tickers, as_of_date=as_of_date, snapshot_mode=snapshot_mode)
     names_df = get_ticker_names(tickers)
 
     if not summary_df.is_empty() and not names_df.is_empty():
@@ -600,8 +601,10 @@ def watchlist_summary(request: Request, name: str, as_of_date: str | None = Quer
     watchlist = get_watchlist_by_name(user["id"], name)
     if watchlist is None:
         return JSONResponse(status_code=404, content={"detail": f"{name} not found"})
+    explicit_date = as_of_date
     if as_of_date is None:
         as_of_date = _live_snapshot_date()
+    snapshot_mode = explicit_date is None and as_of_date is not None
     items = get_watchlist_items_for_user(user["id"], name)
     tickers = [item["ticker"] for item in items]
     custom_data = {item["ticker"]: item.get("note", "") for item in items}
@@ -613,6 +616,7 @@ def watchlist_summary(request: Request, name: str, as_of_date: str | None = Quer
             custom_data=custom_data,
             active_data=active_data,
             as_of_date=as_of_date,
+            snapshot_mode=snapshot_mode,
         )
     )
 

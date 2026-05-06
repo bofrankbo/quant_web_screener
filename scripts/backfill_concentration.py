@@ -1,10 +1,12 @@
 """
-Backfill concentration one ticker at a time, one day at a time.
+Backfill concentration one ticker at a time.
 
 Rules:
   - Start from max(2021-07-01, listing_date from meta/ticker_info.csv)
-  - For each date, if concentration already exists, skip that day
-  - If not, fetch TaiwanStockTradingDailyReport for that ticker/date
+  - Resume from the last saved `next_date` checkpoint when available
+  - If the checkpoint is already past the latest target day, skip the ticker
+  - Fetch TaiwanStockTradingDailyReport one day at a time with asyncio/aiohttp
+  - If FinMind returns 429, pause the whole backfill for one hour and retry
   - Compute top-15 net buy / net sell and concentration
   - Append and upload the ticker parquet back to R2
 
@@ -12,23 +14,22 @@ Usage:
   python -m scripts.backfill_concentration
   python -m scripts.backfill_concentration --ticker-start 1101 --ticker-end 9999
   python -m scripts.backfill_concentration --reset
-  python -m scripts.backfill_concentration --concurrency 8
+  python -m scripts.backfill_concentration --concurrency 6000
 """
 from __future__ import annotations
 
 import argparse
+import asyncio
 import io
 import json
 import os
 import time
-import threading
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import boto3
+import aiohttp
 import polars as pl
-import requests
 from botocore.config import Config
 from dotenv import load_dotenv
 
@@ -45,6 +46,8 @@ FINMIND_TOKEN = os.environ.get("FINMIND_TOKEN") or os.environ["FINMIND_API_KEY"]
 FINMIND_DATA_URL = "https://api.finmindtrade.com/api/v4/data"
 BACKFILL_START = "2021-07-01"
 RATE_LIMIT_SLEEP = 3600
+CONNECT_RETRY_SLEEP = 30
+MAX_IN_FLIGHT_REQUESTS = 10
 
 PROGRESS_FILE = Path(__file__).parent.parent / "data" / "backfill_conc_done.json"
 
@@ -74,27 +77,23 @@ def _mark_ticker(progress_file: Path, progress: dict, ticker: str, **meta) -> No
     _save_progress(progress_file, progress)
 
 
-class RateLimiter:
+class AsyncRateLimiter:
     def __init__(self) -> None:
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         self._pause_until = 0.0
 
-    def wait(self) -> None:
+    async def wait(self) -> None:
         while True:
-            with self._lock:
+            async with self._lock:
                 pause_until = self._pause_until
             now = time.time()
             if now >= pause_until:
                 return
-            time.sleep(min(60, pause_until - now))
+            await asyncio.sleep(min(60, pause_until - now))
 
-    def trip(self, seconds: int) -> None:
-        with self._lock:
+    async def trip(self, seconds: int) -> None:
+        async with self._lock:
             self._pause_until = max(self._pause_until, time.time() + seconds)
-
-
-def _missing_days(start_date: str, end_date: str, existing_dates: set[date]) -> list[date]:
-    return [day for day in _iter_days(start_date, end_date) if day not in existing_dates]
 
 
 def _r2_download(ticker: str) -> pl.DataFrame | None:
@@ -114,28 +113,47 @@ def _r2_upload(ticker: str, df: pl.DataFrame) -> None:
     s3.put_object(Bucket=R2_BUCKET, Key=f"concentration/{ticker}.parquet", Body=buf.getvalue())
 
 
-def _finmind_get(
+async def _finmind_get_async(
+    session: aiohttp.ClientSession,
     dataset: str,
     start_date: str,
     end_date: str,
     stock_id: str,
-    rate_limiter: RateLimiter,
+    rate_limiter: AsyncRateLimiter,
+    request_sem: asyncio.Semaphore,
 ) -> list[dict]:
     while True:
-        rate_limiter.wait()
-        resp = requests.get(
-            FINMIND_DATA_URL,
-            params={
-                "dataset": dataset,
-                "data_id": stock_id,
-                "start_date": start_date,
-                "end_date": end_date,
-                "token": FINMIND_TOKEN,
-            },
-            timeout=120,
-        )
-        resp.raise_for_status()
-        data = resp.json()
+        await rate_limiter.wait()
+        async with request_sem:
+            try:
+                async with session.get(
+                    FINMIND_DATA_URL,
+                    params={
+                        "dataset": dataset,
+                        "data_id": stock_id,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "token": FINMIND_TOKEN,
+                    },
+                    timeout=aiohttp.ClientTimeout(total=120),
+                ) as resp:
+                    resp.raise_for_status()
+                    data = await resp.json()
+            except aiohttp.ClientResponseError as e:
+                if e.status in (402, 429):
+                    wake_at = datetime.now() + timedelta(seconds=RATE_LIMIT_SLEEP)
+                    print(f"\n  [RATE LIMIT {e.status}] sleeping 1h -> resuming at {wake_at.strftime('%H:%M:%S')}\n")
+                    await rate_limiter.trip(RATE_LIMIT_SLEEP)
+                    continue
+                if e.status in (502, 503, 504):
+                    print(f"\n  [RETRY {e.status}] {stock_id} {start_date}: sleeping {CONNECT_RETRY_SLEEP}s")
+                    await asyncio.sleep(CONNECT_RETRY_SLEEP)
+                    continue
+                raise
+            except (aiohttp.ClientConnectorError, aiohttp.ClientOSError, aiohttp.ServerDisconnectedError, asyncio.TimeoutError) as e:
+                print(f"\n  [CONNECT RETRY] {stock_id} {start_date} -> {end_date}: {e}")
+                await asyncio.sleep(CONNECT_RETRY_SLEEP)
+                continue
         status = data.get("status")
         msg = data.get("msg", "")
 
@@ -146,10 +164,29 @@ def _finmind_get(
             wake_at = datetime.now() + timedelta(seconds=RATE_LIMIT_SLEEP)
             print(f"\n  [RATE LIMIT] {msg}")
             print(f"  Sleeping 1h -> resuming at {wake_at.strftime('%H:%M:%S')}\n")
-            rate_limiter.trip(RATE_LIMIT_SLEEP)
+            await rate_limiter.trip(RATE_LIMIT_SLEEP)
             continue
 
         raise RuntimeError(f"FinMind status={status} msg={msg}")
+
+
+async def _fetch_daily_records_async(
+    session: aiohttp.ClientSession,
+    day: str,
+    stock_id: str,
+    rate_limiter: AsyncRateLimiter,
+    request_sem: asyncio.Semaphore,
+) -> tuple[str, list[dict]]:
+    records = await _finmind_get_async(
+        session,
+        "TaiwanStockTradingDailyReport",
+        day,
+        day,
+        stock_id,
+        rate_limiter,
+        request_sem,
+    )
+    return day, records
 
 
 def _compute_daily_row(records: list[dict]) -> pl.DataFrame | None:
@@ -230,21 +267,6 @@ def _merge_daily(existing: pl.DataFrame | None, new_row: pl.DataFrame) -> pl.Dat
     return _add_rolling(combined)
 
 
-def _iter_days(start: str, end: str):
-    current = datetime.strptime(start, "%Y-%m-%d").date()
-    stop = datetime.strptime(end, "%Y-%m-%d").date()
-    while current <= stop:
-        if current.weekday() < 5:
-            yield current
-        current += timedelta(days=1)
-
-
-def _load_existing_dates(df: pl.DataFrame | None) -> set[date]:
-    if df is None or df.is_empty() or "date" not in df.columns:
-        return set()
-    return set(df["date"].cast(pl.Date).to_list())
-
-
 def _listing_start(ticker: str) -> str:
     listing_date = get_listing_date(ticker)
     if listing_date is None:
@@ -252,20 +274,142 @@ def _listing_start(ticker: str) -> str:
     return max(BACKFILL_START, listing_date)
 
 
-def _fetch_missing_day(
+def _next_day(day_s: str) -> str:
+    return str(datetime.strptime(day_s, "%Y-%m-%d").date() + timedelta(days=1))
+
+
+def _iter_days(start: str, end: str):
+    current = datetime.strptime(start, "%Y-%m-%d").date()
+    stop = datetime.strptime(end, "%Y-%m-%d").date()
+    while current <= stop:
+        if current.weekday() < 5:
+            yield str(current)
+        current += timedelta(days=1)
+
+
+async def backfill_ticker_async(
     ticker: str,
-    day: date,
-    rate_limiter: RateLimiter,
-) -> tuple[date, pl.DataFrame | None]:
-    day_s = str(day)
-    records = _finmind_get(
-        "TaiwanStockTradingDailyReport",
-        day_s,
-        day_s,
-        ticker,
-        rate_limiter,
+    progress_file: Path,
+    progress: dict,
+    end_date: str,
+    concurrency: int,
+) -> None:
+    start_date = _listing_start(ticker)
+    end_date_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+    batch_size = max(1, concurrency)
+    request_limit = min(batch_size, MAX_IN_FLIGHT_REQUESTS)
+
+    existing = _r2_download(ticker)
+    combined = _strip_rolling(existing) if existing is not None else None
+    state = progress.get(ticker, {})
+    resume_from = state.get("next_date") if isinstance(state, dict) else None
+    if not resume_from:
+        resume_from = start_date
+
+    resume_from_dt = datetime.strptime(resume_from, "%Y-%m-%d").date()
+    if resume_from_dt > end_date_dt:
+        final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
+        _mark_ticker(
+            progress_file,
+            progress,
+            ticker,
+            status="done",
+            start_date=start_date,
+            next_date=_next_day(end_date),
+            through=end_date,
+            rows=final_rows,
+            updated_at=str(date.today()),
+        )
+        print(f"  start: {start_date}  resume: {resume_from}  already up to date")
+        return
+
+    print(
+        f"  start: {start_date}  resume: {resume_from}  "
+        f"existing: {len(combined) if combined is not None else 0} rows"
     )
-    return day, _compute_daily_row(records)
+    _mark_ticker(
+        progress_file,
+        progress,
+        ticker,
+        status="running",
+        start_date=start_date,
+        next_date=resume_from,
+        through=end_date,
+        rows=len(combined) if combined is not None else 0,
+        updated_at=str(date.today()),
+    )
+
+    timeout = aiohttp.ClientTimeout(total=120)
+    connector = aiohttp.TCPConnector(limit=request_limit, limit_per_host=request_limit, ttl_dns_cache=300)
+    request_sem = asyncio.Semaphore(request_limit)
+    rate_limiter = AsyncRateLimiter()
+
+    days = list(_iter_days(resume_from, end_date))
+    print(f"    days: {len(days)} days (async x{batch_size}, in-flight capped at {request_limit})")
+
+    last_completed_day = None
+    try:
+        async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
+            tasks = [
+                asyncio.create_task(
+                    _fetch_daily_records_async(
+                        session,
+                        day_s,
+                        ticker,
+                        rate_limiter,
+                        request_sem,
+                    )
+                )
+                for day_s in days
+            ]
+
+            for completed in asyncio.as_completed(tasks):
+                day_s, records = await completed
+                new_rows = _compute_daily_row(records)
+                if new_rows is None or new_rows.is_empty():
+                    print(f"    {day_s} -> no trader data")
+                else:
+                    combined = _merge_daily(combined, new_rows)
+                    print(f"    {day_s} -> fetched")
+                last_completed_day = day_s
+
+    except Exception as e:
+        # Upload whatever we collected so far, then stop
+        if combined is not None:
+            print(f"    [ERROR] Uploading partial data ({len(combined)} rows) before stopping...")
+            _r2_upload(ticker, combined)
+        partial_next = _next_day(last_completed_day) if last_completed_day else resume_from
+        _mark_ticker(
+            progress_file,
+            progress,
+            ticker,
+            status="error",
+            start_date=start_date,
+            next_date=partial_next,
+            through=end_date,
+            rows=len(combined) if combined is not None else 0,
+            error=str(e),
+            updated_at=str(date.today()),
+        )
+        print(f"    ERROR: {e}")
+        raise
+
+    # Full ticker complete — upload once
+    final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
+    if combined is not None:
+        _r2_upload(ticker, combined)
+    _mark_ticker(
+        progress_file,
+        progress,
+        ticker,
+        status="done",
+        start_date=start_date,
+        next_date=_next_day(end_date),
+        through=end_date,
+        rows=final_rows,
+        updated_at=str(date.today()),
+    )
+    print(f"    total {final_rows} days")
 
 
 def backfill_ticker(
@@ -275,66 +419,7 @@ def backfill_ticker(
     end_date: str,
     concurrency: int,
 ) -> None:
-    start_date = _listing_start(ticker)
-
-    existing = _r2_download(ticker)
-    existing_dates = _load_existing_dates(existing)
-    missing_days = _missing_days(start_date, end_date, existing_dates)
-    combined = _strip_rolling(existing) if existing is not None else None
-    updated_days = 0
-    rate_limiter = RateLimiter()
-
-    print(f"  start: {start_date}  existing: {len(existing_dates)} days  missing: {len(missing_days)}")
-
-    if not missing_days:
-        _mark_ticker(
-            progress_file,
-            progress,
-            ticker,
-            status="done",
-            start_date=start_date,
-            next_date=str((datetime.strptime(end_date, "%Y-%m-%d").date() + timedelta(days=1))),
-            through=end_date,
-            rows=len(existing) if existing is not None else 0,
-            updated_at=str(date.today()),
-        )
-        return
-
-    rows: list[pl.DataFrame] = []
-    with ThreadPoolExecutor(max_workers=max(1, concurrency)) as executor:
-        future_map = {
-            executor.submit(_fetch_missing_day, ticker, day, rate_limiter): day
-            for day in missing_days
-        }
-        for future in as_completed(future_map):
-            day = future_map[future]
-            day_s = str(day)
-            _, row = future.result()
-            if row is None or row.is_empty():
-                print(f"    {day_s} -> no trader data")
-                continue
-            rows.append(row)
-            updated_days += 1
-            print(f"    {day_s} -> fetched")
-
-    if rows:
-        new_rows = pl.concat(rows).sort("date")
-        combined = _merge_daily(combined, new_rows)
-        _r2_upload(ticker, combined)
-
-    final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
-    _mark_ticker(
-        progress_file,
-        progress,
-        ticker,
-        status="done",
-        start_date=start_date,
-        next_date=str((datetime.strptime(end_date, "%Y-%m-%d").date() + timedelta(days=1))),
-        through=end_date,
-        rows=final_rows,
-        updated_at=str(date.today()),
-    )
-    print(f"    updated {updated_days} days, total {final_rows} days")
+    asyncio.run(backfill_ticker_async(ticker, progress_file, progress, end_date, concurrency))
 
 
 def main() -> None:
@@ -343,7 +428,7 @@ def main() -> None:
     parser.add_argument("--ticker-start", type=int, default=1101)
     parser.add_argument("--ticker-end", type=int, default=9999)
     parser.add_argument("--reset", action="store_true", help="Clear progress and start over")
-    parser.add_argument("--concurrency", type=int, default=8, help="Concurrent FinMind requests per ticker")
+    parser.add_argument("--concurrency", type=int, default=6000, help="Concurrent FinMind requests per ticker")
     args = parser.parse_args()
 
     progress_file = PROGRESS_FILE
@@ -371,18 +456,7 @@ def main() -> None:
             continue
 
         print(prefix)
-        try:
-            backfill_ticker(ticker, progress_file, progress, yesterday, args.concurrency)
-        except Exception as e:
-            _mark_ticker(
-                progress_file,
-                progress,
-                ticker,
-                status="error",
-                error=str(e),
-                updated_at=str(date.today()),
-            )
-            print(f"    ERROR: {e}")
+        backfill_ticker(ticker, progress_file, progress, yesterday, args.concurrency)
 
     done = sum(1 for t in tickers if progress.get(t, {}).get("status") == "done")
     print(f"\n=== Done: {done}/{len(tickers)} tickers complete ===")

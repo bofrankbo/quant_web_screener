@@ -6,6 +6,7 @@
 <title>Quant Phronesis | 市場總覽</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <script src="/static/kline_shared.js"></script>
+<script src="/static/quotes_cache.js"></script>
 <link rel="stylesheet" href="/static/shared_topbar.css">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -395,20 +396,22 @@ let _chartTicker = null;
 let _liveQuotes = {};
 let _dataAsOfDate = null;
 
-function getLiveQuoteDate(quotes) {
-  const meta = quotes && quotes.__meta__;
-  if (meta && /^\d{4}-\d{2}-\d{2}/.test(String(meta.date || ''))) return String(meta.date).slice(0, 10);
-  if (!quotes) return null;
-  for (const key of Object.keys(quotes)) {
-    const q = quotes[key];
-    if (q && /^\d{4}-\d{2}-\d{2}/.test(String(q.date || ''))) return String(q.date).slice(0, 10);
-  }
-  return null;
-}
+function getLiveQuoteDate(quotes) { return QuotesCache.getDate(quotes); }
 
 async function fetchLiveQuotes(forceRefresh = false) {
-  const quotes = await fetch('/api/quotes' + (forceRefresh ? '?refresh=1' : '')).then(r => r.json());
-  _liveQuotes = quotes || {};
+  if (!forceRefresh) {
+    const cached = QuotesCache.load();
+    if (cached && Object.keys(cached).length > 1) {
+      _liveQuotes = cached;
+      QuotesCache.fetchFresh().then(fresh => {
+        _liveQuotes = fresh;
+        refreshLiveQuotes(fresh);
+      }).catch(() => {});
+      return _liveQuotes;
+    }
+  }
+  const quotes = await QuotesCache.fetchFresh(forceRefresh);
+  _liveQuotes = quotes;
   return _liveQuotes;
 }
 
@@ -467,9 +470,14 @@ function overlayRowsWithQuotes(quotes) {
   allRows.forEach(row => {
     const q = quotes[row.ticker];
     if (!q || q.close == null) return;
+    const histClose = row.close;   // last parquet close = yesterday
     row.close = q.close;
-    const prevClose = row.prev_close;
-    if (prevClose != null) {
+    if (q.date) row.date = q.date;
+    const prevClose = row.prev_close;  // second-to-last parquet close
+    if (q.change_rate != null) {
+      row.day_pct = +Number(q.change_rate).toFixed(2);
+      if (histClose != null) row.day_chg = +((q.close - histClose)).toFixed(2);
+    } else if (prevClose != null) {
       row.day_chg = +((q.close - prevClose)).toFixed(2);
       row.day_pct = +((q.close / prevClose - 1) * 100).toFixed(2);
     }

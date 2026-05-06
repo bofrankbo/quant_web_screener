@@ -294,12 +294,17 @@ def _filter_stock_only_tickers(tickers: list[str] | None) -> list[str] | None:
     return [t for t in tickers if t in stock_set]
 
 
-def get_ticker_summary(tickers: list[str], as_of_date: str | None = None) -> pl.DataFrame:
+def get_ticker_summary(
+    tickers: list[str],
+    as_of_date: str | None = None,
+    snapshot_mode: bool = False,
+) -> pl.DataFrame:
     """Return last close, day%, 5d%, 10d%, 20d% for each ticker.
 
-    Fetches only the last 22 rows per ticker to minimise memory; 22 bars is
-    enough for all percentage lookbacks used by the UI (1, 4, 9, 19 trading days
-    behind the latest as-of bar).
+    snapshot_mode=True: parquet[-1] is yesterday; refs shift by -1 so the
+    frontend can overlay today's live quote correctly (today / yesterday - 1).
+    snapshot_mode=False: parquet[-1] is the current price; refs use standard
+    lookbacks (1, 4, 9, 19).
     """
     as_of_date = _normalize_as_of_date(as_of_date)
     _empty = pl.DataFrame(schema={
@@ -345,15 +350,24 @@ def get_ticker_summary(tickers: list[str], as_of_date: str | None = None) -> pl.
             def _ref(back: int, closes=closes, n=n):
                 return round(closes[-(back + 1)], 2) if n >= back + 1 else None
 
-            lookback_1d = 1
-            lookback_5d = 4
-            lookback_10d = 9
-            lookback_20d = 19
+            # snapshot_mode: closes[-1] = yesterday; snapshot is today (day 1).
+            # All refs shift by -1: ref_1d=yesterday, ref_5d=4 days before today, etc.
+            # No snapshot: closes[-1] = last trading day (day 1); standard lookbacks.
+            if snapshot_mode:
+                lookback_1d  = 0
+                lookback_5d  = 3
+                lookback_10d = 8
+                lookback_20d = 18
+            else:
+                lookback_1d  = 1
+                lookback_5d  = 4
+                lookback_10d = 9
+                lookback_20d = 19
 
             rows.append({
                 "ticker": ticker,
                 "close": round(last, 2),
-                "day_pct": _pct(lookback_1d),
+                "day_pct": None if snapshot_mode else _pct(1),
                 "pct_5d": _pct(lookback_5d),
                 "pct_10d": _pct(lookback_10d),
                 "pct_20d": _pct(lookback_20d),
@@ -601,7 +615,7 @@ def get_market_overview(as_of_date: str | None = None) -> list[dict]:
                 replace(split_part(filename, '/', -1), '.parquet', '') AS ticker,
                 date, buy_volume, sell_volume, amount,
                 concentration_5d, concentration_20d
-            FROM read_parquet('{conc_glob}', filename=true)
+            FROM read_parquet('{conc_glob}', filename=true, union_by_name=true)
             {conc_where}
             QUALIFY ROW_NUMBER() OVER (PARTITION BY filename ORDER BY date DESC) = 1
         """).pl()
