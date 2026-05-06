@@ -1046,8 +1046,15 @@ def run_backtest(
         print("[backtest] Loading market value data...")
         mv_df = _load_market_value(start_date, market_cap_rank, allowed_tickers=stock_tickers)
         if mv_df is not None:
+            df = df.sort(["ticker", "date"])
             df = df.join(mv_df, on=["ticker", "date"], how="left")
-            df = df.with_columns(pl.col("in_mc").fill_null(False))
+            # Forward-fill in_mc within each ticker to cover trading days that have no
+            # market_value snapshot (e.g. when the daily fetch missed a date). This
+            # uses the most-recent known rank rather than dropping the ticker from the
+            # universe entirely.
+            df = df.with_columns(
+                pl.col("in_mc").forward_fill().over("ticker").fill_null(False)
+            )
         else:
             df = df.with_columns(pl.lit(False).alias("in_mc"))
     else:
