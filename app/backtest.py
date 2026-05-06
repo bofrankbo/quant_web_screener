@@ -164,20 +164,55 @@ def _load_price_data(start_date: str, tickers: list[str] | None = None) -> pl.Da
 
 
 def _load_concentration(start_date: str) -> pl.DataFrame:
-    """Scan concentration parquets — one file per ticker, same glob pattern as prices."""
+    """Scan concentration parquets — one file per ticker, same glob pattern as prices.
+
+    Some historical parquet shards only contain raw broker volumes
+    (total_volume / buy_volume / sell_volume / amount) and do not
+    store the derived rolling concentration columns yet. In that case
+    we compute concentration_5d / concentration_20d here so the backtest
+    can still run against old data without crashing.
+    """
     import duckdb
     parquet_glob = str(CACHE_DIR / "concentration" / "*.parquet")
     query = f"""
     SELECT
         regexp_extract(filename, '([^/\\\\]+)\\.parquet$', 1) AS ticker,
-        date, concentration_5d, concentration_20d
-    FROM read_parquet('{parquet_glob}', filename=true)
+        *
+    FROM read_parquet('{parquet_glob}', filename=true, union_by_name=true)
     WHERE date >= DATE '{start_date}'
     ORDER BY ticker, date
     """
     conn = duckdb.connect()
-    df = conn.execute(query).pl()
-    conn.close()
+    try:
+        df = conn.execute(query).pl()
+    finally:
+        conn.close()
+
+    if df.is_empty():
+        return df
+
+    has_rollup = {"concentration_5d", "concentration_20d"}.issubset(df.columns)
+    if has_rollup:
+        return df
+
+    raw_cols = {"buy_volume", "sell_volume", "total_volume"}
+    if raw_cols.issubset(df.columns):
+        df = df.sort(["ticker", "date"]).with_columns([
+            (
+                (pl.col("buy_volume").rolling_sum(5) + pl.col("sell_volume").rolling_sum(5))
+                / pl.col("total_volume").rolling_sum(5)
+            ).alias("concentration_5d"),
+            (
+                (pl.col("buy_volume").rolling_sum(20) + pl.col("sell_volume").rolling_sum(20))
+                / pl.col("total_volume").rolling_sum(20)
+            ).alias("concentration_20d"),
+        ])
+    else:
+        df = df.with_columns([
+            pl.lit(None).cast(pl.Float64).alias("concentration_5d"),
+            pl.lit(None).cast(pl.Float64).alias("concentration_20d"),
+        ])
+
     return df
 
 
