@@ -134,3 +134,9 @@ Volume: mount at `/data`, 2 GB. Start command (railway.toml): `uvicorn app.api:a
 For a one-off or scheduled backfill on Railway, create a separate cron/job service and use `bash scripts/run_backfill_concentration.sh` as the command. Set `BACKFILL_CONCURRENCY` to the number of parallel FinMind requests per ticker.
 
 On startup, `startup_sync()` runs in a daemon thread (non-blocking) to populate the cache from R2.
+
+## Error Handling Conventions
+
+- When implementing API clients/uploaders, handle these cases by default: 429 (rate limit), 504 (gateway timeout), 402 (payment), 422 (endpoint mismatch — investigate before treating as no-data), and partial-completion resumption.
+- Don't treat HTTP errors as 'no data' without first verifying the endpoint is correct.
+

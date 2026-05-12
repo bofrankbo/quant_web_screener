@@ -44,7 +44,8 @@ R2_SECRET_ACCESS_KEY = os.environ["R2_SECRET_ACCESS_KEY"]
 FINMIND_TOKEN = os.environ.get("FINMIND_TOKEN") or os.environ["FINMIND_API_KEY"]
 
 FINMIND_DATA_URL = "https://api.finmindtrade.com/api/v4/data"
-BACKFILL_START = "2021-07-01"
+FINMIND_REPORT_URL = "https://api.finmindtrade.com/api/v4/taiwan_stock_trading_daily_report"
+BACKFILL_START = "2026-01-01"
 RATE_LIMIT_SLEEP = 3600
 CONNECT_RETRY_SLEEP = 30
 MAX_IN_FLIGHT_REQUESTS = 10
@@ -145,6 +146,26 @@ async def _finmind_get_async(
                     print(f"\n  [RATE LIMIT {e.status}] sleeping 1h -> resuming at {wake_at.strftime('%H:%M:%S')}\n")
                     await rate_limiter.trip(RATE_LIMIT_SLEEP)
                     continue
+                if e.status == 422:
+                    # Historical dataset not yet indexed for recent dates; fall back to report endpoint
+                    try:
+                        async with session.get(
+                            FINMIND_REPORT_URL,
+                            params={"data_id": stock_id, "date": start_date, "token": FINMIND_TOKEN},
+                            timeout=aiohttp.ClientTimeout(total=120),
+                        ) as r2:
+                            r2.raise_for_status()
+                            d2 = await r2.json()
+                    except aiohttp.ClientResponseError as e2:
+                        if e2.status in (402, 429):
+                            wake_at = datetime.now() + timedelta(seconds=RATE_LIMIT_SLEEP)
+                            print(f"\n  [RATE LIMIT {e2.status}] sleeping 1h -> resuming at {wake_at.strftime('%H:%M:%S')}\n")
+                            await rate_limiter.trip(RATE_LIMIT_SLEEP)
+                            continue
+                        raise
+                    if d2.get("status") == 200:
+                        return d2.get("data", [])
+                    return []
                 if e.status in (502, 503, 504):
                     print(f"\n  [RETRY {e.status}] {stock_id} {start_date}: sleeping {CONNECT_RETRY_SLEEP}s")
                     await asyncio.sleep(CONNECT_RETRY_SLEEP)
