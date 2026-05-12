@@ -775,8 +775,29 @@ let addSuggestionIndex = -1;
 let _liveQuotes = {};
 let _summaryAsOfDate = null;
 let _overviewAsOfDate = null;
+let _summaryRequestSeq = 0;
+const WATCHLIST_CACHE_KEY = 'quant_watchlist_summary_cache';
 
 function getLiveQuoteDate(quotes) { return QuotesCache.getDate(quotes); }
+
+function loadWatchlistCache() {
+  try {
+    const raw = localStorage.getItem(WATCHLIST_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveWatchlistCache() {
+  try {
+    localStorage.setItem(WATCHLIST_CACHE_KEY, JSON.stringify(watchlistCache));
+  } catch (_) {}
+}
+
+watchlistCache = loadWatchlistCache();
 
 async function fetchLiveQuotes(forceRefresh = false) {
   if (!forceRefresh) {
@@ -790,6 +811,12 @@ async function fetchLiveQuotes(forceRefresh = false) {
       }).catch(() => {});
       return _liveQuotes;
     }
+    // No usable cache: do not block chart rendering on a slow quote request.
+    QuotesCache.fetchFresh().then(fresh => {
+      _liveQuotes = fresh;
+      overlayQuotes(fresh);
+    }).catch(() => {});
+    return {};
   }
   const quotes = await QuotesCache.fetchFresh(forceRefresh);
   _liveQuotes = quotes;
@@ -1061,12 +1088,14 @@ function collapseAll() {
 }
 
 async function loadSummary(name) {
+  const requestSeq = ++_summaryRequestSeq;
   const quotes = await fetchLiveQuotes();
+  if (requestSeq !== _summaryRequestSeq || currentWl !== name) return;
   const asOfDate = getLiveQuoteDate(quotes);
   _summaryAsOfDate = asOfDate;
 
   const cached = watchlistCache[name];
-  if (cached && cached.asOfDate === asOfDate) {
+  if (cached && cached.rows) {
     currentRows = cached.rows;
     const thCustom = document.getElementById('th-custom');
     if (!thCustom.querySelector('input')) {
@@ -1079,16 +1108,21 @@ async function loadSummary(name) {
     overlayQuotes(quotes);
     if (_quotesInterval) clearInterval(_quotesInterval);
     _quotesInterval = setInterval(overlayQuotes, 30000);
-    return;
   }
 
-  setLoading(true);
+  if (!cached || !cached.rows) {
+    setLoading(true);
+  }
+
   try {
     const r = await fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''));
     if (!r.ok) return;
     const data = await r.json();
 
     watchlistCache[name] = { rows: data.rows || [], custom_label: data.custom_label, asOfDate };
+    saveWatchlistCache();
+
+    if (requestSeq !== _summaryRequestSeq || currentWl !== name) return;
 
     // Update custom header label
     const thCustom = document.getElementById('th-custom');
@@ -1107,7 +1141,9 @@ async function loadSummary(name) {
   } catch (e) {
     console.error('loadSummary failed:', e);
   } finally {
-    setLoading(false);
+    if (requestSeq === _summaryRequestSeq && (!cached || !cached.rows)) {
+      setLoading(false);
+    }
   }
 }
 
@@ -1346,6 +1382,7 @@ async function deleteWatchlist(name) {
   delete wlCounts[name];
   delete overviewData[name];
   delete watchlistCache[name];
+  saveWatchlistCache();
   expandedWls.delete(name);
   if (currentWl === name) {
     currentWl = '__all__';
@@ -1373,6 +1410,7 @@ async function addTickers() {
   ));
   input.value = '';
   delete watchlistCache[currentWl];
+  saveWatchlistCache();
   await loadAll();
 }
 
@@ -1380,6 +1418,7 @@ async function removeTicker(wlName, ticker) {
   await fetch(`/watchlists/${encodeURIComponent(wlName)}/tickers/${encodeURIComponent(ticker)}`,
     { method: 'DELETE' });
   delete watchlistCache[wlName];
+  saveWatchlistCache();
   await loadAll();
 }
 
@@ -1400,6 +1439,7 @@ async function toggleActive(btn) {
   // Update local cache
   const row = currentRows.find(r => r.ticker === ticker);
   if (row) row.active = newActive;
+  if (watchlistCache[currentWl]) saveWatchlistCache();
 
   await fetch(
     `/watchlists/${encodeURIComponent(currentWl)}/active/${encodeURIComponent(ticker)}`,
@@ -1444,6 +1484,7 @@ async function saveCustomValue(ticker, value) {
   // Update local cache
   const row = currentRows.find(r => r.ticker === ticker);
   if (row) row.custom = value;
+  if (watchlistCache[currentWl]) saveWatchlistCache();
 }
 
 function editCustomLabel() {
@@ -1476,6 +1517,10 @@ async function saveCustomLabel(label) {
     { method: 'PUT', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ label }) }
   );
+  if (watchlistCache[currentWl]) {
+    watchlistCache[currentWl].custom_label = label;
+    saveWatchlistCache();
+  }
 }
 
 // ── Rename ────────────────────────────────────────────────────────────────────
@@ -1513,6 +1558,11 @@ async function commitRename() {
       throw new Error(detail.detail || `HTTP ${resp.status}`);
     }
     const data = await resp.json();
+    if (watchlistCache[currentWl]) {
+      watchlistCache[data.name || newName] = watchlistCache[currentWl];
+      delete watchlistCache[currentWl];
+      saveWatchlistCache();
+    }
     currentWl = data.name || newName;
     renderLeft();
     await loadAll();
@@ -1593,14 +1643,18 @@ function closeChart() {
 
 async function fetchKline(ticker) {
   try {
-    const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes();
-    const q = quotes[ticker];
-    const asOfDate = q?.date || getLiveQuoteDate(quotes);
-    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`);
+    const cachedQuotes = _liveQuotes && Object.keys(_liveQuotes).length
+      ? _liveQuotes
+      : QuotesCache.load() || {};
+    const q = cachedQuotes[ticker];
+    const asOfDate = q?.date || getLiveQuoteDate(cachedQuotes);
+    const resp = await fetch(
+      `/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`
+    );
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
     renderChart(_chartData);
-    applyLiveQuote(ticker, quotes);
+    applyLiveQuote(ticker, cachedQuotes);
   } catch (e) {
     console.error('kline fetch failed:', e);
   }

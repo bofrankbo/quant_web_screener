@@ -320,7 +320,10 @@ async def backfill_ticker_async(
     batch_size = max(1, concurrency)
     request_limit = min(batch_size, MAX_IN_FLIGHT_REQUESTS)
 
+    print(f"  [R2] downloading existing parquet ...")
     existing = _r2_download(ticker)
+    existing_rows = len(existing) if existing is not None else 0
+    print(f"  [R2] existing: {existing_rows} rows")
     combined = _strip_rolling(existing) if existing is not None else None
     state = progress.get(ticker, {})
     resume_from = state.get("next_date") if isinstance(state, dict) else None
@@ -329,7 +332,7 @@ async def backfill_ticker_async(
 
     resume_from_dt = datetime.strptime(resume_from, "%Y-%m-%d").date()
     if resume_from_dt > end_date_dt:
-        final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
+        final_rows = len(combined) if combined is not None else existing_rows
         _mark_ticker(
             progress_file,
             progress,
@@ -341,13 +344,10 @@ async def backfill_ticker_async(
             rows=final_rows,
             updated_at=str(date.today()),
         )
-        print(f"  start: {start_date}  resume: {resume_from}  already up to date")
+        print(f"  [update] start: {start_date}  resume: {resume_from}  already up to date")
         return
 
-    print(
-        f"  start: {start_date}  resume: {resume_from}  "
-        f"existing: {len(combined) if combined is not None else 0} rows"
-    )
+    print(f"  [update] start: {start_date}  resume: {resume_from}  existing: {existing_rows} rows")
     _mark_ticker(
         progress_file,
         progress,
@@ -356,7 +356,7 @@ async def backfill_ticker_async(
         start_date=start_date,
         next_date=resume_from,
         through=end_date,
-        rows=len(combined) if combined is not None else 0,
+        rows=existing_rows,
         updated_at=str(date.today()),
     )
 
@@ -366,9 +366,10 @@ async def backfill_ticker_async(
     rate_limiter = AsyncRateLimiter()
 
     days = list(_iter_days(resume_from, end_date))
-    print(f"    days: {len(days)} days (async x{batch_size}, in-flight capped at {request_limit})")
+    print(f"  [FinMind] fetching {len(days)} days (async x{batch_size}, in-flight capped at {request_limit})")
 
     last_completed_day = None
+    fetched_days = 0
     try:
         async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
             tasks = [
@@ -388,17 +389,18 @@ async def backfill_ticker_async(
                 day_s, records = await completed
                 new_rows = _compute_daily_row(records)
                 if new_rows is None or new_rows.is_empty():
-                    print(f"    {day_s} -> no trader data")
+                    print(f"    [FinMind] {day_s} -> no trader data")
                 else:
                     combined = _merge_daily(combined, new_rows)
-                    print(f"    {day_s} -> fetched")
+                    fetched_days += 1
+                    print(f"    [FinMind] {day_s} -> fetched")
                 last_completed_day = day_s
 
     except Exception as e:
-        # Upload whatever we collected so far, then stop
         if combined is not None:
-            print(f"    [ERROR] Uploading partial data ({len(combined)} rows) before stopping...")
+            print(f"  [R2] uploading partial data ({len(combined)} rows) before stopping ...")
             _r2_upload(ticker, combined)
+            print(f"  [R2] partial upload done")
         partial_next = _next_day(last_completed_day) if last_completed_day else resume_from
         _mark_ticker(
             progress_file,
@@ -412,13 +414,15 @@ async def backfill_ticker_async(
             error=str(e),
             updated_at=str(date.today()),
         )
-        print(f"    ERROR: {e}")
+        print(f"  [ERROR] {e}")
         raise
 
-    # Full ticker complete — upload once
-    final_rows = len(combined) if combined is not None else (len(existing) if existing is not None else 0)
+    final_rows = len(combined) if combined is not None else existing_rows
+    print(f"  [update] merged: {existing_rows} existing + {fetched_days} new days -> {final_rows} total")
     if combined is not None:
+        print(f"  [R2] uploading {final_rows} rows ...")
         _r2_upload(ticker, combined)
+        print(f"  [R2] upload done")
     _mark_ticker(
         progress_file,
         progress,
@@ -430,7 +434,6 @@ async def backfill_ticker_async(
         rows=final_rows,
         updated_at=str(date.today()),
     )
-    print(f"    total {final_rows} days")
 
 
 def backfill_ticker(
