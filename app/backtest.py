@@ -121,6 +121,7 @@ def _read_parquet_r2(key: str) -> pl.DataFrame | None:
     local = CACHE_DIR / key
     if local.exists():
         return pl.read_parquet(local)
+    logger.warning("cache miss, fetching from R2: %s", key)
     try:
         obj = s3.get_object(Bucket=R2_BUCKET, Key=key)
         return pl.read_parquet(io.BytesIO(obj["Body"].read()))
@@ -728,7 +729,7 @@ def get_market_overview(as_of_date: str | None = None) -> list[dict]:
 def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22, as_of_date: str | None = None) -> pl.DataFrame:
     """Return full OHLCV + MA + Bollinger history for a single ticker."""
     as_of_date = _normalize_as_of_date(as_of_date)
-    df = download_parquet(f"tickers/{ticker}.parquet")
+    df = _read_parquet_r2(f"tickers/{ticker}.parquet")
     if df is None or df.is_empty():
         return pl.DataFrame()
 

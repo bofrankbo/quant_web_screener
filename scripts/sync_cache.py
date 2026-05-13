@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import boto3
+import polars as pl
 from botocore.config import Config
 from dotenv import load_dotenv
 
@@ -38,6 +39,29 @@ CACHE_DIR = PARQUET_CACHE_PATH
 def _local_etag(path: Path) -> str:
     """MD5 of local file, matching R2's ETag format for single-part uploads."""
     return hashlib.md5(path.read_bytes()).hexdigest()
+
+
+def _print_date_range(prefix: str, local_dir: Path, objects: list) -> None:
+    if prefix == "market_value":
+        # filenames are YYYY-MM-DD.parquet — extract dates directly
+        dates = sorted(
+            Path(obj["Key"]).stem for obj in objects if obj["Key"].endswith(".parquet")
+        )
+        if dates:
+            print(f"[sync] {prefix}/ date range: {dates[0]} → {dates[-1]}")
+        return
+
+    # For tickers/concentration: read one parquet to get date range
+    sample = next((local_dir / Path(obj["Key"]).name for obj in objects
+                   if (local_dir / Path(obj["Key"]).name).exists()), None)
+    if sample is None:
+        return
+    try:
+        df = pl.read_parquet(sample, columns=["date"])
+        dates = df["date"].cast(pl.Utf8).sort()
+        print(f"[sync] {prefix}/ date range: {dates[0]} → {dates[-1]}")
+    except Exception:
+        pass
 
 
 def sync_prefix(prefix: str) -> None:
@@ -74,6 +98,7 @@ def sync_prefix(prefix: str) -> None:
             err += 1
 
     print(f"[sync] {prefix}/ done — {ok} downloaded, {skipped} skipped, {err} errors")
+    _print_date_range(prefix, local_dir, objects)
 
 
 def main():

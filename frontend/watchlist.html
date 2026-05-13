@@ -856,33 +856,38 @@ async function loadOverview() {
 
   loadingEl.style.display = 'block';
   tbody.innerHTML = '';
+  overviewData = {};
 
-  try {
-    const quotes = await fetchLiveQuotes();
-    const asOfDate = getLiveQuoteDate(quotes);
-    _overviewAsOfDate = asOfDate;
-    const results = await Promise.all(
-      names.map(name =>
-        fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''))
-          .then(r => r.ok ? r.json() : { rows: [], custom_label: '備註' })
-          .then(data => ({ name, rows: data.rows || [], custom_label: data.custom_label || '備註' }))
-      )
-    );
+  const quotes = fetchLiveQuotes();  // fire but don't await
+  const asOfDate = getLiveQuoteDate(QuotesCache.load() || {});
+  _overviewAsOfDate = asOfDate;
 
-    overviewData = {};
-    for (const { name, rows, custom_label } of results) {
-      overviewData[name] = { rows, custom_label };
-    }
+  let pending = names.length;
+  if (_quotesInterval) clearInterval(_quotesInterval);
 
-    loadingEl.style.display = 'none';
-    renderOverview();
-    overlayOverviewQuotes(quotes);
-    if (_quotesInterval) clearInterval(_quotesInterval);
-    _quotesInterval = setInterval(overlayOverviewQuotes, 30000);
-  } catch (e) {
-    loadingEl.style.display = 'none';
-    console.error('loadOverview failed:', e);
-  }
+  names.forEach(name => {
+    fetch('/watchlists/' + encodeURIComponent(name) + '/summary' + (asOfDate ? `?as_of_date=${encodeURIComponent(asOfDate)}` : ''))
+      .then(r => r.ok ? r.json() : { rows: [], custom_label: '備註' })
+      .then(data => {
+        overviewData[name] = { rows: data.rows || [], custom_label: data.custom_label || '備註' };
+        if (loadingEl.style.display !== 'none') {
+          loadingEl.style.display = 'none';
+        }
+        renderOverview();
+      })
+      .catch(() => {
+        overviewData[name] = { rows: [], custom_label: '備註' };
+      })
+      .finally(() => {
+        pending--;
+        if (pending === 0) {
+          quotes.then(q => {
+            overlayOverviewQuotes(q);
+            _quotesInterval = setInterval(overlayOverviewQuotes, 30000);
+          });
+        }
+      });
+  });
 }
 
 function avgPct(rows, key) {

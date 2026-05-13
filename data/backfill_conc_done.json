@@ -12488,679 +12488,1700 @@
     "updated_at": "2026-05-12"
   },
   "6464": {
-    "status": "running",
+    "status": "done",
     "start_date": "2026-01-01",
-    "next_date": "2026-01-01",
+    "next_date": "2026-05-12",
     "through": "2026-05-11",
-    "rows": 578,
+    "rows": 641,
     "updated_at": "2026-05-12"
   },
   "6465": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6465&start_date=2025-06-26&end_date=2025-06-26&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6469": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6469&start_date=2021-09-17&end_date=2021-09-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1110,
+    "updated_at": "2026-05-12"
   },
   "6470": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6470&start_date=2024-01-26&end_date=2024-01-26&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6472": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6472&start_date=2022-01-11&end_date=2022-01-11&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1177,
+    "updated_at": "2026-05-12"
   },
   "6477": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6477&start_date=2021-11-18&end_date=2021-11-18&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6482": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6482&start_date=2022-09-30&end_date=2022-09-30&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6485": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6485&start_date=2025-04-09&end_date=2025-04-09&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6486": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6486&start_date=2022-02-25&end_date=2022-02-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6488": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6488&start_date=2025-09-01&end_date=2025-09-01&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1178,
+    "updated_at": "2026-05-12"
   },
   "6491": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6491&start_date=2025-03-19&end_date=2025-03-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1110,
+    "updated_at": "2026-05-12"
   },
   "6492": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6492&start_date=2023-04-26&end_date=2023-04-26&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 192,
+    "updated_at": "2026-05-12"
   },
   "6494": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6494&start_date=2022-12-13&end_date=2022-12-13&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6496": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6496&start_date=2024-06-19&end_date=2024-06-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6497": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6497&start_date=2024-04-05&end_date=2024-04-05&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 0,
+    "updated_at": "2026-05-12"
   },
   "6498": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6498&start_date=2026-04-15&end_date=2026-04-15&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6499": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6499&start_date=2025-03-31&end_date=2025-03-31&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 120,
+    "updated_at": "2026-05-12"
   },
   "6504": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6504&start_date=2021-12-30&end_date=2021-12-30&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6505": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6505&start_date=2024-07-18&end_date=2024-07-18&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-12"
   },
   "6506": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6506&start_date=2024-07-16&end_date=2024-07-16&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6508": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6508&start_date=2022-06-17&end_date=2022-06-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6509": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6509&start_date=2021-11-03&end_date=2021-11-03&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 234,
+    "updated_at": "2026-05-12"
   },
   "6510": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6510&start_date=2023-11-29&end_date=2023-11-29&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1176,
+    "updated_at": "2026-05-12"
   },
   "6512": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6512&start_date=2022-01-04&end_date=2022-01-04&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6514": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6514&start_date=2024-11-08&end_date=2024-11-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 0,
+    "updated_at": "2026-05-12"
   },
   "6515": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6515&start_date=2026-04-27&end_date=2026-04-27&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-12"
   },
   "6516": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6516&start_date=2021-12-08&end_date=2021-12-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6517": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6517&start_date=2023-04-12&end_date=2023-04-12&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6523": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6523&start_date=2022-04-06&end_date=2022-04-06&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6525": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6525&start_date=2022-07-21&end_date=2022-07-21&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 389,
+    "updated_at": "2026-05-12"
   },
   "6526": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6526&start_date=2025-01-02&end_date=2025-01-02&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 942,
+    "updated_at": "2026-05-12"
   },
   "6527": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6527&start_date=2023-10-26&end_date=2023-10-26&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6530": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6530&start_date=2024-05-08&end_date=2024-05-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6531": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6531&start_date=2025-11-27&end_date=2025-11-27&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1172,
+    "updated_at": "2026-05-12"
   },
   "6532": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6532&start_date=2023-06-16&end_date=2023-06-16&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6533": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6533&start_date=2025-11-21&end_date=2025-11-21&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1106,
+    "updated_at": "2026-05-12"
   },
   "6534": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6534&start_date=2022-06-24&end_date=2022-06-24&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6535": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6535&start_date=2022-08-26&end_date=2022-08-26&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1132,
+    "updated_at": "2026-05-12"
   },
   "6538": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6538&start_date=2025-01-08&end_date=2025-01-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6541": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6541&start_date=2022-07-29&end_date=2022-07-29&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 698,
+    "updated_at": "2026-05-12"
   },
   "6542": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6542&start_date=2026-04-06&end_date=2026-04-06&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6546": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6546&start_date=2024-09-10&end_date=2024-09-10&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 119,
+    "updated_at": "2026-05-12"
   },
   "6547": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6547&start_date=2021-08-17&end_date=2021-08-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1089,
+    "updated_at": "2026-05-12"
   },
   "6548": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6548&start_date=2021-07-12&end_date=2021-07-12&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1140,
+    "updated_at": "2026-05-12"
   },
   "6550": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6550&start_date=2023-05-25&end_date=2023-05-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1108,
+    "updated_at": "2026-05-12"
   },
   "6552": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6552&start_date=2025-04-08&end_date=2025-04-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6556": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6556&start_date=2021-09-14&end_date=2021-09-14&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6558": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6558&start_date=2021-12-20&end_date=2021-12-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6560": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6560&start_date=2023-05-12&end_date=2023-05-12&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6561": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6561&start_date=2023-03-03&end_date=2023-03-03&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1102,
+    "updated_at": "2026-05-12"
   },
   "6568": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6568&start_date=2022-02-21&end_date=2022-02-21&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 179,
+    "updated_at": "2026-05-12"
   },
   "6569": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6569&start_date=2023-07-25&end_date=2023-07-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6570": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6570&start_date=2023-11-20&end_date=2023-11-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6573": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6573&start_date=2023-09-27&end_date=2023-09-27&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6574": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6574&start_date=2022-01-04&end_date=2022-01-04&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6576": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6576&start_date=2024-08-22&end_date=2024-08-22&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 727,
+    "updated_at": "2026-05-12"
   },
   "6577": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6577&start_date=2022-02-03&end_date=2022-02-03&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6578": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6578&start_date=2022-04-20&end_date=2022-04-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6579": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6579&start_date=2025-05-21&end_date=2025-05-21&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1109,
+    "updated_at": "2026-05-12"
   },
   "6581": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6581&start_date=2022-02-16&end_date=2022-02-16&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 417,
+    "updated_at": "2026-05-12"
   },
   "6582": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6582&start_date=2022-10-24&end_date=2022-10-24&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1101,
+    "updated_at": "2026-05-12"
   },
   "6584": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6584&start_date=2021-11-19&end_date=2021-11-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 284,
+    "updated_at": "2026-05-12"
   },
   "6585": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6585&start_date=2024-11-29&end_date=2024-11-29&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 182,
+    "updated_at": "2026-05-12"
   },
   "6588": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6588&start_date=2025-02-20&end_date=2025-02-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6589": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6589&start_date=2026-01-09&end_date=2026-01-09&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1110,
+    "updated_at": "2026-05-12"
   },
   "6590": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6590&start_date=2022-03-17&end_date=2022-03-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6591": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6591&start_date=2024-05-22&end_date=2024-05-22&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6592": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6592&start_date=2023-10-20&end_date=2023-10-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1117,
+    "updated_at": "2026-05-12"
   },
   "6593": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6593&start_date=2025-04-08&end_date=2025-04-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6594": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6594&start_date=2024-03-15&end_date=2024-03-15&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 0,
+    "updated_at": "2026-05-12"
   },
   "6596": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6596&start_date=2023-04-25&end_date=2023-04-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6597": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6597&start_date=2026-01-13&end_date=2026-01-13&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 77,
+    "updated_at": "2026-05-12"
   },
   "6598": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6598&start_date=2025-12-25&end_date=2025-12-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6603": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6603&start_date=2021-08-19&end_date=2021-08-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6605": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6605&start_date=2025-11-27&end_date=2025-11-27&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1110,
+    "updated_at": "2026-05-12"
   },
   "6606": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6606&start_date=2021-12-30&end_date=2021-12-30&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6609": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6609&start_date=2021-10-27&end_date=2021-10-27&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6612": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6612&start_date=2023-03-02&end_date=2023-03-02&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6613": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6613&start_date=2025-05-29&end_date=2025-05-29&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 419,
+    "updated_at": "2026-05-12"
   },
   "6615": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6615&start_date=2022-03-07&end_date=2022-03-07&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 81,
+    "updated_at": "2026-05-12"
   },
   "6616": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6616&start_date=2021-09-13&end_date=2021-09-13&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6617": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6617&start_date=2025-04-11&end_date=2025-04-11&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 408,
+    "updated_at": "2026-05-12"
   },
   "6624": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6624&start_date=2022-06-24&end_date=2022-06-24&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6625": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6625&start_date=2025-11-28&end_date=2025-11-28&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6629": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6629&start_date=2024-07-01&end_date=2024-07-01&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6637": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6637&start_date=2021-07-16&end_date=2021-07-16&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6640": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6640&start_date=2021-07-16&end_date=2021-07-16&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 408,
+    "updated_at": "2026-05-12"
   },
   "6641": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6641&start_date=2026-04-28&end_date=2026-04-28&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6642": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6642&start_date=2026-04-07&end_date=2026-04-07&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6643": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6643&start_date=2023-09-07&end_date=2023-09-07&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1110,
+    "updated_at": "2026-05-12"
   },
   "6645": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6645&start_date=2024-07-02&end_date=2024-07-02&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6649": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6649&start_date=2026-04-06&end_date=2026-04-06&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6651": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6651&start_date=2023-01-25&end_date=2023-01-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6654": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6654&start_date=2023-06-15&end_date=2023-06-15&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6655": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6655&start_date=2026-04-02&end_date=2026-04-02&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 259,
+    "updated_at": "2026-05-12"
   },
   "6657": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6657&start_date=2022-05-02&end_date=2022-05-02&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6658": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6658&start_date=2025-06-23&end_date=2025-06-23&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6661": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6661&start_date=2024-02-07&end_date=2024-02-07&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6662": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6662&start_date=2025-06-20&end_date=2025-06-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6664": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6664&start_date=2022-08-25&end_date=2022-08-25&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 377,
+    "updated_at": "2026-05-12"
   },
   "6666": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6666&start_date=2022-01-19&end_date=2022-01-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6667": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6667&start_date=2024-06-10&end_date=2024-06-10&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 137,
+    "updated_at": "2026-05-12"
   },
   "6668": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6668&start_date=2023-02-17&end_date=2023-02-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6669": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6669&start_date=2025-03-03&end_date=2025-03-03&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-12"
   },
   "6670": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6670&start_date=2022-08-22&end_date=2022-08-22&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1111,
+    "updated_at": "2026-05-12"
   },
   "6671": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6671&start_date=2024-11-14&end_date=2024-11-14&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 80,
+    "updated_at": "2026-05-12"
   },
   "6672": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6672&start_date=2021-09-17&end_date=2021-09-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 143,
+    "updated_at": "2026-05-12"
   },
   "6674": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6674&start_date=2022-02-23&end_date=2022-02-23&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6679": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6679&start_date=2023-10-18&end_date=2023-10-18&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1054,
+    "updated_at": "2026-05-12"
   },
   "6680": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6680&start_date=2024-08-20&end_date=2024-08-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6683": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6683&start_date=2024-02-22&end_date=2024-02-22&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 112,
+    "updated_at": "2026-05-12"
   },
   "6684": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6684&start_date=2022-06-29&end_date=2022-06-29&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6689": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6689&start_date=2022-07-19&end_date=2022-07-19&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 118,
+    "updated_at": "2026-05-12"
   },
   "6690": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6690&start_date=2022-03-11&end_date=2022-03-11&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6691": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6691&start_date=2024-05-17&end_date=2024-05-17&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1178,
+    "updated_at": "2026-05-12"
   },
   "6692": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6692&start_date=2025-09-04&end_date=2025-09-04&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6693": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6693&start_date=2024-04-08&end_date=2024-04-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6695": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6695&start_date=2022-11-18&end_date=2022-11-18&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6697": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6697&start_date=2025-09-23&end_date=2025-09-23&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6698": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6698&start_date=2022-05-30&end_date=2022-05-30&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6702": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6702&start_date=2025-04-22&end_date=2025-04-22&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 0,
+    "updated_at": "2026-05-12"
   },
   "6703": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6703&start_date=2024-05-09&end_date=2024-05-09&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6706": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6706&start_date=2023-02-03&end_date=2023-02-03&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 357,
+    "updated_at": "2026-05-12"
   },
   "6708": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6708&start_date=2025-08-08&end_date=2025-08-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6712": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6712&start_date=2021-08-20&end_date=2021-08-20&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1109,
+    "updated_at": "2026-05-12"
   },
   "6715": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6715&start_date=2026-04-08&end_date=2026-04-08&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 171,
+    "updated_at": "2026-05-12"
   },
   "6716": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6716&start_date=2024-10-23&end_date=2024-10-23&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6719": {
-    "status": "error",
-    "error": "403, message='Forbidden', url='https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockTradingDailyReport&data_id=6719&start_date=2023-10-06&end_date=2023-10-06&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkYXRlIjoiMjAyNi0wNC0wOCAxNjo0MToxMCIsInVzZXJfaWQiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiZW1haWwiOiJib2ZyYW5rYm9AZ21haWwuY29tIiwiaXAiOiI0Mi43OC4yMDYuMTgxIn0.UdgvUWkLVD6E5JBVwcFxB4l1UMQDoPfEwi9J5K3szvM'",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1107,
+    "updated_at": "2026-05-12"
   },
   "6720": {
-    "status": "error",
-    "error": "Cannot connect to host api.finmindtrade.com:443 ssl:default [Connection reset by peer]",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6721": {
-    "status": "error",
-    "error": "Cannot connect to host api.finmindtrade.com:443 ssl:default [Connect call failed ('139.162.104.254', 443)]",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 81,
+    "updated_at": "2026-05-12"
   },
   "6727": {
-    "status": "error",
-    "error": "Cannot connect to host api.finmindtrade.com:443 ssl:default [Connect call failed ('139.162.104.254', 443)]",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6728": {
-    "status": "error",
-    "error": "Cannot connect to host api.finmindtrade.com:443 ssl:default [Connect call failed ('139.162.104.254', 443)]",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
   },
   "6732": {
-    "status": "error",
-    "error": "Cannot connect to host api.finmindtrade.com:443 ssl:default [Connect call failed ('139.162.104.254', 443)]",
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1101,
+    "updated_at": "2026-05-12"
   },
   "6733": {
-    "status": "running",
-    "start_date": "2021-07-01",
-    "next_date": "2021-07-01",
-    "through": "2026-05-04",
-    "rows": 14,
-    "updated_at": "2026-05-05"
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-12"
+  },
+  "6735": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6739": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 122,
+    "updated_at": "2026-05-12"
+  },
+  "6741": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1101,
+    "updated_at": "2026-05-12"
+  },
+  "6742": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6743": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 252,
+    "updated_at": "2026-05-12"
+  },
+  "6747": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 22,
+    "updated_at": "2026-05-12"
+  },
+  "6751": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6752": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6753": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 457,
+    "updated_at": "2026-05-12"
+  },
+  "6754": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6756": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1101,
+    "updated_at": "2026-05-12"
+  },
+  "6757": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1114,
+    "updated_at": "2026-05-12"
+  },
+  "6761": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6762": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 80,
+    "updated_at": "2026-05-12"
+  },
+  "6763": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 255,
+    "updated_at": "2026-05-12"
+  },
+  "6767": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 81,
+    "updated_at": "2026-05-12"
+  },
+  "6768": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1102,
+    "updated_at": "2026-05-12"
+  },
+  "6770": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1176,
+    "updated_at": "2026-05-12"
+  },
+  "6771": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-12"
+  },
+  "6776": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6781": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-13"
+  },
+  "6782": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 633,
+    "updated_at": "2026-05-13"
+  },
+  "6785": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 275,
+    "updated_at": "2026-05-13"
+  },
+  "6788": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6789": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1179,
+    "updated_at": "2026-05-13"
+  },
+  "6790": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 586,
+    "updated_at": "2026-05-13"
+  },
+  "6791": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6792": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6794": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6796": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6799": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6803": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1100,
+    "updated_at": "2026-05-13"
+  },
+  "6804": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6805": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1180,
+    "updated_at": "2026-05-13"
+  },
+  "6806": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 1027,
+    "updated_at": "2026-05-13"
+  },
+  "6807": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6811": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 293,
+    "updated_at": "2026-05-13"
+  },
+  "6821": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6823": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6829": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6830": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6834": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6835": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6838": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6840": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6841": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 167,
+    "updated_at": "2026-05-13"
+  },
+  "6843": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6844": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6846": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 81,
+    "updated_at": "2026-05-13"
+  },
+  "6854": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 587,
+    "updated_at": "2026-05-13"
+  },
+  "6855": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 80,
+    "updated_at": "2026-05-13"
+  },
+  "6856": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 68,
+    "updated_at": "2026-05-13"
+  },
+  "6859": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6861": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6862": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6863": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 582,
+    "updated_at": "2026-05-13"
+  },
+  "6865": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6869": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 971,
+    "updated_at": "2026-05-13"
+  },
+  "6870": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6872": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6873": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 723,
+    "updated_at": "2026-05-13"
+  },
+  "6874": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6875": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6877": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6881": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6885": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6887": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6890": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 463,
+    "updated_at": "2026-05-13"
+  },
+  "6894": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6895": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6899": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6901": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 850,
+    "updated_at": "2026-05-13"
+  },
+  "6902": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6903": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6904": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 75,
+    "updated_at": "2026-05-13"
+  },
+  "6906": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6909": {
+    "status": "done",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 82,
+    "updated_at": "2026-05-13"
+  },
+  "6913": {
+    "status": "error",
+    "start_date": "2026-01-01",
+    "next_date": "2026-05-12",
+    "through": "2026-05-11",
+    "rows": 78,
+    "error": "",
+    "updated_at": "2026-05-13"
   }
 }
