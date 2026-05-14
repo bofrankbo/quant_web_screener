@@ -623,23 +623,45 @@ function closeChart() {
   _chartData = null;
 }
 
+function _moDateOffset(dateStr, days) {
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
 async function fetchKline(ticker) {
   try {
     const quotes = _liveQuotes && Object.keys(_liveQuotes).length ? _liveQuotes : await fetchLiveQuotes();
     const q = quotes[ticker];
     const asOfDate = q?.date || getLiveQuoteDate(quotes);
-    const resp = await fetch(`/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`);
+    const today = asOfDate || new Date().toISOString().slice(0, 10);
+    const startDate = _moDateOffset(today, -365);
+    const resp = await fetch(
+      `/kline/${ticker}?ma_window=10&bb_window=22&start_date=${encodeURIComponent(startDate)}${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`
+    );
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
-    renderChart(_chartData);
+    renderChart(ticker, _chartData, asOfDate);
     await applyLiveQuote(ticker, quotes);
   } catch (e) { console.error('kline fetch:', e); }
 }
 
-function renderChart(rows) {
+function renderChart(ticker, rows, asOfDate) {
   const container = document.getElementById('lwc-container');
   KlineChart.render(container, rows, {
     volumeTopMargin: 0.91,
+    onLoadEarlier: async (earliestDate) => {
+      try {
+        const end = _moDateOffset(earliestDate, -1);
+        const start = _moDateOffset(earliestDate, -366);
+        const resp = await fetch(
+          `/kline/${ticker}?ma_window=10&bb_window=22&start_date=${encodeURIComponent(start)}&as_of_date=${encodeURIComponent(end)}`
+        );
+        if (!resp.ok) return [];
+        return resp.json();
+      } catch (_) { return []; }
+    },
   });
 }
 

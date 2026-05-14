@@ -776,10 +776,6 @@ select:focus { outline: none; border-color: #2962ff; }
     <div id="kline-panel">
       <div id="kline-header">
         <span id="kline-ticker">—</span>
-        <label>Lookback</label>
-        <input type="range" id="lookback" min="30" max="500" value="120"
-               oninput="document.getElementById('lookback-val').textContent=this.value; debouncedFetch()">
-        <span id="lookback-val">120</span>
         <button id="btn-kline-close" onclick="closeKline()">✕</button>
       </div>
       <div id="lwc-container"></div>
@@ -1157,6 +1153,13 @@ function getParams() {
 }
 
 // ── K-line (bottom panel) ─────────────────────────────────────────────────────
+function _dateOffset(dateStr, days) {
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
 function onRowClick(ticker, tr) {
   if (activeRow) activeRow.classList.remove('active');
   tr.classList.add('active');
@@ -1165,7 +1168,7 @@ function onRowClick(ticker, tr) {
 
   document.getElementById('kline-ticker').textContent = ticker;
   document.getElementById('kline-panel').classList.add('visible');
-  fetchKline(ticker, +document.getElementById('lookback').value);
+  fetchKline(ticker);
 }
 
 function closeKline() {
@@ -1175,28 +1178,38 @@ function closeKline() {
   currentTicker = null;
 }
 
-function debouncedFetch() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    if (currentTicker) fetchKline(currentTicker, +document.getElementById('lookback').value);
-  }, 300);
-}
-
-async function fetchKline(ticker, lookback) {
+async function _fetchKlineRows(ticker, { startDate, asOfDate } = {}) {
   const ma = +document.getElementById('ma_window_n').value;
   const bb = +document.getElementById('bb_window_n').value;
+  let url = `/kline/${ticker}?ma_window=${ma}&bb_window=${bb}`;
+  if (startDate) url += `&start_date=${encodeURIComponent(startDate)}`;
+  if (asOfDate) url += `&as_of_date=${encodeURIComponent(asOfDate)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return resp.json();
+}
+
+async function fetchKline(ticker) {
+  const today = new Date().toISOString().slice(0, 10);
+  const startDate = _dateOffset(today, -365);
   try {
-    const resp = await fetch(`/kline/${ticker}?lookback=${lookback}&ma_window=${ma}&bb_window=${bb}`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    renderChart(await resp.json());
+    const rows = await _fetchKlineRows(ticker, { startDate });
+    renderChart(ticker, rows);
   } catch (e) { console.error('kline fetch:', e); }
 }
 
-function renderChart(rows) {
+function renderChart(ticker, rows) {
   const container = document.getElementById('lwc-container');
   KlineChart.render(container, rows, {
     showBb: true,
     volumeTopMargin: 0.91,
+    onLoadEarlier: async (earliestDate) => {
+      const asOfDate = _dateOffset(earliestDate, -1);
+      const startDate = _dateOffset(earliestDate, -366);
+      try {
+        return await _fetchKlineRows(ticker, { startDate, asOfDate });
+      } catch (_) { return []; }
+    },
   });
 }
 

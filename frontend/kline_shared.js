@@ -14,6 +14,48 @@
 
   const chartState = new WeakMap();
 
+  function _normalizedRows(rows) {
+    const byDate = new Map();
+    for (const row of rows || []) {
+      if (!row || !row.date) continue;
+      byDate.set(String(row.date), {
+        ...row,
+        date: String(row.date),
+        open: Number(row.open),
+        high: Number(row.high),
+        low: Number(row.low),
+        close: Number(row.close),
+        volume: Number(row.volume || 0),
+        ma: row.ma == null ? null : Number(row.ma),
+        bb_upper: row.bb_upper == null ? null : Number(row.bb_upper),
+        bb_lower: row.bb_lower == null ? null : Number(row.bb_lower),
+      });
+    }
+    return Array.from(byDate.values())
+      .filter(r => Number.isFinite(r.open) && Number.isFinite(r.high) && Number.isFinite(r.low) && Number.isFinite(r.close))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  function _setAllSeriesData(state) {
+    state.candles.setData(state.rows.map(r => ({
+      time: r.date,
+      open: r.open,
+      high: r.high,
+      low: r.low,
+      close: r.close,
+    })));
+    state.ma.setData(state.rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+    if (state.bbUpper) {
+      state.bbUpper.setData(state.rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+      state.bbLower.setData(state.rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+    }
+    state.vol.setData(state.rows.map(r => ({
+      time: r.date,
+      value: r.volume,
+      color: r.close >= r.open ? THEME.volumeUp : THEME.volumeDown,
+    })));
+  }
+
   function syncPriceSeries(state) {
     if (!state || !state.rows) return;
     state.candles.setData(state.rows.map(r => ({
@@ -48,6 +90,7 @@
     const bbColor = opts.bbColor || THEME.bb;
     const upColor = opts.upColor || THEME.up;
     const downColor = opts.downColor || THEME.down;
+    const onLoadEarlier = opts.onLoadEarlier || null;
 
     const chart = LightweightCharts.createChart(container, {
       layout: { background: { color: THEME.background }, textColor: THEME.text },
@@ -67,7 +110,9 @@
       wickUpColor: upColor,
       wickDownColor: downColor,
     });
-    candles.setData(rows.map(r => ({
+    const cleanRows = _normalizedRows(rows);
+
+    candles.setData(cleanRows.map(r => ({
       time: r.date,
       open: r.open,
       high: r.high,
@@ -76,7 +121,7 @@
     })));
 
     const ma = chart.addLineSeries({ color: maColor, lineWidth: 1, priceLineVisible: false });
-    ma.setData(rows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
+    ma.setData(cleanRows.filter(r => r.ma != null).map(r => ({ time: r.date, value: r.ma })));
 
     let bbUpper = null;
     let bbLower = null;
@@ -87,7 +132,7 @@
         lineStyle: 2,
         priceLineVisible: false,
       });
-      bbUpper.setData(rows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
+      bbUpper.setData(cleanRows.filter(r => r.bb_upper != null).map(r => ({ time: r.date, value: r.bb_upper })));
 
       bbLower = chart.addLineSeries({
         color: bbColor,
@@ -95,7 +140,7 @@
         lineStyle: 2,
         priceLineVisible: false,
       });
-      bbLower.setData(rows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
+      bbLower.setData(cleanRows.filter(r => r.bb_lower != null).map(r => ({ time: r.date, value: r.bb_lower })));
     }
 
     const vol = chart.addHistogramSeries({
@@ -103,15 +148,15 @@
       priceScaleId: 'vol',
       scaleMargins: { top: volumeTopMargin, bottom: 0 },
     });
-    vol.setData(rows.map(r => ({
+    vol.setData(cleanRows.map(r => ({
       time: r.date,
       value: r.volume,
       color: r.close >= r.open ? THEME.volumeUp : THEME.volumeDown,
     })));
 
-    if (rows.length) {
-      const lastDate = new Date(rows[rows.length - 1].date);
-      if (defaultRangeMonths > 0 && rows.length > 1) {
+    if (cleanRows.length) {
+      const lastDate = new Date(cleanRows[cleanRows.length - 1].date);
+      if (defaultRangeMonths > 0 && cleanRows.length > 1) {
         const fromDate = new Date(lastDate);
         fromDate.setMonth(fromDate.getMonth() - defaultRangeMonths);
         chart.timeScale().setVisibleRange({
@@ -131,8 +176,49 @@
     });
     ro.observe(container);
 
-    const state = { chart, ro, candles, ma, bbUpper, bbLower, vol, rows: rows.map(r => ({ ...r })) };
+    const state = {
+      chart, ro, candles, ma, bbUpper, bbLower, vol,
+      rows: cleanRows,
+      earliestDate: cleanRows.length ? cleanRows[0].date : null,
+      loadingMore: false,
+      noMoreHistory: false,
+    };
     chartState.set(container, state);
+
+    if (onLoadEarlier) {
+      // Suppress the initial setVisibleRange callback by waiting one tick
+      let ready = false;
+      setTimeout(() => { ready = true; }, 0);
+
+      chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+        if (!ready || !range || state.loadingMore || state.noMoreHistory) return;
+        if (range.from <= 10 && state.earliestDate) {
+          state.loadingMore = true;
+          const previousEarliestDate = state.earliestDate;
+          Promise.resolve(onLoadEarlier(previousEarliestDate)).then(olderRows => {
+            const merged = _normalizedRows([...(olderRows || []), ...state.rows]);
+            const addedCount = merged.filter(r => r.date < previousEarliestDate).length;
+            if (!olderRows || olderRows.length === 0 || addedCount === 0) {
+              state.noMoreHistory = true;
+            } else {
+              const currentRange = state.chart.timeScale().getVisibleLogicalRange();
+              state.rows = merged;
+              state.earliestDate = merged[0].date;
+              _setAllSeriesData(state);
+              if (currentRange) {
+                state.chart.timeScale().setVisibleLogicalRange({
+                  from: currentRange.from + addedCount,
+                  to: currentRange.to + addedCount,
+                });
+              }
+            }
+          }).catch(() => {}).finally(() => {
+            state.loadingMore = false;
+          });
+        }
+      });
+    }
+
     return state;
   }
 

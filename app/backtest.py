@@ -121,7 +121,7 @@ def _read_parquet_r2(key: str) -> pl.DataFrame | None:
     local = CACHE_DIR / key
     if local.exists():
         return pl.read_parquet(local)
-    logger.warning("cache miss, fetching from R2: %s", key)
+    print(f"[cache miss] fetching from R2: {key}")
     try:
         obj = s3.get_object(Bucket=R2_BUCKET, Key=key)
         return pl.read_parquet(io.BytesIO(obj["Body"].read()))
@@ -726,9 +726,21 @@ def get_market_overview(as_of_date: str | None = None) -> list[dict]:
     return rows
 
 
-def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22, as_of_date: str | None = None) -> pl.DataFrame:
-    """Return full OHLCV + MA + Bollinger history for a single ticker."""
+def get_kline(
+    ticker: str,
+    ma_window: int = 10,
+    bb_window: int = 22,
+    as_of_date: str | None = None,
+    start_date: str | None = None,
+) -> pl.DataFrame:
+    """Return OHLCV + MA + Bollinger history for a single ticker.
+
+    When start_date is given, only rows >= start_date are returned, but
+    indicator computation uses a warmup window before start_date so that
+    MA/BB/RSI values are correct from the very first returned bar.
+    """
     as_of_date = _normalize_as_of_date(as_of_date)
+    start_date = _normalize_as_of_date(start_date)
     df = _read_parquet_r2(f"tickers/{ticker}.parquet")
     if df is None or df.is_empty():
         return pl.DataFrame()
@@ -736,6 +748,12 @@ def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22, as_of_date:
     df = df.with_columns(pl.col("date").cast(pl.Date, strict=False))
     if as_of_date is not None:
         df = df.filter(pl.col("date") <= pl.lit(as_of_date).cast(pl.Date))
+
+    if start_date is not None:
+        warmup_days = max(ma_window, bb_window) * 4
+        warmup_start = (date.fromisoformat(start_date) - timedelta(days=warmup_days)).isoformat()
+        df = df.filter(pl.col("date") >= pl.lit(warmup_start).cast(pl.Date))
+
     if df.is_empty():
         return pl.DataFrame()
 
@@ -743,6 +761,9 @@ def get_kline(ticker: str, ma_window: int = 10, bb_window: int = 22, as_of_date:
     df = df.with_columns(pl.lit(ticker).alias("ticker"))
     df = _compute_screen_indicators(df, ma_window=ma_window, bb_window=bb_window, rsi_period=14)
     df = df.drop(["ticker"])
+
+    if start_date is not None:
+        df = df.filter(pl.col("date") >= pl.lit(start_date).cast(pl.Date))
 
     return df.select(["date", "open", "high", "low", "close", "volume", "ma", "bb_upper", "bb_lower", "rsi"])
 

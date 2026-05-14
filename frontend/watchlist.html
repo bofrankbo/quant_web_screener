@@ -772,6 +772,7 @@ let sortDir = 1;
 let stockUniverse = [];
 let stockUniverseLoaded = false;
 let addSuggestionIndex = -1;
+let addInputComposing = false;
 let _liveQuotes = {};
 let _summaryAsOfDate = null;
 let _overviewAsOfDate = null;
@@ -960,6 +961,36 @@ function getAddSuggestions(q) {
       return (+a.ticker || 0) - (+b.ticker || 0);
     })
     .slice(0, 8);
+}
+
+function resolveAddTicker(token, { allowSuggestion = false } = {}) {
+  const q = String(token || '').trim().toLowerCase();
+  if (!q || !stockUniverse.length) return null;
+
+  const exactTicker = stockUniverse.find(item =>
+    String(item.ticker || '').toLowerCase() === q
+  );
+  if (exactTicker) return String(exactTicker.ticker);
+
+  const exactNameMatches = stockUniverse.filter(item =>
+    String(item.name || '').toLowerCase() === q
+  );
+  if (exactNameMatches.length === 1) return String(exactNameMatches[0].ticker);
+
+  if (allowSuggestion) {
+    const suggestions = getAddSuggestions(q);
+    if (suggestions.length) {
+      const idx = addSuggestionIndex >= 0 ? addSuggestionIndex : 0;
+      return String(suggestions[idx]?.ticker || suggestions[0].ticker);
+    }
+  }
+
+  const partialNameMatches = stockUniverse.filter(item =>
+    String(item.name || '').toLowerCase().includes(q)
+  );
+  if (partialNameMatches.length === 1) return String(partialNameMatches[0].ticker);
+
+  return null;
 }
 
 function hideAddSuggestions() {
@@ -1406,13 +1437,33 @@ async function addTickers() {
   if (!raw) return;
 
   hideAddSuggestions();
-  const tickers = raw.split(/[\s,，、\n]+/).map(t => t.trim()).filter(Boolean);
+  await loadStockUniverse();
+  const tokens = raw.split(/[\s,，、\n]+/).map(t => t.trim()).filter(Boolean);
+  const allowSuggestion = tokens.length === 1;
+  const resolved = [];
+  const invalid = [];
+  for (const token of tokens) {
+    const ticker = resolveAddTicker(token, { allowSuggestion });
+    if (ticker) resolved.push(ticker);
+    else invalid.push(token);
+  }
+  const tickers = Array.from(new Set(resolved));
+  if (invalid.length) {
+    alert(`以下輸入不在股票 meta 中，未加入：${invalid.join(', ')}`);
+  }
   if (!tickers.length) return;
 
-  await Promise.all(tickers.map(ticker =>
-    fetch(`/watchlists/${encodeURIComponent(currentWl)}/tickers/${encodeURIComponent(ticker)}`,
-      { method: 'PUT' })
+  const responses = await Promise.all(tickers.map(ticker =>
+    fetch(`/watchlists/${encodeURIComponent(currentWl)}/tickers/${encodeURIComponent(ticker)}`, { method: 'PUT' })
+      .then(resp => ({ ticker, resp }))
   ));
+  const rejected = [];
+  for (const { ticker, resp } of responses) {
+    if (!resp.ok) rejected.push(ticker);
+  }
+  if (rejected.length) {
+    alert(`以下代號不在股票 meta 中，未加入：${rejected.join(', ')}`);
+  }
   input.value = '';
   delete watchlistCache[currentWl];
   saveWatchlistCache();
@@ -1587,6 +1638,15 @@ function handleRenameKey(e) {
 
 const addInput = document.getElementById('add-input');
 addInput.addEventListener('input', () => {
+  if (addInputComposing) return;
+  addSuggestionIndex = -1;
+  renderAddSuggestions();
+});
+addInput.addEventListener('compositionstart', () => {
+  addInputComposing = true;
+});
+addInput.addEventListener('compositionend', () => {
+  addInputComposing = false;
   addSuggestionIndex = -1;
   renderAddSuggestions();
 });
@@ -1597,6 +1657,7 @@ addInput.addEventListener('blur', () => {
   setTimeout(hideAddSuggestions, 120);
 });
 addInput.addEventListener('keydown', async e => {
+  if (addInputComposing || e.isComposing || e.keyCode === 229) return;
   const q = getAddQuery(addInput.value);
   const suggestions = getAddSuggestions(q);
   if (e.key === 'ArrowDown') {
@@ -1646,6 +1707,13 @@ function closeChart() {
   _chartData = null;
 }
 
+function _wlDateOffset(dateStr, days) {
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return dt.toISOString().slice(0, 10);
+}
+
 async function fetchKline(ticker) {
   try {
     const cachedQuotes = _liveQuotes && Object.keys(_liveQuotes).length
@@ -1653,12 +1721,14 @@ async function fetchKline(ticker) {
       : QuotesCache.load() || {};
     const q = cachedQuotes[ticker];
     const asOfDate = q?.date || getLiveQuoteDate(cachedQuotes);
+    const today = asOfDate || new Date().toISOString().slice(0, 10);
+    const startDate = _wlDateOffset(today, -365);
     const resp = await fetch(
-      `/kline/${ticker}?ma_window=10&bb_window=22${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`
+      `/kline/${ticker}?ma_window=10&bb_window=22&start_date=${encodeURIComponent(startDate)}${asOfDate ? `&as_of_date=${encodeURIComponent(asOfDate)}` : ''}`
     );
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     _chartData = await resp.json();
-    renderChart(_chartData);
+    renderChart(ticker, _chartData, asOfDate);
     applyLiveQuote(ticker, cachedQuotes);
   } catch (e) {
     console.error('kline fetch failed:', e);
@@ -1695,16 +1765,27 @@ async function applyLiveQuote(ticker, quotes = null) {
   } catch (_) {}
 }
 
-function renderChart(rows) {
+function renderChart(ticker, rows, asOfDate) {
   const container = document.getElementById('lwc-container');
   KlineChart.render(container, rows, {
     showBb: document.getElementById('chart-bb-cb').checked,
     volumeTopMargin: 0.91,
+    onLoadEarlier: async (earliestDate) => {
+      try {
+        const end = _wlDateOffset(earliestDate, -1);
+        const start = _wlDateOffset(earliestDate, -366);
+        const resp = await fetch(
+          `/kline/${ticker}?ma_window=10&bb_window=22&start_date=${encodeURIComponent(start)}&as_of_date=${encodeURIComponent(end)}`
+        );
+        if (!resp.ok) return [];
+        return resp.json();
+      } catch (_) { return []; }
+    },
   });
 }
 
 document.getElementById('chart-bb-cb').addEventListener('change', () => {
-  if (_chartData) renderChart(_chartData);
+  if (_chartData && _chartTicker) renderChart(_chartTicker, _chartData);
 });
 
 function pctClass(v) {

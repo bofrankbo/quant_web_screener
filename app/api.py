@@ -3,6 +3,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from datetime import date, timedelta
+from functools import lru_cache
 from pathlib import Path
 import polars as pl
 from fastapi import FastAPI, Query, Request
@@ -144,8 +145,10 @@ def _build_watchlist_summary(
         summary_df = summary_df.with_columns(pl.lit(None).cast(pl.Utf8).alias("name"))
 
     rows = []
+    found_tickers = set()
     for row in summary_df.to_dicts():
         t = row["ticker"]
+        found_tickers.add(t)
         rows.append({
             "ticker": t,
             "stock_name": row.get("name") or "",
@@ -161,6 +164,18 @@ def _build_watchlist_summary(
             "custom": custom_data.get(t, ""),
             "active": active_data.get(t, True),
         })
+
+    for t in tickers:
+        if t not in found_tickers:
+            rows.append({
+                "ticker": t,
+                "stock_name": "",
+                "close": None, "day_pct": None,
+                "pct_5d": None, "pct_10d": None, "pct_20d": None,
+                "ref_1d": None, "ref_5d": None, "ref_10d": None, "ref_20d": None,
+                "custom": custom_data.get(t, ""),
+                "active": active_data.get(t, True),
+            })
 
     order = {t: i for i, t in enumerate(tickers)}
     rows.sort(key=lambda r: order.get(r["ticker"], 9999))
@@ -243,6 +258,14 @@ class ScreenerActiveProfilePayload(BaseModel):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@lru_cache(maxsize=1)
+def _stock_universe_ticker_set() -> set[str]:
+    df = load_stock_info()
+    if df.is_empty():
+        return set()
+    return {str(ticker) for ticker in df["stock_id"].to_list()}
 
 
 @app.get("/api/quotes")
@@ -340,10 +363,17 @@ def kline(
     ma_window: int = Query(default=10, ge=5, le=120),
     bb_window: int = Query(default=22, ge=5, le=120),
     as_of_date: str | None = Query(default=None),
+    start_date: str | None = Query(default=None),
 ):
     if as_of_date is None:
         as_of_date = _live_snapshot_date()
-    df = get_kline(ticker=ticker, ma_window=ma_window, bb_window=bb_window, as_of_date=as_of_date)
+    df = get_kline(
+        ticker=ticker,
+        ma_window=ma_window,
+        bb_window=bb_window,
+        as_of_date=as_of_date,
+        start_date=start_date,
+    )
     if df.is_empty():
         return JSONResponse(status_code=404, content={"detail": f"{ticker} not found"})
     return JSONResponse(content=df.with_columns(pl.col("date").cast(pl.Utf8)).to_dicts())
@@ -577,6 +607,15 @@ def add_ticker(request: Request, name: str, ticker: str):
     user = _current_user(request)
     if not user:
         return JSONResponse(status_code=401, content={"detail": "login required"})
+    ticker = str(ticker).strip().upper()
+    if not ticker:
+        return JSONResponse(status_code=400, content={"detail": "ticker is required"})
+    try:
+        valid_tickers = _stock_universe_ticker_set()
+    except Exception:
+        return JSONResponse(status_code=503, content={"detail": "stock metadata unavailable"})
+    if ticker not in valid_tickers:
+        return JSONResponse(status_code=400, content={"detail": f"{ticker} not found in stock metadata"})
     try:
         add_ticker_to_watchlist(user["id"], name, ticker)
     except KeyError:
