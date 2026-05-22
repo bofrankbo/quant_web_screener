@@ -645,6 +645,108 @@ def set_watchlist_item_active(user_id: int, name: str, ticker: str, active: bool
         )
 
 
+def export_watchlists_for_user(user_id: int) -> list[dict]:
+    with get_connection() as conn:
+        watchlists = conn.execute(
+            """
+            SELECT id, name, custom_label, created_at, updated_at
+            FROM user_watchlists
+            WHERE user_id = ?
+            ORDER BY created_at, id
+            """,
+            (user_id,),
+        ).fetchall()
+
+        result = []
+        for watchlist in watchlists:
+            items = conn.execute(
+                """
+                SELECT ticker, note, active, created_at, updated_at
+                FROM watchlist_items
+                WHERE watchlist_id = ?
+                ORDER BY id
+                """,
+                (watchlist["id"],),
+            ).fetchall()
+            result.append(
+                {
+                    "name": watchlist["name"],
+                    "custom_label": watchlist["custom_label"],
+                    "items": [
+                        {
+                            "ticker": row["ticker"],
+                            "note": row["note"],
+                            "active": bool(row["active"]),
+                        }
+                        for row in items
+                    ],
+                }
+            )
+        return result
+
+
+def import_watchlists_for_user(user_id: int, watchlists: list[dict], replace: bool = False) -> dict:
+    with get_connection() as conn:
+        if replace:
+            conn.execute(
+                """
+                DELETE FROM user_watchlists
+                WHERE user_id = ?
+                """,
+                (user_id,),
+            )
+
+        imported_watchlists = 0
+        imported_items = 0
+        for entry in watchlists:
+            name = str(entry.get("name", "")).strip()
+            if not name:
+                continue
+            custom_label = str(entry.get("custom_label") or "備註")
+            conn.execute(
+                """
+                INSERT INTO user_watchlists (user_id, name, custom_label)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id, name) DO UPDATE SET
+                    custom_label = excluded.custom_label,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (user_id, name, custom_label),
+            )
+            watchlist = conn.execute(
+                """
+                SELECT id
+                FROM user_watchlists
+                WHERE user_id = ? AND name = ?
+                """,
+                (user_id, name),
+            ).fetchone()
+            if watchlist is None:
+                continue
+            imported_watchlists += 1
+
+            for item in entry.get("items", []):
+                ticker = str(item.get("ticker", "")).strip().upper()
+                if not ticker:
+                    continue
+                note = str(item.get("note") or "")
+                active = 1 if item.get("active", True) else 0
+                conn.execute(
+                    """
+                    INSERT INTO watchlist_items (watchlist_id, ticker, note, active)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(watchlist_id, ticker) DO UPDATE SET
+                        note = excluded.note,
+                        active = excluded.active,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    (watchlist["id"], ticker, note, active),
+                )
+                imported_items += 1
+
+        return {"watchlists": imported_watchlists, "items": imported_items}
+
+
 def get_watchlist_summary_for_user(user_id: int, name: str) -> dict | None:
     with get_connection() as conn:
         watchlist = conn.execute(

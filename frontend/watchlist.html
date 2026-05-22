@@ -117,6 +117,29 @@ body {
 }
 #btn-create-wl:hover { background: #1a4fd4; }
 
+#watchlist-transfer {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid #2a2e39;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.transfer-btn {
+  background: #242836;
+  color: #d1d4dc;
+  border: 1px solid #363a45;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.transfer-btn:hover { border-color: #2962ff; color: #f0f6fc; }
+.transfer-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 
 #wl-list {
   flex: 1;
@@ -667,6 +690,11 @@ tr.row-inactive td:not(.toggle-col) {
       <input id="new-wl-input" type="text" placeholder="New watchlist name…"
              onkeydown="if(event.key==='Enter')createWatchlist()">
       <button id="btn-create-wl" onclick="createWatchlist()">＋</button>
+    </div>
+    <div id="watchlist-transfer">
+      <button class="transfer-btn" id="btn-export-watchlists" onclick="exportWatchlists()">匯出</button>
+      <button class="transfer-btn" id="btn-import-watchlists" onclick="openWatchlistImport()">匯入</button>
+      <input id="watchlist-import-file" type="file" accept="application/json,.json" hidden>
     </div>
     <div id="wl-list"></div>
   </div>
@@ -1412,6 +1440,84 @@ async function createWatchlist() {
   selectWatchlist(name);
 }
 
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function filenameFromDisposition(disposition) {
+  const match = /filename="?([^";]+)"?/i.exec(disposition || '');
+  return match ? match[1] : 'watchlists.json';
+}
+
+async function exportWatchlists() {
+  const btn = document.getElementById('btn-export-watchlists');
+  btn.disabled = true;
+  try {
+    const resp = await fetch('/watchlists/export');
+    if (!resp.ok) {
+      const detail = await resp.json().catch(() => ({}));
+      throw new Error(detail.detail || `HTTP ${resp.status}`);
+    }
+    const blob = await resp.blob();
+    const filename = filenameFromDisposition(resp.headers.get('Content-Disposition'));
+    downloadBlob(blob, filename);
+  } catch (err) {
+    console.error('exportWatchlists failed:', err);
+    alert('匯出失敗，請確認已登入並稍後再試。');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function openWatchlistImport() {
+  document.getElementById('watchlist-import-file').click();
+}
+
+async function importWatchlistsFromFile(file) {
+  if (!file) return;
+  const text = await file.text();
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch (_) {
+    alert('匯入失敗：JSON 格式不正確。');
+    return;
+  }
+
+  const choice = prompt('直接按 Enter 會合併匯入；若要先清空本機觀察清單再匯入，請輸入 REPLACE。');
+  if (choice === null) return;
+  const mode = choice.trim().toUpperCase() === 'REPLACE' ? 'replace' : 'merge';
+  const btn = document.getElementById('btn-import-watchlists');
+  btn.disabled = true;
+  try {
+    const resp = await fetch(`/watchlists/import?mode=${mode}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+    watchlistCache = {};
+    saveWatchlistCache();
+    overviewData = {};
+    currentWl = '__all__';
+    await loadAll();
+    alert(`匯入完成：${data.watchlists || 0} 個清單，${data.items || 0} 檔股票。`);
+  } catch (err) {
+    console.error('importWatchlistsFromFile failed:', err);
+    alert(`匯入失敗：${err.message || '請稍後再試。'}`);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function deleteWatchlist(name) {
   if (!confirm(`Delete watchlist "${name}"?\nThis cannot be undone.`)) return;
   await fetch('/watchlists/' + encodeURIComponent(name), { method: 'DELETE' });
@@ -1633,6 +1739,12 @@ function handleRenameKey(e) {
   if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
   if (e.key === 'Escape') cancelRename();
 }
+
+document.getElementById('watchlist-import-file').addEventListener('change', async e => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  await importWatchlistsFromFile(file);
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

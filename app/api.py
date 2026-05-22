@@ -2,11 +2,11 @@ import json
 import threading
 import time
 from contextlib import asynccontextmanager
-from datetime import date, timedelta
+from datetime import date, datetime, timezone, timedelta
 from functools import lru_cache
 from pathlib import Path
 import polars as pl
-from fastapi import FastAPI, Query, Request
+from fastapi import Body, FastAPI, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -26,10 +26,12 @@ from app.db import (
     add_ticker_to_watchlist,
     create_watchlist_for_user,
     delete_watchlist_for_user,
+    export_watchlists_for_user,
     get_watchlist_counts_for_user,
     get_watchlist_by_name,
     get_watchlist_items_for_user,
     get_watchlists_for_user,
+    import_watchlists_for_user,
     clear_watchlists_for_user,
     remove_ticker_from_watchlist,
     rename_watchlist_for_user,
@@ -205,6 +207,54 @@ def _import_legacy_watchlists_to_user(user_id: int) -> None:
                 set_watchlist_note(user_id, name, ticker, custom_data[ticker])
             if ticker in active_data:
                 set_watchlist_item_active(user_id, name, ticker, bool(active_data[ticker]))
+
+
+def _normalize_watchlist_import_payload(payload: dict) -> list[dict]:
+    source = payload.get("watchlists", payload)
+    if not isinstance(source, (list, dict)):
+        raise ValueError("watchlists must be an array or object")
+
+    normalized = []
+    if isinstance(source, dict):
+        iterable = source.items()
+    else:
+        iterable = ((entry.get("name", ""), entry) for entry in source if isinstance(entry, dict))
+
+    for name, entry in iterable:
+        if isinstance(entry, list):
+            items = [{"ticker": ticker, "note": "", "active": True} for ticker in entry]
+            custom_label = "備註"
+        elif isinstance(entry, dict):
+            if isinstance(entry.get("items"), list):
+                raw_items = entry.get("items", [])
+            else:
+                raw_items = [
+                    {
+                        "ticker": ticker,
+                        "note": (entry.get("custom") or {}).get(ticker, ""),
+                        "active": (entry.get("active") or {}).get(ticker, True),
+                    }
+                    for ticker in entry.get("tickers", [])
+                ]
+            items = [
+                {
+                    "ticker": str(item.get("ticker", "")).strip().upper(),
+                    "note": str(item.get("note") or item.get("custom") or ""),
+                    "active": bool(item.get("active", True)),
+                }
+                for item in raw_items
+                if isinstance(item, dict) and str(item.get("ticker", "")).strip()
+            ]
+            custom_label = str(entry.get("custom_label") or "備註")
+            name = entry.get("name", name)
+        else:
+            continue
+
+        name = str(name).strip()
+        if name:
+            normalized.append({"name": name, "custom_label": custom_label, "items": items})
+    return normalized
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -555,6 +605,45 @@ def list_watchlists(request: Request):
     if not user:
         return JSONResponse(status_code=401, content={"detail": "login required"})
     return JSONResponse(content=get_watchlist_counts_for_user(user["id"]))
+
+
+@app.get("/watchlists/export")
+def export_watchlists(request: Request):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    exported_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    payload = {
+        "schema": "quant_web_screener.watchlists.v1",
+        "exported_at": exported_at,
+        "user": {
+            "email": user.get("email"),
+            "name": user.get("name"),
+        },
+        "watchlists": export_watchlists_for_user(user["id"]),
+    }
+    filename = f"watchlists-{date.today().isoformat()}.json"
+    return JSONResponse(
+        content=payload,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post("/watchlists/import")
+def import_watchlists(
+    request: Request,
+    payload: dict = Body(...),
+    mode: str = Query(default="merge", pattern="^(merge|replace)$"),
+):
+    user = _current_user(request)
+    if not user:
+        return JSONResponse(status_code=401, content={"detail": "login required"})
+    try:
+        watchlists = _normalize_watchlist_import_payload(payload)
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+    result = import_watchlists_for_user(user["id"], watchlists, replace=(mode == "replace"))
+    return JSONResponse(content={"ok": True, "mode": mode, **result})
 
 
 @app.get("/watchlists/{name}")
